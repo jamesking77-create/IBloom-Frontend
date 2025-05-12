@@ -98,8 +98,11 @@ const Login = () => {
         await notifyPromise(
           async () => {
 
-            // ⬇️ Replace this block
+
             const res = await login(email, password);
+              if (res?.success === false) {
+                notifyError('Unauthorized: Invalid email or password');
+              } 
             return res;
           },
           'Logging in...',

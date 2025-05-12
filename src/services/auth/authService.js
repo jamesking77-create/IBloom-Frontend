@@ -6,7 +6,7 @@ export const login = async (email, password) => {
 };
 
 export const forgotPassword = async (email) => {
-  const response = await post('/api/auth/forgot-password', { email });
+  const response = await post('/api/auth//forgotPassword', { email });
   return response.data;
 };
 

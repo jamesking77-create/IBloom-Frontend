@@ -66,9 +66,9 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
   };
 
   return (
-    <header className="bg-white border border-gray-200 rounded-lg shadow-sm mx-4 mt-4">
+    <header className="bg-white border border-gray-200 rounded-lg shadow-sm mx-2 mt-2">
       <div className="px-4 py-3 flex items-center justify-between">
-        {/* Left section with logo and hamburger menu */}
+   
         <div className="flex items-center">
           {/* Only show toggle button on mobile */}
           {/* {isMobile && (

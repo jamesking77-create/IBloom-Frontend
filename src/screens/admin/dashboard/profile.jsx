@@ -1,15 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Edit,
-  Save,
-  X,
-  Camera,
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Edit, Save, X } from 'lucide-react';
+import { notifySuccess } from '../../../utils/toastify';
+import { AvatarUpload } from '../../../components/Admin/proflie/avatarUpload';
+import { PersonalInfo } from '../../../components/Admin/proflie/personalInfo';
+import { Specializations } from '../../../components/Admin/proflie/specializations';
+import { Activity } from '../../../components/Admin/proflie/activity';
+import { Category } from '../../../components/Admin/proflie/categoryManagement';
+
 
 const initialUserData = {
   name: 'John Doe',
@@ -20,15 +17,22 @@ const initialUserData = {
   avatar: '/api/placeholder/150/150',
   bio: 'Software developer with 5 years of experience in React and Node.js. Passionate about building user-friendly interfaces and solving complex problems.',
   specialize: ['Decor', 'Event Planning', 'Catering', 'Rental'],
+  categories: [
+    { name: 'Chairs' },
+    { name: 'Tables' },
+    { name: 'Lighting' }
+  ]
 };
 
-export default function Profile({ onProfileUpdate, profileData }) {
+
+export default function Profile({
+  onProfileUpdate,
+  profileData
+}) {
   const [userData, setUserData] = useState(profileData || initialUserData);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(userData);
-  const [avatarPreview, setAvatarPreview] = useState(null);
-  const [newSpecialization, setNewSpecialization] = useState('');
-  const fileInputRef = useRef(null);
+  const [editCategoryData, setEditCategoryData] = useState(userData);
 
   useEffect(() => {
     if (profileData) {
@@ -46,23 +50,18 @@ export default function Profile({ onProfileUpdate, profileData }) {
   const handleEdit = () => {
     setEditData({ ...userData });
     setIsEditing(true);
-    setAvatarPreview(null);
   };
 
   const handleSave = () => {
-    const updatedData = {
-      ...editData,
-      avatar: avatarPreview || editData.avatar,
-    };
-    setUserData(updatedData);
+    setUserData(editData);
     setIsEditing(false);
-    setAvatarPreview(null);
-    if (onProfileUpdate) onProfileUpdate(updatedData);
+    if (onProfileUpdate) onProfileUpdate(editData);
+    notifySuccess("Profile updated successfully!")
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    setAvatarPreview(null);
+    setEditData(userData);
   };
 
   const handleChange = (e) => {
@@ -73,45 +72,39 @@ export default function Profile({ onProfileUpdate, profileData }) {
     }));
   };
 
-  const handleAvatarClick = () => {
-    if (isEditing) {
-      fileInputRef.current?.click();
-    }
+  const handleAvatarChange = (newAvatar) => {
+    setEditData((prev) => ({
+      ...prev,
+      avatar: newAvatar,
+    }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleSpecializationAdd = (specialization) => {
+    setEditData((prev) => ({
+      ...prev,
+      specialize: [...(prev.specialize || []), specialization],
+    }));
   };
 
-  const handleSpecializationAdd = () => {
-    if (newSpecialization.trim()) {
-      setEditData((prev) => ({
-        ...prev,
-        specialize: [...(prev.specialize || []), newSpecialization.trim()],
-      }));
-      setNewSpecialization('');
-    }
+  const handleCategoryAdd = (newCategory) => {
+    setEditData((prev) => ({
+      ...prev,
+      categories: [...(prev.categories || []), { name: newCategory }]
+    }));
   };
 
   const handleSpecializationRemove = (index) => {
-    setEditData((prev) => ({
+    setEditCategoryData((prev) => ({
       ...prev,
       specialize: prev.specialize.filter((_, i) => i !== index),
     }));
   };
 
-  const handleSpecializationKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSpecializationAdd();
-    }
+  const handleCategoryRemove = (index) => {
+    setEditData((prev) => ({
+      ...prev,
+      categories: prev.categories.filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -119,33 +112,11 @@ export default function Profile({ onProfileUpdate, profileData }) {
       {/* Left Side */}
       <div className="w-full md:w-1/3 bg-white rounded-lg shadow-md p-6">
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="relative mb-4">
-            <div
-              className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 cursor-pointer"
-              onClick={handleAvatarClick}
-            >
-              <img
-                src={avatarPreview || userData.avatar}
-                alt="Profile avatar"
-                className="w-full h-full object-cover"
-              />
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleFileChange}
-              />
-            </div>
-            {isEditing && (
-              <div
-                className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-full cursor-pointer"
-                onClick={handleAvatarClick}
-              >
-                <Camera size={32} className="text-white" />
-              </div>
-            )}
-          </div>
+          <AvatarUpload
+            isEditing={isEditing}
+            currentAvatar={userData.avatar}
+            onAvatarChange={handleAvatarChange}
+          />
 
           <h2 className="text-2xl font-bold text-gray-800">
             {isEditing ? (
@@ -191,62 +162,17 @@ export default function Profile({ onProfileUpdate, profileData }) {
           )}
         </div>
 
-        <div className="border-t pt-4">
-          <div className="flex items-center gap-3 mb-3">
-            <Mail className="text-gray-400" size={18} />
-            {isEditing ? (
-              <input
-                type="email"
-                name="email"
-                value={editData.email}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-md"
-              />
-            ) : (
-              <p className="text-gray-700">{userData.email}</p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 mb-3">
-            <Phone className="text-gray-400" size={18} />
-            {isEditing ? (
-              <input
-                type="text"
-                name="phone"
-                value={editData.phone}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-md"
-              />
-            ) : (
-              <p className="text-gray-700">{userData.phone}</p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 mb-3">
-            <MapPin className="text-gray-400" size={18} />
-            {isEditing ? (
-              <input
-                type="text"
-                name="location"
-                value={editData.location}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-md"
-              />
-            ) : (
-              <p className="text-gray-700">{userData.location}</p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Calendar className="text-gray-400" size={18} />
-            <p className="text-gray-700">Member since {userData.joinDate}</p>
-          </div>
-        </div>
+        <PersonalInfo
+          userData={userData}
+          isEditing={isEditing}
+          editData={editData}
+          onChangeHandler={handleChange}
+        />
       </div>
 
-      {/* Right Side */}
+
       <div className="w-full md:w-2/3 flex flex-col gap-4">
-        {/* About Us */}
+
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">About Us</h3>
           {isEditing ? (
@@ -262,69 +188,40 @@ export default function Profile({ onProfileUpdate, profileData }) {
           )}
         </div>
 
-        {/* Specializations */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">We Specialize In:</h3>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {(isEditing ? editData.specialize : userData.specialize)?.map((item, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-[#A61A5A] text-white rounded-full text-sm flex items-center gap-1"
-              >
-                {item}
-                {isEditing && (
-                  <button onClick={() => handleSpecializationRemove(index)}>
-                    <X size={14} />
-                  </button>
-                )}
-              </span>
-            ))}
-          </div>
-          {isEditing && (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newSpecialization}
-                onChange={(e) => setNewSpecialization(e.target.value)}
-                onKeyDown={handleSpecializationKeyDown}
-                className="border p-2 rounded-md w-full"
-                placeholder="Add specialization"
-              />
-              <button
-                onClick={handleSpecializationAdd}
-                className="bg-[#A61A5A] text-white px-4 py-2 rounded-md"
-              >
-                Add
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Activity</h3>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 mt-2 rounded-full bg-green-500"></div>
-              <div>
-                <p className="font-medium">Profile updated</p>
-                <p className="text-sm text-gray-500">3 days ago</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 mt-2 rounded-full bg-green-500"></div>
-              <div>
-                <p className="font-medium">Completed project "Dashboard Redesign"</p>
-                <p className="text-sm text-gray-500">1 week ago</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 mt-2 rounded-full bg-green-500"></div>
-              <div>
-                <p className="font-medium">Joined the platform</p>
-                <p className="text-sm text-gray-500">{userData.joinDate}</p>
-              </div>
+        <Specializations
+          isEditing={isEditing}
+          specialize={isEditing ? editData.specialize : userData.specialize}
+          onAddSpecialization={handleSpecializationAdd}
+          onRemoveSpecialization={handleSpecializationRemove}
+        />
+
+        {!isEditing && (
+          <div className="bg-white rounded-lg shadow-md p-6 mt-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Categories</h3>
+            <div className="flex flex-wrap gap-2">
+              {userData.categories?.map((category, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-[#468E36] text-white rounded-full text-sm"
+                >
+                  {category.name}
+                </span>
+              ))}
             </div>
           </div>
-        </div>
+        )}
+
+        {/* In the editing section */}
+        {isEditing && (
+          <Category
+            isEditing={isEditing}
+            categories={editData.categories}
+            onAddCategory={handleCategoryAdd}
+            onRemoveCategory={handleCategoryRemove}
+          />
+        )}
+
+        <Activity joinDate={userData.joinDate} />
       </div>
     </div>
   );

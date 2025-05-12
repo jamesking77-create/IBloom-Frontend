@@ -49,7 +49,7 @@ const ResetPassword = () => {
   
     if (newPassword === confirmPassword && newPassword.length > 0) {
       notifySuccess("Password reset successful!");
-      navigate('/');
+      navigate('/login');
     } else {
       setPasswordsMatch(false);
     }
@@ -124,7 +124,7 @@ const ResetPassword = () => {
         </div>
         
         <div className="mt-6 text-center">
-          <a href="/forgotPassword" className="text-sm text-[#A61A5A] hover:text-[#468E36]">
+          <a href="/forgotPassword" className="text-md font-semibold text-[#A61A5A] hover:text-[#468E36]">
             Back
           </a>
         </div>

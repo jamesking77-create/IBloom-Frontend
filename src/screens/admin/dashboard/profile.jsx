@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Edit, Save, X } from 'lucide-react';
 import { notifySuccess } from '../../../utils/toastify';
 import { AvatarUpload } from '../../../components/Admin/proflie/avatarUpload';
@@ -7,39 +8,36 @@ import { Specializations } from '../../../components/Admin/proflie/specializatio
 import { Activity } from '../../../components/Admin/proflie/activity';
 import { Category } from '../../../components/Admin/proflie/categoryManagement';
 
+import {
+  setUserData,
+  setEditData,
+  setIsEditing,
+  resetEditData,
+  updateEditDataField,
+  updateAvatar,
+  addSpecialization,
+  removeSpecialization,
+  addCategory,
+  removeCategory,
+  saveProfile // This is now the async thunk, not the local action
+} from '../../../store/slices/profile-slice';
 
-const initialUserData = {
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  phone: '+1 (555) 123-4567',
-  location: 'New York, USA',
-  joinDate: 'January 2023',
-  avatar: '/api/placeholder/150/150',
-  bio: 'Software developer with 5 years of experience in React and Node.js. Passionate about building user-friendly interfaces and solving complex problems.',
-  specialize: ['Decor', 'Event Planning', 'Catering', 'Rental'],
-  categories: [
-    { name: 'Chairs' },
-    { name: 'Tables' },
-    { name: 'Lighting' }
-  ]
-};
+export default function Profile({ onProfileUpdate, profileData }) {
+  const dispatch = useDispatch();
 
-
-export default function Profile({
-  onProfileUpdate,
-  profileData
-}) {
-  const [userData, setUserData] = useState(profileData || initialUserData);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState(userData);
-  const [editCategoryData, setEditCategoryData] = useState(userData);
+  const {
+    userData,
+    editData,
+    isEditing,
+    loading
+  } = useSelector((state) => state.profile);
 
   useEffect(() => {
     if (profileData) {
-      setUserData(profileData);
-      setEditData(profileData);
+      dispatch(setUserData(profileData));
+      dispatch(setEditData(profileData));
     }
-  }, [profileData]);
+  }, [profileData, dispatch]);
 
   useEffect(() => {
     if (onProfileUpdate) {
@@ -48,73 +46,54 @@ export default function Profile({
   }, [userData, onProfileUpdate]);
 
   const handleEdit = () => {
-    setEditData({ ...userData });
-    setIsEditing(true);
+    dispatch(setEditData(userData));
+    dispatch(setIsEditing(true));
   };
 
-  const handleSave = () => {
-    setUserData(editData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    await dispatch(saveProfile());
+    notifySuccess("Profile updated successfully!");
     if (onProfileUpdate) onProfileUpdate(editData);
-    notifySuccess("Profile updated successfully!")
   };
 
   const handleCancel = () => {
-    setIsEditing(false);
-    setEditData(userData);
+    dispatch(resetEditData());
+    dispatch(setIsEditing(false));
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    dispatch(updateEditDataField({ name, value }));
   };
 
   const handleAvatarChange = (newAvatar) => {
-    setEditData((prev) => ({
-      ...prev,
-      avatar: newAvatar,
-    }));
+    dispatch(updateAvatar(newAvatar));
   };
 
   const handleSpecializationAdd = (specialization) => {
-    setEditData((prev) => ({
-      ...prev,
-      specialize: [...(prev.specialize || []), specialization],
-    }));
-  };
-
-  const handleCategoryAdd = (newCategory) => {
-    setEditData((prev) => ({
-      ...prev,
-      categories: [...(prev.categories || []), { name: newCategory }]
-    }));
+    dispatch(addSpecialization(specialization));
   };
 
   const handleSpecializationRemove = (index) => {
-    setEditCategoryData((prev) => ({
-      ...prev,
-      specialize: prev.specialize.filter((_, i) => i !== index),
-    }));
+    dispatch(removeSpecialization(index));
+  };
+
+  const handleCategoryAdd = (newCategory) => {
+    dispatch(addCategory(newCategory));
   };
 
   const handleCategoryRemove = (index) => {
-    setEditData((prev) => ({
-      ...prev,
-      categories: prev.categories.filter((_, i) => i !== index)
-    }));
+    dispatch(removeCategory(index));
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 p-6 bg-gray-50 min-h-[100%]">
+    <div className="flex flex-col md:flex-row gap-4 p-6 bg-gray-50 min-h-[100%] overflow-hidden">
       {/* Left Side */}
       <div className="w-full md:w-1/3 bg-white rounded-lg shadow-md p-6">
         <div className="flex flex-col items-center text-center mb-6">
           <AvatarUpload
             isEditing={isEditing}
-            currentAvatar={userData.avatar}
+            currentAvatar={isEditing ? editData.avatar : userData.avatar}
             onAvatarChange={handleAvatarChange}
           />
 
@@ -146,14 +125,16 @@ export default function Profile({
             <div className="flex gap-2 mt-4">
               <button
                 onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <Save size={16} />
-                Save
+                {loading ? 'Saving...' : 'Save'}
               </button>
               <button
                 onClick={handleCancel}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <X size={16} />
                 Cancel
@@ -170,9 +151,7 @@ export default function Profile({
         />
       </div>
 
-
       <div className="w-full md:w-2/3 flex flex-col gap-4">
-
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">About Us</h3>
           {isEditing ? (
@@ -211,7 +190,6 @@ export default function Profile({
           </div>
         )}
 
-        {/* In the editing section */}
         {isEditing && (
           <Category
             isEditing={isEditing}

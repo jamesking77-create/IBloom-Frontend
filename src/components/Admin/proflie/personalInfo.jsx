@@ -1,8 +1,11 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { validateEmail } from '../../../utils/validateEmail';
 
-// File: PersonalInfo.jsx
-export const PersonalInfo = ({ userData, isEditing, editData, onChangeHandler }) => {
+
+export const PersonalInfo = ({ userData, isEditing, editData, onChangeHandler, handleEmailBlur }) => {
+
+ 
   return (
     <div className="border-t pt-4">
       <div className="flex items-center gap-3 mb-3">
@@ -13,6 +16,7 @@ export const PersonalInfo = ({ userData, isEditing, editData, onChangeHandler })
             name="email"
             value={editData.email}
             onChange={onChangeHandler}
+            onBlur={handleEmailBlur}
             className="w-full p-2 border rounded-md"
           />
         ) : (

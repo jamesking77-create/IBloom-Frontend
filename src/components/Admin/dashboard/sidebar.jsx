@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Calendar, 
@@ -10,13 +10,29 @@ import {
   Layers,
   X
 } from 'lucide-react';
-import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png"
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom'; 
+import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png";
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser } from '../../../store/slices/auth-slice'; 
+import { useNavigate } from 'react-router-dom';
+import { fetchProfile } from '../../../store/slices/profile-slice'; 
 
 const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
   const location = useLocation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
+  // Get profile data from Redux store
+  const { userData, loading } = useSelector((state) => state.profile);
+
+  // Fetch profile data when component mounts if it's not already loaded
+  useEffect(() => {
+    if (!userData?.name) {
+      dispatch(fetchProfile());
+    }
+  }, [dispatch, userData]);
+
   // Menu items configuration
   const menuItems = [
     {
@@ -57,10 +73,13 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
   };
   
   // Handle logout
-  const handleLogout = () => {
-    // Implement your logout logic here
-    console.log('Logging out');
-    setShowLogoutModal(false);
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser());
+      navigate('/login'); // or your login route
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
   };
   
   // Close logout modal
@@ -72,6 +91,9 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
   if (isMobile && !isOpen) {
     return null;
   }
+
+  // Default avatar if none is set
+  const defaultAvatar = "/api/placeholder/160/160"; // Placeholder image
 
   return (
     <div className=''>
@@ -107,14 +129,22 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
         <div className="flex-1 flex flex-col overflow-y-auto pt-5 pb-4 px-3">
           <div className="flex flex-col items-center px-4 mb-8">
             <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-[#468E36] mb-2">
+              {/* Use profile avatar from Redux state, fallback to default or logo */}
               <img 
-                src={logoimg} 
+                src={userData?.avatar || defaultAvatar} 
                 alt="Profile" 
                 className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = logoimg; // Fallback to logo if avatar fails to load
+                }}
               />
             </div>
-            <h2 className="font-medium text-gray-900">John Doe</h2>
-            <p className="text-sm text-gray-500">Administrator</p>
+            {/* Show user name from Redux state, or "Loading..." when loading */}
+            <h2 className="font-medium text-gray-900">
+              {loading ? 'Loading...' : userData?.name || 'User'}
+            </h2>
+            <p className="text-sm text-gray-500">Admin</p>
           </div>
           
           <nav className="flex-1 space-y-1">
@@ -173,7 +203,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
         <>
           {/* Modal Backdrop */}
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center"
+            className="fixed inset-0 bg-black/85 z-40 flex items-center justify-center"
             onClick={closeLogoutModal}
           />
           

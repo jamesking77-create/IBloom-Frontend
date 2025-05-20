@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { 
   Bell, 
   Search, 
@@ -12,42 +13,108 @@ import {
   LogOut,
   Layers
 } from 'lucide-react';
-import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png"
-const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
+import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png";
+import { logoutUser } from '../../../store/slices/auth-slice';
+import { fetchProfile } from '../../../store/slices/profile-slice';
+import { addNotification } from '../../../store/slices/notification-slice';
+import { 
+  toggleProfileDropdown, 
+  toggleNotificationsDropdown, 
+  closeAllDropdowns,
+  toggleSidebar
+} from '../../../store/slices/ui-slice';
+
+const DashboardHeader = () => {
+  const dispatch = useDispatch();
+  
+  // Get state from Redux
+  const { userData } = useSelector((state) => state.profile);
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { 
+    isSidebarOpen, 
+    isMobile, 
+    isProfileOpen, 
+    isNotificationsOpen 
+  } = useSelector((state) => state.ui);
+  
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const profileRef = useRef(null);
   const notificationRef = useRef(null);
   
-
-  const logoUrl = "../../../assets/Screenshot 2025-05-09 144927.png";
+  // Fetch profile data when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchProfile());
+    }
+  }, [dispatch, isAuthenticated]);
   
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setIsProfileOpen(false);
+        if (isProfileOpen) {
+          dispatch(closeAllDropdowns());
+        }
       }
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setIsNotificationsOpen(false);
+        if (isNotificationsOpen) {
+          dispatch(closeAllDropdowns());
+        }
       }
     };
     
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [dispatch, isProfileOpen, isNotificationsOpen]);
   
-  // Sample notifications - replace with your actual data
-  const notifications = [
-    { id: 1, text: 'New booking request', time: '5 minutes ago', isUnread: true },
-    { id: 2, text: 'Order #1234 completed', time: '1 hour ago', isUnread: true },
-    { id: 3, text: 'New review received', time: '2 hours ago', isUnread: false },
-  ];
+  // Using activity data from the profile for notifications
+  // This would typically come from a dedicated notifications slice
+  // but for this example we're using the profile data
+  const joinDate = userData.joinDate || 'January 2023';
   
-  // Mobile menu items
+  // Create "fake" notifications based on specializations and categories
+  // In a real app, you'd have a dedicated notifications system
+  const generateNotifications = () => {
+    let notifications = [];
+    
+    // Add a notification about join date
+    notifications.push({
+      id: 1,
+      text: `Account created`,
+      time: joinDate,
+      isUnread: false
+    });
+    
+    // Add notifications based on specializations
+    if (userData.specialize && userData.specialize.length > 0) {
+      userData.specialize.forEach((specialization, index) => {
+        notifications.push({
+          id: index + 2,
+          text: `Added ${specialization} specialization`,
+          time: '2 days ago',
+          isUnread: index === 0 // Mark first one as unread for demo
+        });
+      });
+    }
+    
+    // Add notifications based on categories
+    if (userData.categories && userData.categories.length > 0) {
+      userData.categories.forEach((category, index) => {
+        notifications.push({
+          id: index + userData.specialize.length + 2,
+          text: `Added ${category.name} category`,
+          time: '3 days ago',
+          isUnread: false
+        });
+      });
+    }
+    
+    return notifications;
+  };
+  
+  const notifications = generateNotifications();
+  
   const mobileMenuItems = [
     { icon: <User size={18} />, label: 'Profile', link: '/dashboard/profile' },
     { icon: <Calendar size={18} />, label: 'Bookings', link: '/dashboard/bookings' },
@@ -58,31 +125,37 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
     { icon: <LogOut size={18} />, label: 'Logout', link: '/logout', isLogout: true }
   ];
   
-  // This function should ideally be passed from parent component to keep logout consistent
+  const handleToggleSidebar = () => {
+    dispatch(toggleSidebar());
+  };
+  
+  const handleToggleProfile = () => {
+    dispatch(toggleProfileDropdown());
+  };
+  
+  const handleToggleNotifications = () => {
+    dispatch(toggleNotificationsDropdown());
+  };
+  
   const handleLogout = () => {
-    // This would typically display the same modal as in sidebar
-    // For now we just log
-    console.log('Logging out from header');
+    dispatch(logoutUser());
   };
 
   return (
     <header className="bg-white border border-gray-200 rounded-lg shadow-sm mx-2 mt-2">
       <div className="px-4 py-3 flex items-center justify-between">
-   
         <div className="flex items-center">
-          {/* Only show toggle button on mobile */}
-          {/* {isMobile && (
+          {isMobile && (
             <button 
-              onClick={toggleSidebar} 
+              onClick={handleToggleSidebar} 
               className="p-2 mr-4 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#468E36]"
               aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-          )} */}
+          )}
           
           <div className="h-10 w-auto">
-            {/* Replace with your actual logo */}
             <img 
               src={logoimg} 
               alt="Dashboard Logo"
@@ -92,7 +165,7 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
         </div>
         
         {/* Center section with search bar */}
-        <div className={`hidden md:flex items-center flex-1 max-w-xl mx-4  `}>
+        <div className="hidden md:flex items-center flex-1 max-w-xl mx-4">
           <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3">
               <Search size={18} className="text-gray-400" />
@@ -107,9 +180,7 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
           </div>
         </div>
         
-        {/* Right section with notifications and profile */}
         <div className="flex items-center space-x-4">
-          {/* Mobile menu toggle */}
           {isMobile && (
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -119,10 +190,10 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
             </button>
           )}
           
-          {/* Notifications */}
+          {/* Notifications dropdown */}
           <div ref={notificationRef} className="relative">
             <button
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              onClick={handleToggleNotifications}
               className="p-2 rounded-full text-gray-600 hover:bg-gray-100 focus:outline-none"
               aria-label="Notifications"
             >
@@ -132,15 +203,14 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
               )}
             </button>
             
-            {/* Notification dropdown */}
             {isNotificationsOpen && (
               <div className="absolute right-0 z-50 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                 <div className="py-2 px-4 border-b border-gray-200">
-                  <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
+                  <h3 className="text-sm font-medium text-gray-900">Activity & Notifications</h3>
                 </div>
                 <div className="max-h-60 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <p className="py-4 px-4 text-sm text-center text-gray-500">No notifications</p>
+                    <p className="py-4 px-4 text-sm text-center text-gray-500">No activity to show</p>
                   ) : (
                     <div>
                       {notifications.map(notification => (
@@ -156,8 +226,8 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
                   )}
                 </div>
                 <div className="py-2 px-4 border-t border-gray-200">
-                  <a href="#" className="text-xs font-medium text-[#468E36] hover:text-[#2C5D22]">
-                    View all notifications
+                  <a href="/dashboard/profile" className="text-xs font-medium text-[#468E36] hover:text-[#2C5D22]">
+                    View profile
                   </a>
                 </div>
               </div>
@@ -167,41 +237,29 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
           {/* Profile dropdown */}
           <div ref={profileRef} className="relative">
             <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              onClick={handleToggleProfile}
               className="flex items-center focus:outline-none"
               aria-label="Profile"
             >
               <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-gray-200">
-                {/* Replace with actual profile image */}
+                {/* Use profile avatar from Redux store if available */}
                 <img 
-                  src={logoimg}
-                  alt="Profile" 
+                  src={userData.avatar || '/api/placeholder/150/150'}
+                  alt={userData.name || 'Profile'} 
                   className="h-full w-full object-cover"
                 />
               </div>
             </button>
             
-            {/* Profile dropdown menu (desktop) */}
-            {/* {isProfileOpen && !isMobile && (
+            {isProfileOpen && (
               <div className="absolute right-0 z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900 truncate">{userData.name || 'User'}</p>
+                  <p className="text-xs text-gray-500 truncate">{userData.email || 'user@example.com'}</p>
+                </div>
                 <div className="py-1">
                   <a href="/dashboard/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     <User size={16} className="mr-2" /> Profile
-                  </a>
-                  <a href="/dashboard/bookings" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <Calendar size={16} className="mr-2" /> Bookings
-                  </a>
-                  <a href="/dashboard/orders" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <ShoppingCart size={16} className="mr-2" /> Orders
-                  </a>
-                  <a href="/dashboard/mailer" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <Mail size={16} className="mr-2" /> Mailer
-                  </a>
-                  <a href="/dashboard/ratings" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <Star size={16} className="mr-2" /> Ratings
-                  </a>
-                  <a href="/dashboard/categories" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <Layers size={16} className="mr-2" /> Categories
                   </a>
                   <button 
                     onClick={handleLogout}
@@ -211,7 +269,7 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
                   </button>
                 </div>
               </div>
-            )} */}
+            )}
           </div>
         </div>
       </div>
@@ -230,6 +288,7 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
         </div>
       </div>
       
+      {/* Mobile menu */}
       {isMobile && isMobileMenuOpen && (
         <div className="md:hidden px-2 pb-3 pt-2 border-t border-gray-200">
           {mobileMenuItems.map((item, index) => (

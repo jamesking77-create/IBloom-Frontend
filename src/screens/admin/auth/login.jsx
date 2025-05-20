@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
-import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png"
+// screens/admin/auth/login.jsx
+import React, { useState, useEffect } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png";
 import { validateEmail } from '../../../utils/validateEmail';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../../services/auth/authService';
-
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, clearError } from '../../../store/slices/auth-slice';
 import {
   notifySuccess,
   notifyError,
@@ -12,16 +13,30 @@ import {
   notifyPromise
 } from '../../../utils/toastify';
 
-
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error, isAuthenticated } = useSelector(state => state.auth);
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
+ 
+  useEffect(() => {
+    if (error) {
+      notifyError(error);
+    }
+  }, [error]);
 
   const handleEmailChange = (e) => {
     const value = e.target.value;
@@ -29,6 +44,11 @@ const Login = () => {
 
     if (emailError && value.length > 0) {
       setEmailError('');
+    }
+    
+  
+    if (error) {
+      dispatch(clearError());
     }
   };
 
@@ -39,23 +59,25 @@ const Login = () => {
     if (passwordError && value.length > 0) {
       setPasswordError('');
     }
+    
+    // Clear any Redux errors when user types
+    if (error) {
+      dispatch(clearError());
+    }
   };
 
   const handleEmailBlur = () => {
     if (email && !validateEmail(email)) {
       setEmailError('Please enter a valid email address');
-      //   notifyError('Please enter a valid email address');
     } else {
       setEmailError('');
     }
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     let isValid = true;
-
 
     if (!email) {
       setEmailError('Email is required');
@@ -67,14 +89,12 @@ const Login = () => {
       setEmailError('');
     }
 
-
     if (!password) {
       setPasswordError('Password is required');
       isValid = false;
     } else {
       setPasswordError('');
     }
-
 
     if (!email && !password) {
       notifyError('Please fill in both email and password fields');
@@ -90,40 +110,17 @@ const Login = () => {
       return;
     }
 
-
     if (isValid) {
-      setIsSubmitting(true);
-
       try {
-        await notifyPromise(
-          async () => {
-
-
-            const res = await login(email, password);
-              if (res?.success === false) {
-                notifyError('Unauthorized: Invalid email or password');
-              } 
-            return res;
-          },
-          'Logging in...',
-          'Login successful!',
-          'Login failed. Please check your credentials.'
-        );
-
-        // Reset form after successful login
-        // Uncomment if you want to reset the form on success
-        // setEmail('');
-        // setPassword('');
-
-        // Navigate or perform additional actions on success
-        // Example: navigate('/dashboard');
-
-        navigate("/dashboard")
-
-      } catch (error) {
-        console.error('Login error:', error);
-      } finally {
-        setIsSubmitting(false);
+        // Use the loginUser thunk action
+        await dispatch(
+          loginUser({ email, password })
+        ).unwrap();
+        
+        // If login is successful, navigate will happen via the useEffect above
+        // This ensures we only navigate after Redux state has been updated
+      } catch (rejectedValue) {
+        // Redux will handle displaying the error via the useEffect
       }
     }
   };
@@ -146,7 +143,7 @@ const Login = () => {
               value={email}
               onChange={handleEmailChange}
               onBlur={handleEmailBlur}
-              disabled={isSubmitting}
+              disabled={loading}
               className={`w-full px-4 py-3 rounded-md border text-lg font-semibold border-gray-300 focus:outline-none focus:ring-2 ${emailError ? "border-red-500 focus:ring-red-500" : "focus:ring-[#468E36]"
                 }`}
               placeholder="Enter your email"
@@ -166,7 +163,7 @@ const Login = () => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={handlePasswordChange}
-                disabled={isSubmitting}
+                disabled={loading}
                 className={`w-full px-4 py-3 rounded-md border text-lg font-semibold border-gray-300 focus:outline-none focus:ring-2 ${passwordError ? "border-red-500 focus:ring-red-500" : "focus:ring-[#468E36]"
                   }`}
                 placeholder="Enter your password"
@@ -186,12 +183,11 @@ const Login = () => {
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className={`w-full bg-[#468E36] hover:bg-[#2C5D22] text-white font-medium py-3 px-4 rounded-md transition duration-300 ${isSubmitting ? "opacity-75 cursor-not-allowed" : ""
+            disabled={loading}
+            className={`w-full bg-[#468E36] hover:bg-[#2C5D22] text-white font-medium py-3 px-4 rounded-md transition duration-300 ${loading ? "opacity-75 cursor-not-allowed" : ""
               }`}
-            onClick={handleSubmit}
           >
-            {isSubmitting ? "Logging in..." : "Log In"}
+            {loading ? "Logging in..." : "Log In"}
           </button>
         </form>
 

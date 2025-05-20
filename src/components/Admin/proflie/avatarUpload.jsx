@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { X } from 'lucide-react';
-
+import { X, Camera } from 'lucide-react';
+import avatarpreview from  "../../../assets/androgynous-avatar-non-binary-queer-person.png"
 
 export const AvatarUpload = ({ isEditing, currentAvatar, onAvatarChange }) => {
-  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(avatarpreview);
   const fileInputRef = useRef(null);
-
+  
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -18,40 +18,76 @@ export const AvatarUpload = ({ isEditing, currentAvatar, onAvatarChange }) => {
       reader.readAsDataURL(file);
     }
   };
-
+  
   const handleAvatarClick = () => {
     if (isEditing) {
       fileInputRef.current?.click();
     }
   };
-
+  
+  const handleRemoveAvatar = (e) => {
+    e.stopPropagation();
+    setAvatarPreview(null);
+    onAvatarChange(null);
+  };
+  
+  const displayAvatar = avatarPreview || currentAvatar;
+  
   return (
-    <div className="relative mb-4">
-      <div
-        className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 cursor-pointer"
+    <div className="flex flex-col items-center">
+      <div 
         onClick={handleAvatarClick}
+        className={`
+          h-40 w-40 rounded-full overflow-hidden border-2 relative
+          ${isEditing ? 'cursor-pointer border-[#468E36] hover:opacity-90' : 'border-gray-200'}
+        `}
       >
-        <img
-          src={avatarPreview || currentAvatar}
-          alt="Profile avatar"
-          className="w-full h-full object-cover"
-        />
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={handleFileChange}
-        />
+        {displayAvatar ? (
+          <img 
+            src={displayAvatar} 
+            alt="" 
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="h-full w-full bg-gray-200 flex items-center justify-center">
+            <Camera size={32} className="text-gray-400" />
+          </div>
+        )}
+        
+        {isEditing && displayAvatar && (
+          <div 
+            className="absolute top-0 right-0 p-1 bg-red-500 rounded-full cursor-pointer"
+            onClick={handleRemoveAvatar}
+          >
+            <X size={16} className="text-white" />
+          </div>
+        )}
+        
+        {isEditing && (
+          <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+            <span className="text-white text-sm font-medium">Change Photo</span>
+          </div>
+        )}
       </div>
+      
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+      
       {isEditing && (
-        <div
-          className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-full cursor-pointer"
+        <button 
           onClick={handleAvatarClick}
+          className="mt-2 text-sm text-[#468E36] font-medium"
         >
-          <p className="text-white text-sm">Change Photo</p>
-        </div>
+          Change Photo
+        </button>
       )}
     </div>
   );
 };
+
+export default AvatarUpload;

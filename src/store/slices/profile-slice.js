@@ -6,16 +6,23 @@ const fetchProfileFromAPI = async () => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '+1 (555) 123-4567',
-        location: 'New York, USA',
-        joinDate: 'January 2023',
+        name: 'Username',
+        email: 'companyemail@example.com',
+        phone: 'phone number',
+        location: 'address',
+        joinDate: Date.now(),
         avatar: '/api/placeholder/150/150',
         bio: 'Software developer with 5 years of experience in React and Node.js. Passionate about building user-friendly interfaces and solving complex problems.',
         specialize: ['Decor', 'Event Planning', 'Catering', 'Rental'],
         categories: [
-          { name: 'Chairs' },
+          { name: 'Chairs' ,types:[ 
+            {
+              item_name: "",
+              describtion:"",
+              quantity: " ",
+              price : ""
+            }
+          ] },
           { name: 'Tables' },
           { name: 'Lighting' }
         ]

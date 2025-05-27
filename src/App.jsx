@@ -6,10 +6,11 @@ import ForgotPassword from './screens/admin/auth/forgotPassword';
 import ResetPassword from './screens/admin/auth/resetPassword';
 import DashboardLayout from './screens/admin/dashboard/dashboardLayout';
 import Profile from './screens/admin/dashboard/profile';
-import DashboardHome from './components/admin/dashboard/dashboardHome';
 import { Provider } from 'react-redux';
 import store from './store';
 import { useSelector } from 'react-redux';
+import DashboardHome from './screens/admin/dashboard/dashboardHome';
+import Bookings from './screens/admin/dashboard/bookings';
 
 // PrivateRoute component to handle authentication
 const PrivateRoute = ({ children }) => {
@@ -18,7 +19,7 @@ const PrivateRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-// App wrapper to use Redux
+
 const AppWrapper = () => {
   return (
     <Provider store={store}>
@@ -27,7 +28,6 @@ const AppWrapper = () => {
   );
 };
 
-// Main App content that can access Redux store
 function AppContent() {
   return (
     <>
@@ -36,22 +36,23 @@ function AppContent() {
         <Route path="/forgotPassword" element={<ForgotPassword />} />
         <Route path="/resetPassword" element={<ResetPassword />} />
         
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <PrivateRoute>
               <DashboardLayout />
             </PrivateRoute>
           }
         >
-          <Route index element={<Profile />} />
+          <Route index element={<DashboardHome />} />
+          <Route path="home" element={<DashboardHome />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="bookings" element={<Bookings />} />
         </Route>
         
-   
-        <Route 
-          path="/" 
-          element={<Navigate to="/dashboard" replace />} 
+        <Route
+          path="/"
+          element={<Navigate to="/login" replace />}
         />
       </Routes>
     </>

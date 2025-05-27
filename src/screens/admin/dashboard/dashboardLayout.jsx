@@ -35,7 +35,7 @@ const DashboardLayout = () => {
   };
 
   return (
-    <div className="flex h-full bg-[#DDFFD5]">
+    <div className="flex h-screen bg-[#DDFFD5]">
      
       <Sidebar 
         isOpen={isSidebarOpen} 

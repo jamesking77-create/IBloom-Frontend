@@ -8,7 +8,8 @@ import {
   LogOut,
   ChevronRight,
   Layers,
-  X
+  X,
+  Home
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom'; 
 import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png";
@@ -35,15 +36,20 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
 
   // Menu items configuration
   const menuItems = [
+       {
+      icon: <Home size={20} />,
+      label: 'Home',
+      path: 'home',
+    },
     {
       icon: <User size={20} />,
       label: 'Profile',
-      path: '/profile',
+      path: 'profile',
     },
     {
       icon: <Calendar size={20} />,
       label: 'Bookings',
-      path: '/dashboard/bookings',
+      path: 'bookings',
     },
     {
       icon: <ShoppingCart size={20} />,

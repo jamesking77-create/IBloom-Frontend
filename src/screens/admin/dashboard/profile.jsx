@@ -88,7 +88,6 @@ export default function Profile({ onProfileUpdate, profileData }) {
 
   return (
     <div className="flex flex-col md:flex-row gap-4 p-6 bg-gray-50 min-h-[100%] overflow-hidden">
-      {/* Left Side */}
       <div className="w-full md:w-1/3 bg-white rounded-lg shadow-md p-6">
         <div className="flex flex-col items-center text-center mb-6">
           <AvatarUpload

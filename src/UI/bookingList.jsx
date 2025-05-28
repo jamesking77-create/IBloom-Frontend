@@ -4,90 +4,32 @@ import { Calendar, Clock, User, MapPin, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Import your booking slice actions and selectors
-// import {
-//   fetchBookings,
-//   selectBookings,
-//   selectBookingsLoading,
-//   selectBookingsStats
-// } from '../store/slices/bookingSlice';
+import {
+  loadSampleData,
+  selectBookings,
+  selectBookingsLoading,
+  selectBookingsStats
+} from '../store/slices/booking-slice';
 
 const BookingsList = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate()
-   // Safe selectors with fallback values
-  const bookings = useSelector((state) => state.bookings?.bookings || []);
-  const loading = useSelector((state) => state.bookings?.loading || false);
-  const stats = useSelector((state) => state.bookings?.stats || {});
+  const navigate = useNavigate();
+  
+  // Use selectors from booking slice
+  const bookings = useSelector(selectBookings);
+  const loading = useSelector(selectBookingsLoading);
+  const stats = useSelector(selectBookingsStats);
 
-  const handleMoveToBokkings = () =>{
-    navigate("/dashboard/home")
-  }
-
-  // Sample data for demonstration (remove when connecting to real API)
-  const sampleBookings = [
-    {
-      id: 1,
-      customerName: 'Sarah Johnson',
-      eventType: 'Wedding Reception',
-      date: '2024-06-15',
-      time: '6:00 PM',
-      location: 'Grand Ballroom',
-      status: 'confirmed',
-      amount: '₦2,500,000'
-    },
-    {
-      id: 2,
-      customerName: 'Michael Chen',
-      eventType: 'Corporate Event',
-      date: '2024-06-18',
-      time: '2:00 PM',
-      location: 'Conference Center',
-      status: 'pending',
-      amount: '₦1,800,000'
-    },
-    {
-      id: 3,
-      customerName: 'Emily Rodriguez',
-      eventType: 'Birthday Party',
-      date: '2024-06-20',
-      time: '4:00 PM',
-      location: 'Garden Pavilion',
-      status: 'confirmed',
-      amount: '₦950,000'
-    },
-    {
-      id: 4,
-      customerName: 'David Thompson',
-      eventType: 'Anniversary Dinner',
-      date: '2024-06-22',
-      time: '7:00 PM',
-      location: 'Private Dining',
-      status: 'confirmed',
-      amount: '₦1,200,000'
-    },
-    {
-      id: 5,
-      customerName: 'Lisa Wang',
-      eventType: 'Baby Shower',
-      date: '2024-06-25',
-      time: '3:00 PM',
-      location: 'Garden Pavilion',
-      status: 'pending',
-      amount: '₦750,000'
-    }
-  ];
-
-  const sampleStats = {
-    thisWeek: 12,
-    thisMonth: 45,
-    totalRevenue: '₦18,200,000'
+  const handleMoveToBookings = () => {
+    navigate("/dashboard/bookings");
   };
 
   useEffect(() => {
-    // Dispatch fetchBookings when component mounts
-    // Uncomment when you have the booking slice properly set up
-    // dispatch(fetchBookings({ limit: 5, sortBy: 'date', order: 'desc' }));
-  }, [dispatch]);
+    // Load sample data if bookings are empty
+    if (bookings.length === 0) {
+      dispatch(loadSampleData());
+    }
+  }, [dispatch, bookings.length]);
 
   const getStatusStyles = (status) => {
     switch (status) {
@@ -126,15 +68,53 @@ const BookingsList = () => {
     });
   };
 
-  // Use Redux data if available, otherwise use sample data
-  const displayBookings = bookings.length > 0 ? bookings.slice(0, 5) : sampleBookings;
-  const displayStats = stats.thisWeek ? stats : sampleStats;
+  const formatRevenue = (amount) => {
+    if (typeof amount === 'number') {
+      return `₦${amount.toLocaleString()}`;
+    }
+    return amount;
+  };
+
+  // Get recent bookings (latest 5) sorted by creation date
+  const recentBookings = bookings
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
+
+  // Calculate stats from actual bookings data
+  const currentDate = new Date();
+  const oneWeekAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const oneMonthAgo = new Date(currentDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const thisWeekBookings = bookings.filter(booking => 
+    new Date(booking.createdAt) >= oneWeekAgo
+  ).length;
+
+  const thisMonthBookings = bookings.filter(booking => 
+    new Date(booking.createdAt) >= oneMonthAgo
+  ).length;
+
+  const totalRevenue = bookings
+    .filter(booking => booking.status === 'confirmed')
+    .reduce((total, booking) => {
+      const amount = parseFloat(booking.amount.replace(/[₦,]/g, ''));
+      return total + amount;
+    }, 0);
+
+  const calculatedStats = {
+    thisWeek: thisWeekBookings,
+    thisMonth: thisMonthBookings,
+    totalRevenue: formatRevenue(totalRevenue)
+  };
 
   return (
     <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg h-full flex flex-col">
       <div className="flex justify-between items-center mb-4 md:mb-6">
         <h3 className="text-lg md:text-xl font-semibold text-gray-800">Recent Bookings</h3>
-        <button className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors" onClick={handleMoveToBokkings()}>
+        <button 
+          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors" 
+          onClick={handleMoveToBookings}
+        >
           View All
           <ChevronRight size={16} />
         </button>
@@ -145,9 +125,16 @@ const BookingsList = () => {
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
+        ) : recentBookings.length === 0 ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="text-gray-500 text-center">
+              <div className="text-lg mb-2">No bookings yet</div>
+              <div className="text-sm">Bookings will appear here once created</div>
+            </div>
+          </div>
         ) : (
           <div className="space-y-3 md:space-y-4 overflow-y-auto h-full pr-2">
-            {displayBookings.map((booking) => {
+            {recentBookings.map((booking) => {
               const statusStyles = getStatusStyles(booking.status);
               
               return (
@@ -194,19 +181,19 @@ const BookingsList = () => {
       <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
         <div className="text-center">
           <div className="text-lg md:text-xl font-bold text-gray-800">
-            {loading ? '...' : displayStats.thisWeek}
+            {loading ? '...' : calculatedStats.thisWeek}
           </div>
           <div className="text-xs md:text-sm text-gray-600">This Week</div>
         </div>
         <div className="text-center">
           <div className="text-lg md:text-xl font-bold text-gray-800">
-            {loading ? '...' : displayStats.thisMonth}
+            {loading ? '...' : calculatedStats.thisMonth}
           </div>
           <div className="text-xs md:text-sm text-gray-600">This Month</div>
         </div>
         <div className="text-center">
           <div className="text-lg md:text-xl font-bold text-green-600">
-            {loading ? '...' : displayStats.totalRevenue}
+            {loading ? '...' : calculatedStats.totalRevenue}
           </div>
           <div className="text-xs md:text-sm text-gray-600">Revenue</div>
         </div>

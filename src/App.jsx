@@ -11,6 +11,7 @@ import store from './store';
 import { useSelector } from 'react-redux';
 import DashboardHome from './screens/admin/dashboard/dashboardHome';
 import Bookings from './screens/admin/dashboard/bookings';
+import OrdersManagement from './screens/admin/dashboard/orderManagement';
 
 // PrivateRoute component to handle authentication
 const PrivateRoute = ({ children }) => {
@@ -48,6 +49,7 @@ function AppContent() {
           <Route path="home" element={<DashboardHome />} />
           <Route path="profile" element={<Profile />} />
           <Route path="bookings" element={<Bookings />} />
+          <Route path="orders" element={<OrdersManagement />} />
         </Route>
         
         <Route

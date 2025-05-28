@@ -48,9 +48,10 @@ const Bookings = () => {
   
   const [showViewModal, setShowViewModal] = useState(false);
   const [processingBookingId, setProcessingBookingId] = useState(null);
+  const [currentViewingBooking, setCurrentViewingBooking] = useState(null);
 
   // Sample data for demonstration (remove when connecting to real API)
-  const sampleBookings = [
+  const [sampleBookings, setSampleBookings] = useState([
     {
       id: 1,
       customerName: 'Sarah Johnson',
@@ -136,7 +137,7 @@ const Bookings = () => {
       amountPaid: '₦300,000',
       createdAt: '2024-05-21T11:30:00Z'
     }
-  ];
+  ]);
 
   useEffect(() => {
     // Dispatch fetchBookings when component mounts
@@ -183,19 +184,32 @@ const Bookings = () => {
   };
 
   const handleViewBooking = (booking) => {
-    // For demo, we'll use the booking data directly
-    // In real app: dispatch(fetchBookingDetails(booking.id));
+    setCurrentViewingBooking(booking);
     setShowViewModal(true);
   };
 
   const handleStatusUpdate = async (bookingId, newStatus) => {
     setProcessingBookingId(bookingId);
     try {
-      // Optimistic update
+      // Update sample data for demo
+      setSampleBookings(prev => 
+        prev.map(booking => 
+          booking.id === bookingId 
+            ? { ...booking, status: newStatus }
+            : booking
+        )
+      );
+      
+      // Update the currently viewing booking if it's the same one
+      if (currentViewingBooking && currentViewingBooking.id === bookingId) {
+        setCurrentViewingBooking(prev => ({ ...prev, status: newStatus }));
+      }
+      
+      // Optimistic update for Redux
       dispatch(updateBookingStatusOptimistic({ bookingId, status: newStatus }));
       
-      // Actual API call
-      await dispatch(updateBookingStatus({ bookingId, status: newStatus })).unwrap();
+      // Actual API call would go here
+      // await dispatch(updateBookingStatus({ bookingId, status: newStatus })).unwrap();
     } catch (error) {
       console.error('Failed to update booking status:', error);
     } finally {
@@ -400,8 +414,8 @@ const Bookings = () => {
       </div>
 
       {/* View Booking Modal */}
-      {showViewModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      {showViewModal && currentViewingBooking && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
@@ -414,7 +428,7 @@ const Bookings = () => {
                 </button>
               </div>
               
-              {/* Sample booking details */}
+              {/* Booking details */}
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -422,15 +436,15 @@ const Bookings = () => {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <User size={16} className="text-gray-400" />
-                        <span>{sampleBookings[0].customerName}</span>
+                        <span>{currentViewingBooking.customerName}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone size={16} className="text-gray-400" />
-                        <span>{sampleBookings[0].phone}</span>
+                        <span>{currentViewingBooking.phone}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Mail size={16} className="text-gray-400" />
-                        <span>{sampleBookings[0].email}</span>
+                        <span>{currentViewingBooking.email}</span>
                       </div>
                     </div>
                   </div>
@@ -440,15 +454,15 @@ const Bookings = () => {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Calendar size={16} className="text-gray-400" />
-                        <span>{formatDate(sampleBookings[0].date)} at {sampleBookings[0].time}</span>
+                        <span>{formatDate(currentViewingBooking.date)} at {currentViewingBooking.time}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin size={16} className="text-gray-400" />
-                        <span>{sampleBookings[0].location}</span>
+                        <span>{currentViewingBooking.location}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <User size={16} className="text-gray-400" />
-                        <span>{sampleBookings[0].guests} Guests</span>
+                        <span>{currentViewingBooking.guests} Guests</span>
                       </div>
                     </div>
                   </div>
@@ -456,7 +470,7 @@ const Bookings = () => {
                 
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Special Requests</h3>
-                  <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{sampleBookings[0].specialRequests}</p>
+                  <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{currentViewingBooking.specialRequests}</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -465,16 +479,16 @@ const Bookings = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span>Total Amount:</span>
-                        <span className="font-semibold">{sampleBookings[0].amount}</span>
+                        <span className="font-semibold">{currentViewingBooking.amount}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Amount Paid:</span>
-                        <span className="font-semibold text-green-600">{sampleBookings[0].amountPaid}</span>
+                        <span className="font-semibold text-green-600">{currentViewingBooking.amountPaid}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Payment Status:</span>
-                        <span className={`font-semibold ${sampleBookings[0].paymentStatus === 'paid' ? 'text-green-600' : 'text-orange-600'}`}>
-                          {sampleBookings[0].paymentStatus.charAt(0).toUpperCase() + sampleBookings[0].paymentStatus.slice(1)}
+                        <span className={`font-semibold ${currentViewingBooking.paymentStatus === 'paid' ? 'text-green-600' : 'text-orange-600'}`}>
+                          {currentViewingBooking.paymentStatus.charAt(0).toUpperCase() + currentViewingBooking.paymentStatus.slice(1)}
                         </span>
                       </div>
                     </div>
@@ -483,19 +497,19 @@ const Bookings = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">Booking Status</h3>
                     <div className="space-y-3">
-                      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${getStatusStyles(sampleBookings[0].status).bg}`}>
-                        <div className={`w-3 h-3 rounded-full ${getStatusStyles(sampleBookings[0].status).dot}`}></div>
-                        <span className={`font-medium ${getStatusStyles(sampleBookings[0].status).text}`}>
-                          {sampleBookings[0].status.charAt(0).toUpperCase() + sampleBookings[0].status.slice(1)}
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${getStatusStyles(currentViewingBooking.status).bg}`}>
+                        <div className={`w-3 h-3 rounded-full ${getStatusStyles(currentViewingBooking.status).dot}`}></div>
+                        <span className={`font-medium ${getStatusStyles(currentViewingBooking.status).text}`}>
+                          {currentViewingBooking.status.charAt(0).toUpperCase() + currentViewingBooking.status.slice(1)}
                         </span>
                       </div>
                       
-                      {sampleBookings[0].status === 'pending' && (
+                      {/* Action buttons based on status */}
+                      {currentViewingBooking.status === 'pending' && (
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
-                              handleApprove(sampleBookings[0].id);
-                              setShowViewModal(false);
+                              handleApprove(currentViewingBooking.id);
                             }}
                             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                           >
@@ -504,13 +518,40 @@ const Bookings = () => {
                           </button>
                           <button
                             onClick={() => {
-                              handleReject(sampleBookings[0].id);
-                              setShowViewModal(false);
+                              handleReject(currentViewingBooking.id);
                             }}
                             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                           >
                             <X size={16} />
                             Reject Booking
+                          </button>
+                        </div>
+                      )}
+                      
+                      {currentViewingBooking.status === 'confirmed' && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              handleReject(currentViewingBooking.id);
+                            }}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                          >
+                            <X size={16} />
+                            Cancel Booking
+                          </button>
+                        </div>
+                      )}
+                      
+                      {currentViewingBooking.status === 'cancelled' && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              handleApprove(currentViewingBooking.id);
+                            }}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          >
+                            <Check size={16} />
+                            Reactivate Booking
                           </button>
                         </div>
                       )}

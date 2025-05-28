@@ -253,11 +253,10 @@ const bookingsSlice = createSlice({
       .addCase(fetchBookings.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        // Fallback to sample data on error
         state.bookings = sampleBookings;
       })
       
-      // Update booking status
+ 
       .addCase(updateBookingStatus.pending, (state) => {
         state.error = null;
       })
@@ -272,7 +271,7 @@ const bookingsSlice = createSlice({
         state.error = action.payload;
       })
       
-      // Fetch booking details
+    
       .addCase(fetchBookingDetails.pending, (state) => {
         state.loading = true;
         state.error = null;

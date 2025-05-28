@@ -93,7 +93,7 @@ const Calendar = () => {
             className={`
               aspect-square flex items-center justify-center relative text-xs md:text-sm rounded-md
               ${day ? 'bg-white hover:bg-blue-50 cursor-pointer' : 'bg-transparent'}
-              ${day && isToday(day) ? 'bg-blue-500 text-white hover:bg-blue-600' : 'text-gray-700'}
+              ${day && isToday(day) ? 'bg-blue-500 text-black hover:bg-blue-600' : 'text-gray-700'}
               ${day && hasEvent(day) && !isToday(day) ? 'border-2 border-[#2C5D22]' : ''}
               transition-colors
             `}

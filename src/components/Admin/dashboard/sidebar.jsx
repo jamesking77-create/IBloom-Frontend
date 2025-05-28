@@ -54,7 +54,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
     {
       icon: <ShoppingCart size={20} />,
       label: 'Orders',
-      path: '/dashboard/orders',
+      path: 'orders',
     },
     {
       icon: <Mail size={20} />,

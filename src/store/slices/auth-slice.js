@@ -3,6 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   forgotPassword as forgotPasswordService,
   login as loginService,
+  resetPassword as resetPasswordService,
 } from "../../services/auth/authService";
 import { notifySuccess } from "../../utils/toastify";
 
@@ -31,6 +32,7 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+// Async thunk for forgot password
 export const forgotPassword = createAsyncThunk(
   "auth/forgotPassword",
   async (email, { rejectWithValue }) => {
@@ -51,13 +53,38 @@ export const forgotPassword = createAsyncThunk(
   }
 );
 
+// Async thunk for reset password
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async ({ token, password, confirmPassword }, { rejectWithValue }) => {
+    try {
+      const response = await resetPasswordService(token, password, confirmPassword);
+
+      if (response?.success === false) {
+        return rejectWithValue(
+          response.message || "Failed to reset password"
+        );
+      }
+
+      // Store new token in localStorage for automatic login
+      if (response?.token) {
+        localStorage.setItem("token", response.token);
+      }
+
+      notifySuccess("Password reset successful!");
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to reset password");
+    }
+  }
+);
+
 // Async thunk for logout
 export const logoutUser = createAsyncThunk(
   "auth/logout",
   async (_, { dispatch }) => {
     // Clear token from localStorage
     localStorage.removeItem("token");
-    // You might want to call a logout API endpoint here
     return true;
   }
 );
@@ -77,18 +104,15 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    // Clear any error messages
     clearError: (state) => {
       state.error = null;
     },
-    // In case we need to manually set auth state
     setAuthenticated: (state, action) => {
       state.isAuthenticated = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Login cases
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -104,15 +128,11 @@ const authSlice = createSlice({
         state.error = action.payload || "Login failed";
         state.isAuthenticated = false;
       })
-
-      // Logout cases
       .addCase(logoutUser.fulfilled, (state) => {
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
       })
-
-      // Forgot password cases
       .addCase(forgotPassword.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -123,6 +143,20 @@ const authSlice = createSlice({
       .addCase(forgotPassword.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Failed to send reset email";
+      })
+      .addCase(resetPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(resetPassword.fulfilled, (state, action) => {
+        state.loading = false;
+        state.token = action.payload.token || null;
+        state.isAuthenticated = !!action.payload.token;
+        state.user = action.payload.user || null;
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to reset password";
       });
   },
 });

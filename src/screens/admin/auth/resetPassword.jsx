@@ -1,17 +1,16 @@
-import React, { useState } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
-import { useNavigate } from 'react-router-dom';
-import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png";
-import { 
-    notifySuccess, 
-    notifyError, 
-    notifyInfo,
-    notifyPromise 
-  } from '../../../utils/toastify';
-
+import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { resetPassword } from '../../../store/slices/auth-slice';
+import logoimg from '../../../assets/Screenshot 2025-05-09 144927.png';
+import { notifyError, notifyPromise } from '../../../utils/toastify';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const { token } = useParams(); // Extract resetToken from URL
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.auth);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -23,16 +22,14 @@ const ResetPassword = () => {
     if (confirmPwd.length > 0) {
       return newPwd === confirmPwd;
     }
-    return true; 
+    return true;
   };
-
 
   const handleConfirmPasswordChange = (e) => {
     const value = e.target.value;
     setConfirmPassword(value);
     setPasswordsMatch(checkPasswordsMatch(newPassword, value));
   };
-
 
   const handleNewPasswordChange = (e) => {
     const value = e.target.value;
@@ -42,16 +39,30 @@ const ResetPassword = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
-    
-  
-    if (newPassword === confirmPassword && newPassword.length > 0) {
-      notifySuccess("Password reset successful!");
-      navigate('/login');
-    } else {
+
+    if (!newPassword || !confirmPassword) {
+      notifyError('Please provide both password and confirm password');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
       setPasswordsMatch(false);
+      notifyError('Passwords do not match');
+      return;
+    }
+
+    const promise = dispatch(resetPassword({ token, password: newPassword, confirmPassword })).unwrap();
+    await notifyPromise(promise, {
+      pending: 'Resetting password...',
+      success: 'Password reset successful!',
+      error: (err) => err || 'Failed to reset password',
+    });
+
+    if (!error) {
+      setTimeout(() => navigate('/login'), 2000); // Redirect to login after success
     }
   };
 
@@ -62,8 +73,7 @@ const ResetPassword = () => {
           <img src={logoimg} alt="Logo" />
         </div>
         
-        <div>          
-         
+        <div>
           <div className="mb-6">
             <label htmlFor="newPassword" className="block text-sm text-left font-medium text-gray-700 mb-2">
               New Password
@@ -76,8 +86,9 @@ const ResetPassword = () => {
                 onChange={handleNewPasswordChange}
                 className="w-full px-4 py-3 rounded-md border text-lg font-semibold border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#468E36]"
                 placeholder="Enter new password"
+                disabled={loading}
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
@@ -101,8 +112,9 @@ const ResetPassword = () => {
                   !passwordsMatch ? "border-red-500 focus:ring-red-500" : "focus:ring-[#468E36]"
                 }`}
                 placeholder="Confirm your password"
+                disabled={loading}
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
@@ -113,13 +125,17 @@ const ResetPassword = () => {
             {!passwordsMatch && (
               <p className="text-red-500 text-sm mt-1">Passwords do not match</p>
             )}
+            {error && (
+              <p className="text-red-500 text-sm mt-1">{error}</p>
+            )}
           </div>
           
           <button
             onClick={handleSubmit}
             className="w-full bg-[#468E36] hover:bg-[#2C5D22] text-white font-medium py-3 px-4 rounded-md transition duration-300"
+            disabled={loading}
           >
-            Reset Password
+            {loading ? 'Resetting...' : 'Reset Password'}
           </button>
         </div>
         

@@ -35,7 +35,7 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/forgotPassword" element={<ForgotPassword />} />
-        <Route path="/resetPassword" element={<ResetPassword />} />
+        <Route path="/resetPassword/:token" element={<ResetPassword />} />
         
         <Route
           path="/dashboard"

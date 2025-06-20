@@ -12,6 +12,10 @@ import { useSelector } from 'react-redux';
 import DashboardHome from './screens/admin/dashboard/dashboardHome';
 import Bookings from './screens/admin/dashboard/bookings';
 import OrdersManagement from './screens/admin/dashboard/orderManagement';
+import MailerScreen from './screens/admin/dashboard/mailer';
+import CategoriesScreen from './screens/admin/dashboard/categoriesScreen';
+import UserLayout from './screens/users/userLayout';
+import HomePage from './screens/users/homepage';
 
 // PrivateRoute component to handle authentication
 const PrivateRoute = ({ children }) => {
@@ -50,6 +54,12 @@ function AppContent() {
           <Route path="profile" element={<Profile />} />
           <Route path="bookings" element={<Bookings />} />
           <Route path="orders" element={<OrdersManagement />} />
+          <Route path="mailer" element={<MailerScreen />} />
+          <Route path="categories" element={<CategoriesScreen />} />
+        </Route>
+
+         <Route path="/" element={<UserLayout/>}>
+          <Route index element={<HomePage />} />
         </Route>
         
         <Route

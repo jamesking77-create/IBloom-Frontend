@@ -5,7 +5,7 @@ import {
   login as loginService,
   resetPassword as resetPasswordService,
 } from "../../services/auth/authService";
-import { notifySuccess } from "../../utils/toastify";
+import { notifyError, notifySuccess } from "../../utils/toastify";
 
 // Async thunk for login
 export const loginUser = createAsyncThunk(

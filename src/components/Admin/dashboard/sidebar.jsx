@@ -59,17 +59,13 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
     {
       icon: <Mail size={20} />,
       label: 'Mailer',
-      path: '/dashboard/mailer',
+      path: 'mailer',
     },
-    {
-      icon: <Star size={20} />,
-      label: 'Ratings',
-      path: '/dashboard/ratings',
-    },
+
     {
       icon: <Layers size={20} />,
       label: 'Categories',
-      path: '/dashboard/categories',
+      path: 'categories',
     }
   ];
 
@@ -204,12 +200,11 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
         )}
       </aside>
 
-      {/* Logout Confirmation Modal */}
-      {showLogoutModal && (
+    {showLogoutModal && (
         <>
           {/* Modal Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/85 z-40 flex items-center justify-center"
+            className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center"
             onClick={closeLogoutModal}
           />
           

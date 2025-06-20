@@ -54,15 +54,19 @@ const ResetPassword = () => {
       return;
     }
 
-    const promise = dispatch(resetPassword({ token, password: newPassword, confirmPassword })).unwrap();
-    await notifyPromise(promise, {
-      pending: 'Resetting password...',
-      success: 'Password reset successful!',
-      error: (err) => err || 'Failed to reset password',
-    });
+    try {
+      const promise = dispatch(resetPassword({ token, password: newPassword, confirmPassword })).unwrap();
+      await notifyPromise(promise, {
+        pending: 'Resetting password...',
+        success: 'Password reset successful!',
+        error: (err) => err || 'Failed to reset password',
+      });
 
-    if (!error) {
-      setTimeout(() => navigate('/login'), 2000); // Redirect to login after success
+  
+      setTimeout(() => navigate('/login'), 1000);
+    } catch (error) {
+      // Error is already handled by notifyPromise, so we don't need to do anything here
+      console.log('Password reset failed:', error);
     }
   };
 

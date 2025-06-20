@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 // You would replace this with an actual API call
 const fetchProfileFromAPI = async () => {
@@ -6,26 +6,45 @@ const fetchProfileFromAPI = async () => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({
-        name: 'Username',
-        email: 'companyemail@example.com',
-        phone: 'phone number',
-        location: 'address',
-        joinDate: Date.now(),
-        avatar: '/api/placeholder/150/150',
-        bio: 'Software developer with 5 years of experience in React and Node.js. Passionate about building user-friendly interfaces and solving complex problems.',
-        specialize: ['Decor', 'Event Planning', 'Catering', 'Rental'],
+        name: "Username",
+        email: "companyemail@example.com",
+        phone: "phone number",
+        location: "address",
+        joinDate: new Date().toLocaleDateString(),
+        avatar: "/api/placeholder/150/150",
+        bio: "Software developer with 5 years of experience in React and Node.js. Passionate about building user-friendly interfaces and solving complex problems.",
+        specialize: ["Decor", "Event Planning", "Catering", "Rental"],
         categories: [
-          { name: 'Chairs' ,types:[ 
-            {
-              item_name: "",
-              describtion:"",
-              quantity: " ",
-              price : ""
-            }
-          ] },
-          { name: 'Tables' },
-          { name: 'Lighting' }
-        ]
+          {
+            id: 1,
+            name: "Lightings",
+            types: [
+              {
+                item_name: "",
+                describtion: "",
+                quantity: " ",
+                price: "",
+              },
+            ],
+          },
+          { id: 2, name: "Dance Floor" },
+          { id: 3, name: "Glow Furniture" },
+          { id: 4, name: "LED Inflatables" },
+          { id: 5, name: "Lighted Props" },
+          { id: 6, name: "LED Backdrops" },
+          { id: 7, name: "Centerpieces / Vases" },
+          { id: 8, name: "Table Covers" },
+          { id: 9, name: "Chair Covers" },
+          { id: 10, name: "Bridal Sofas / Chairs" },
+          { id: 11, name: "Walkway Pedestals" },
+          { id: 12, name: "Mandaps" },
+          { id: 13, name: "Drape Aluminium Poles" },
+          { id: 14, name: "Gold Backdrop Panels" },
+          { id: 15, name: "Water Fountain" },
+          { id: 16, name: "Mirror Balls" },
+          { id: 17, name: "Green Mats / Balls" },
+          { id: 18, name: "Lanterns" },
+        ],
       });
     }, 500);
   });
@@ -33,25 +52,25 @@ const fetchProfileFromAPI = async () => {
 
 // Async thunk for fetching profile
 export const fetchProfile = createAsyncThunk(
-  'profile/fetchProfile',
+  "profile/fetchProfile",
   async (_, { rejectWithValue }) => {
     try {
       const response = await fetchProfileFromAPI();
       return response;
     } catch (error) {
-      return rejectWithValue(error.message || 'Failed to fetch profile');
+      return rejectWithValue(error.message || "Failed to fetch profile");
     }
   }
 );
 
 // Async thunk for saving profile changes
 export const saveProfile = createAsyncThunk(
-  'profile/saveProfile',
+  "profile/saveProfile",
   async (_, { getState, rejectWithValue }) => {
     try {
       const state = getState();
       const profileData = state.profile.editData;
-      
+
       // Here you would make the actual API call to update the profile
       // For now, we'll simulate a successful API call
       return await new Promise((resolve) => {
@@ -60,33 +79,33 @@ export const saveProfile = createAsyncThunk(
         }, 500);
       });
     } catch (error) {
-      return rejectWithValue(error.message || 'Failed to save profile');
+      return rejectWithValue(error.message || "Failed to save profile");
     }
   }
 );
 
 const initialState = {
   userData: {
-    name: '',
-    email: '',
-    phone: '',
-    location: '',
-    joinDate: '',
-    avatar: '/api/placeholder/150/150',
-    bio: '',
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    joinDate: "",
+    avatar: "/api/placeholder/150/150",
+    bio: "",
     specialize: [],
-    categories: []
+    categories: [],
   },
   editData: {
-    name: '',
-    email: '',
-    phone: '',
-    location: '',
-    joinDate: '',
-    avatar: '/api/placeholder/150/150',
-    bio: '',
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    joinDate: "",
+    avatar: "/api/placeholder/150/150",
+    bio: "",
     specialize: [],
-    categories: []
+    categories: [],
   },
   isEditing: false,
   loading: false,
@@ -94,7 +113,7 @@ const initialState = {
 };
 
 const profileSlice = createSlice({
-  name: 'profile',
+  name: "profile",
   initialState,
   reducers: {
     setUserData: (state, action) => {
@@ -123,14 +142,35 @@ const profileSlice = createSlice({
     },
     removeSpecialization: (state, action) => {
       const index = action.payload;
-      state.editData.specialize = state.editData.specialize.filter((_, i) => i !== index);
+      state.editData.specialize = state.editData.specialize.filter(
+        (_, i) => i !== index
+      );
     },
     addCategory: (state, action) => {
-      state.editData.categories.push({ name: action.payload });
+      const newCategory = {
+        id: Date.now(),
+        name: action.payload,
+        types: []
+      };
+      state.editData.categories.push(newCategory);
     },
     removeCategory: (state, action) => {
       const index = action.payload;
-      state.editData.categories = state.editData.categories.filter((_, i) => i !== index);
+      state.editData.categories = state.editData.categories.filter(
+        (_, i) => i !== index
+      );
+    },
+    // New action to sync category addition from categories page
+    syncCategoryAddition: (state, action) => {
+      const category = action.payload;
+      const exists = state.editData.categories.some(cat => cat.name === category.name);
+      if (!exists) {
+        state.editData.categories.push({
+          id: category.id,
+          name: category.name,
+          types: []
+        });
+      }
     },
     // This local action is replaced by the saveProfile async thunk
     clearProfileError: (state) => {
@@ -181,7 +221,8 @@ export const {
   removeSpecialization,
   addCategory,
   removeCategory,
-  clearProfileError
+  syncCategoryAddition,
+  clearProfileError,
 } = profileSlice.actions;
 
 export default profileSlice.reducer;

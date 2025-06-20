@@ -6,6 +6,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+   validateStatus: () => true,
 });
 
 // ✅ Named exports (not wrapped in an object)

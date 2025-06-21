@@ -1,32 +1,38 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { get, put } from "../../utils/api";
 
-// API service functions for profile operations
-export const getProfileAPI = async () => {
-  const response = await get("/api/users/profile");
-  return response.data;
+// You would replace this with an actual API call
+const fetchProfileFromAPI = async () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        name: "IBLOOM",
+        email: "ibloomrentals@gmail.com",
+        phone: "0817-225-8085",
+        location: "85B, Laifaji way, dolphin estate, ikoyi, Lagos.",
+        joinDate: new Date().toLocaleDateString(),
+        avatar: "/api/placeholder/150/150",
+        bio: "We are a leading event rental company based in Lagos, dedicated to making your special occasions memorable. With years of experience in the industry, we provide high-quality rental equipment and exceptional service for weddings, corporate events, parties, and celebrations of all sizes",
+        specialize: ["Decor", "Event Planning", "Catering", "Rental"],
+        categories: [], // This will be populated from category slice
+      });
+    }, 500);
+  });
 };
 
-export const updateProfileAPI = async (profileData) => {
-  const response = await put("/api/profile", profileData);
-  console.log("response", response.data);
-  return response.data;
-};
-
-// Async thunk for fetching profile from backend
+// Async thunk for fetching profile
 export const fetchProfile = createAsyncThunk(
   "profile/fetchProfile",
   async (_, { rejectWithValue }) => {
     try {
-      const data = await getProfileAPI();
-      return data;
+      const response = await fetchProfileFromAPI();
+      return response;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to fetch profile");
     }
   }
 );
 
-// Async thunk for saving profile changes to backend
+// Async thunk for saving profile changes
 export const saveProfile = createAsyncThunk(
   "profile/saveProfile",
   async (_, { getState, rejectWithValue }) => {
@@ -34,23 +40,15 @@ export const saveProfile = createAsyncThunk(
       const state = getState();
       const profileData = state.profile.editData;
 
-      const data = await updateProfileAPI(profileData);
-      return data;
+      // Here you would make the actual API call to update the profile
+      // For now, we'll simulate a successful API call
+      return await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(profileData);
+        }, 500);
+      });
     } catch (error) {
       return rejectWithValue(error.message || "Failed to save profile");
-    }
-  }
-);
-
-// Optional: Async thunk for updating specific profile fields
-export const updateProfileField = createAsyncThunk(
-  "profile/updateProfileField",
-  async (fieldData, { rejectWithValue }) => {
-    try {
-      const data = await updateProfileAPI(fieldData);
-      return data;
-    } catch (error) {
-      return rejectWithValue(error.message || "Failed to update profile field");
     }
   }
 );
@@ -81,7 +79,6 @@ const initialState = {
   isEditing: false,
   loading: false,
   error: null,
-  saving: false,
 };
 
 const profileSlice = createSlice({
@@ -118,19 +115,17 @@ const profileSlice = createSlice({
         (_, i) => i !== index
       );
     },
+    // Clear profile error
     clearProfileError: (state) => {
       state.error = null;
     },
-    clearLoadingStates: (state) => {
-      state.loading = false;
-      state.saving = false;
-    },
+    // Sync categories from category slice
     syncCategoriesFromCategorySlice: (state, action) => {
-      const categories = action.payload.map((cat) => ({
+      const categories = action.payload.map(cat => ({
         id: cat.id,
-        name: cat.name,
+        name: cat.name
       }));
-
+      
       state.userData.categories = categories;
       state.editData.categories = categories;
     },
@@ -153,90 +148,73 @@ const profileSlice = createSlice({
       })
       // Save profile cases
       .addCase(saveProfile.pending, (state) => {
-        state.saving = true;
+        state.loading = true;
         state.error = null;
       })
       .addCase(saveProfile.fulfilled, (state, action) => {
-        state.saving = false;
+        state.loading = false;
         state.userData = action.payload;
-        state.editData = { ...action.payload };
         state.isEditing = false;
       })
       .addCase(saveProfile.rejected, (state, action) => {
-        state.saving = false;
-        state.error = action.payload;
-      })
-      // Update profile field cases
-      .addCase(updateProfileField.pending, (state) => {
-        state.saving = true;
-        state.error = null;
-      })
-      .addCase(updateProfileField.fulfilled, (state, action) => {
-        state.saving = false;
-        state.userData = { ...state.userData, ...action.payload };
-        state.editData = { ...state.editData, ...action.payload };
-      })
-      .addCase(updateProfileField.rejected, (state, action) => {
-        state.saving = false;
+        state.loading = false;
         state.error = action.payload;
       })
       // Listen to category slice changes
-      .addCase("categories/fetchCategories/fulfilled", (state, action) => {
-        const categories = action.payload.map((cat) => ({
+      .addCase('categories/fetchCategories/fulfilled', (state, action) => {
+        // Sync categories when they are fetched
+        const categories = action.payload.map(cat => ({
           id: cat.id,
-          name: cat.name,
+          name: cat.name
         }));
-
+        
         state.userData.categories = categories;
         if (!state.isEditing) {
           state.editData.categories = categories;
         }
       })
-      .addCase("categories/createCategory/fulfilled", (state, action) => {
+      .addCase('categories/createCategory/fulfilled', (state, action) => {
+        // Add new category to profile
         const newCategory = {
           id: action.payload.id,
-          name: action.payload.name,
+          name: action.payload.name
         };
-
-        const existsInUserData = state.userData.categories.some(
-          (cat) => cat.id === newCategory.id
-        );
+        
+        const existsInUserData = state.userData.categories.some(cat => cat.id === newCategory.id);
         if (!existsInUserData) {
           state.userData.categories.push(newCategory);
         }
-
-        const existsInEditData = state.editData.categories.some(
-          (cat) => cat.id === newCategory.id
-        );
+        
+        const existsInEditData = state.editData.categories.some(cat => cat.id === newCategory.id);
         if (!existsInEditData) {
           state.editData.categories.push(newCategory);
         }
       })
-      .addCase("categories/updateCategory/fulfilled", (state, action) => {
+      .addCase('categories/updateCategory/fulfilled', (state, action) => {
+        // Update category name in profile
         const updatedCategory = action.payload;
-
-        const userDataIndex = state.userData.categories.findIndex(
-          (cat) => cat.id === updatedCategory.id
-        );
+        
+        // Update in userData
+        const userDataIndex = state.userData.categories.findIndex(cat => cat.id === updatedCategory.id);
         if (userDataIndex !== -1) {
           state.userData.categories[userDataIndex].name = updatedCategory.name;
         }
-
-        const editDataIndex = state.editData.categories.findIndex(
-          (cat) => cat.id === updatedCategory.id
-        );
+        
+        // Update in editData
+        const editDataIndex = state.editData.categories.findIndex(cat => cat.id === updatedCategory.id);
         if (editDataIndex !== -1) {
           state.editData.categories[editDataIndex].name = updatedCategory.name;
         }
       })
-      .addCase("categories/deleteCategory/fulfilled", (state, action) => {
+      .addCase('categories/deleteCategory/fulfilled', (state, action) => {
+        // Remove category from profile
         const deletedCategoryId = action.payload;
-
+        
         state.userData.categories = state.userData.categories.filter(
-          (cat) => cat.id !== deletedCategoryId
+          cat => cat.id !== deletedCategoryId
         );
         state.editData.categories = state.editData.categories.filter(
-          (cat) => cat.id !== deletedCategoryId
+          cat => cat.id !== deletedCategoryId
         );
       });
   },
@@ -252,7 +230,6 @@ export const {
   addSpecialization,
   removeSpecialization,
   clearProfileError,
-  clearLoadingStates,
   syncCategoriesFromCategorySlice,
 } = profileSlice.actions;
 

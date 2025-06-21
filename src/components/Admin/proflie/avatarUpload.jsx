@@ -3,7 +3,7 @@ import { X, Camera } from 'lucide-react';
 import avatarpreview from  "../../../assets/androgynous-avatar-non-binary-queer-person.png"
 
 export const AvatarUpload = ({ isEditing, currentAvatar, onAvatarChange }) => {
-  const [avatarPreview, setAvatarPreview] = useState(avatarpreview);
+  const [avatarPreview, setAvatarPreview] = useState('');
   const fileInputRef = useRef(null);
   
   const handleFileChange = (e) => {

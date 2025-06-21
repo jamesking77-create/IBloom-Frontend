@@ -1,17 +1,22 @@
 // components/FloatingChatBox.js
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, X, User, Phone, Zap } from 'lucide-react';
+import { MessageCircle, Send, X, User, Mail, Zap, CheckCircle } from 'lucide-react';
 
-const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
+const FloatingChatBox = ({ 
+  adminEmail = "admin@yourcompany.com", 
+  companyName = "Your Company",
+  emailServiceUrl = "/api/send-email" // Your backend endpoint
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimizing, setIsMinimizing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    phone: '',
+    email: '',
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const chatBoxRef = useRef(null);
   const nameInputRef = useRef(null);
 
@@ -42,6 +47,8 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
   const handleOpen = () => {
     setIsOpen(true);
     setIsMinimizing(false);
+    setSubmitSuccess(false);
+    setSubmitError('');
   };
 
   const handleClose = () => {
@@ -50,6 +57,7 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
       setIsOpen(false);
       setIsMinimizing(false);
       setSubmitSuccess(false);
+      setSubmitError('');
     }, 200);
   };
 
@@ -59,33 +67,90 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (submitError) {
+      setSubmitError('');
+    }
+  };
+
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.message.trim()) return;
+    
+    // Validation
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      setSubmitError('Please fill in all fields');
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      setSubmitError('Please enter a valid email address');
+      return;
+    }
     
     setIsSubmitting(true);
+    setSubmitError('');
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Create WhatsApp message
-    const whatsappMessage = `Hi! I'm ${formData.name}${formData.phone ? ` (${formData.phone})` : ''}.\n\n${formData.message}`;
-    const encodedMessage = encodeURIComponent(whatsappMessage);
-    const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/[^\d]/g, '')}?text=${encodedMessage}`;
-    
-    // Open WhatsApp
-    window.open(whatsappUrl, '_blank');
-    
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
-    
-    // Reset form after success
-    setTimeout(() => {
-      setFormData({ name: '', phone: '', message: '' });
-      handleClose();
-    }, 2000);
+    try {
+      // Example API call - replace with your actual email service
+      const response = await fetch(emailServiceUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: adminEmail,
+          subject: `New Message from ${formData.name} - ${companyName} Website`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+              <h2 style="color: #333; border-bottom: 2px solid #4F46E5; padding-bottom: 10px;">New Contact Message</h2>
+              
+              <div style="margin: 20px 0;">
+                <h3 style="color: #4F46E5; margin-bottom: 10px;">Contact Information:</h3>
+                <p><strong>Name:</strong> ${formData.name}</p>
+                <p><strong>Email:</strong> ${formData.email}</p>
+              </div>
+              
+              <div style="margin: 20px 0;">
+                <h3 style="color: #4F46E5; margin-bottom: 10px;">Message:</h3>
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #4F46E5;">
+                  ${formData.message.replace(/\n/g, '<br>')}
+                </div>
+              </div>
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
+                <p>This message was sent from your ${companyName} website contact form.</p>
+                <p>Sent on: ${new Date().toLocaleString()}</p>
+              </div>
+            </div>
+          `,
+          from: {
+            name: formData.name,
+            email: formData.email
+          }
+        }),
+      });
+
+      if (response.ok) {
+        setSubmitSuccess(true);
+        // Reset form after success
+        setTimeout(() => {
+          setFormData({ name: '', email: '', message: '' });
+          handleClose();
+        }, 3000);
+      } else {
+        throw new Error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setSubmitError('Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -129,6 +194,13 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
             100% { background-position: 200% 0; }
           }
           
+          @keyframes bounce-in {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          
           .animate-float {
             animation: float 3s ease-in-out infinite;
           }
@@ -163,6 +235,10 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
             animation: shimmer 2s infinite;
           }
           
+          .bounce-in {
+            animation: bounce-in 0.6s ease-out;
+          }
+          
           .glass-morphism {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
@@ -172,6 +248,16 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
           .input-glow:focus {
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
             border-color: rgba(59, 130, 246, 0.5);
+          }
+          
+          .error-shake {
+            animation: shake 0.5s ease-in-out;
+          }
+          
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
           }
         `}
       </style>
@@ -193,7 +279,7 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
             {/* Tooltip */}
             <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <div className="bg-gray-800 text-white text-sm px-3 py-2 rounded-lg whitespace-nowrap">
-                Chat with us on WhatsApp
+                Send us a message
                 <div className="absolute top-full right-4 w-2 h-2 bg-gray-800 transform rotate-45"></div>
               </div>
             </div>
@@ -216,11 +302,11 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
               <div className="relative flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <Zap className="w-5 h-5" />
+                    <Mail className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Quick Message</h3>
-                    <p className="text-sm text-blue-100">We'll respond instantly on WhatsApp</p>
+                    <h3 className="font-semibold">Contact Us</h3>
+                    <p className="text-sm text-blue-100">We'll get back to you soon!</p>
                   </div>
                 </div>
                 <button
@@ -235,20 +321,27 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
             {/* Content */}
             <div className="p-6">
               {submitSuccess ? (
-                <div className="text-center py-8">
+                <div className="text-center py-8 bounce-in">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MessageCircle className="w-8 h-8 text-green-600" />
+                    <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Message Sent!</h3>
-                  <p className="text-gray-600">Redirecting you to WhatsApp...</p>
+                  <p className="text-gray-600">Thank you for reaching out. We'll respond within 24 hours.</p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="text-center mb-6">
                     <p className="text-gray-600">
-                      Send us a message and we'll get back to you on WhatsApp instantly!
+                      Send us a message and we'll get back to you as soon as possible!
                     </p>
                   </div>
+
+                  {/* Error Message */}
+                  {submitError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 error-shake">
+                      <p className="text-red-600 text-sm">{submitError}</p>
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     {/* Name Input */}
@@ -266,15 +359,16 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
                       />
                     </div>
 
-                    {/* Phone Input */}
+                    {/* Email Input */}
                     <div className="relative group">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
                       <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
+                        type="email"
+                        name="email"
+                        value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="Phone Number (Optional)"
+                        placeholder="Your Email Address"
+                        required
                         className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none input-glow transition-all duration-200 placeholder-gray-400"
                       />
                     </div>
@@ -296,11 +390,11 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting || !formData.name.trim() || !formData.message.trim()}
+                    disabled={isSubmitting || !formData.name.trim() || !formData.email.trim() || !formData.message.trim()}
                     className={`w-full py-3 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 ${
                       isSubmitting
                         ? 'bg-gray-400 cursor-not-allowed'
-                        : formData.name.trim() && formData.message.trim()
+                        : formData.name.trim() && formData.email.trim() && formData.message.trim()
                         ? 'shimmer-button hover:shadow-xl'
                         : 'bg-gray-300 cursor-not-allowed'
                     }`}
@@ -313,7 +407,7 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
                     ) : (
                       <>
                         <Send className="w-5 h-5" />
-                        <span>Send to WhatsApp</span>
+                        <span>Send Message</span>
                       </>
                     )}
                   </button>
@@ -321,7 +415,7 @@ const FloatingChatBox = ({ whatsappNumber = "+1234567890" }) => {
                   {/* Footer */}
                   <div className="text-center pt-2">
                     <p className="text-xs text-gray-500">
-                      By sending, you agree to receive messages via WhatsApp
+                      We respect your privacy and will never share your information
                     </p>
                   </div>
                 </form>

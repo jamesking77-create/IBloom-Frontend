@@ -71,7 +71,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
     {
       icon: <Quote size={20} />,
       label: "Quotes",
-      path: "quote",
+      path: "quotes",
     },
   ];
 
@@ -108,7 +108,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
       {/* Overlay for mobile - closes sidebar when clicking outside */}
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-20"
+          className="fixed inset-0 bg-black/60  z-20"
           onClick={toggleSidebar}
           aria-hidden="true"
         />

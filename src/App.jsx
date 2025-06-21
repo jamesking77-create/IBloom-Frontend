@@ -16,6 +16,7 @@ import MailerScreen from './screens/admin/dashboard/mailer';
 import CategoriesScreen from './screens/admin/dashboard/categoriesScreen';
 import UserLayout from './screens/users/userLayout';
 import HomePage from './screens/users/homepage';
+import { QuotesList } from './screens/admin/dashboard/quotesList';
 
 // PrivateRoute component to handle authentication
 const PrivateRoute = ({ children }) => {
@@ -56,6 +57,7 @@ function AppContent() {
           <Route path="orders" element={<OrdersManagement />} />
           <Route path="mailer" element={<MailerScreen />} />
           <Route path="categories" element={<CategoriesScreen />} />
+          <Route path="quotes" element={<QuotesList />} />
         </Route>
 
          <Route path="/" element={<UserLayout/>}>

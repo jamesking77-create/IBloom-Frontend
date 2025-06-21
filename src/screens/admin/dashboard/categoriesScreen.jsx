@@ -260,7 +260,7 @@ const CategoriesScreen = () => {
 
       {/* Category Modal */}
       {modals.categoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/60  flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -406,7 +406,7 @@ const CategoriesScreen = () => {
                       <h4 className="font-medium text-gray-900 mb-1">{item.name}</h4>
                       <p className="text-gray-600 text-sm mb-2 line-clamp-2">{item.description}</p>
                       {item.price && (
-                        <p className="text-blue-600 font-semibold">{item.price}</p>
+                        <p className="text-blue-600 font-semibold">₦{item.price}</p>
                       )}
                     </div>
                   ))}
@@ -419,7 +419,7 @@ const CategoriesScreen = () => {
 
       {/* Item Modal */}
       {modals.itemModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/60  flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -467,7 +467,7 @@ const CategoriesScreen = () => {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g., $25.00"
+                    placeholder="e.g., 25,000"
                     value={itemForm.price}
                     onChange={(e) => setItemForm(prev => ({ ...prev, price: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

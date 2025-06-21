@@ -1,15 +1,14 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { get, put } from "../../utils/api";
+import { get, put } from '../../utils/api';
 
 // API service functions for profile operations
 export const getProfileAPI = async () => {
-  const response = await get("/api/users/profile");
-  return response.data;
+  const response = await get('/api/users/profile');
+  return response?.data?.data?.user;
 };
 
 export const updateProfileAPI = async (profileData) => {
-  const response = await put("/api/profile", profileData);
-  console.log("response", response.data);
+  const response = await put('/api/users/profile', profileData);
   return response.data;
 };
 
@@ -33,7 +32,7 @@ export const saveProfile = createAsyncThunk(
     try {
       const state = getState();
       const profileData = state.profile.editData;
-
+      
       const data = await updateProfileAPI(profileData);
       return data;
     } catch (error) {
@@ -62,7 +61,7 @@ const initialState = {
     phone: "",
     location: "",
     joinDate: "",
-    avatar: "/api/placeholder/150/150",
+    avatar: "",
     bio: "",
     specialize: [],
     categories: [],
@@ -73,7 +72,7 @@ const initialState = {
     phone: "",
     location: "",
     joinDate: "",
-    avatar: "/api/placeholder/150/150",
+    avatar: "",
     bio: "",
     specialize: [],
     categories: [],
@@ -126,11 +125,11 @@ const profileSlice = createSlice({
       state.saving = false;
     },
     syncCategoriesFromCategorySlice: (state, action) => {
-      const categories = action.payload.map((cat) => ({
+      const categories = action.payload.map(cat => ({
         id: cat.id,
-        name: cat.name,
+        name: cat.name
       }));
-
+      
       state.userData.categories = categories;
       state.editData.categories = categories;
     },
@@ -181,62 +180,54 @@ const profileSlice = createSlice({
         state.error = action.payload;
       })
       // Listen to category slice changes
-      .addCase("categories/fetchCategories/fulfilled", (state, action) => {
-        const categories = action.payload.map((cat) => ({
+      .addCase('categories/fetchCategories/fulfilled', (state, action) => {
+        const categories = action.payload.map(cat => ({
           id: cat.id,
-          name: cat.name,
+          name: cat.name
         }));
-
+        
         state.userData.categories = categories;
         if (!state.isEditing) {
           state.editData.categories = categories;
         }
       })
-      .addCase("categories/createCategory/fulfilled", (state, action) => {
+      .addCase('categories/createCategory/fulfilled', (state, action) => {
         const newCategory = {
           id: action.payload.id,
-          name: action.payload.name,
+          name: action.payload.name
         };
-
-        const existsInUserData = state.userData.categories.some(
-          (cat) => cat.id === newCategory.id
-        );
+        
+        const existsInUserData = state.userData.categories.some(cat => cat.id === newCategory.id);
         if (!existsInUserData) {
           state.userData.categories.push(newCategory);
         }
-
-        const existsInEditData = state.editData.categories.some(
-          (cat) => cat.id === newCategory.id
-        );
+        
+        const existsInEditData = state.editData.categories.some(cat => cat.id === newCategory.id);
         if (!existsInEditData) {
           state.editData.categories.push(newCategory);
         }
       })
-      .addCase("categories/updateCategory/fulfilled", (state, action) => {
+      .addCase('categories/updateCategory/fulfilled', (state, action) => {
         const updatedCategory = action.payload;
-
-        const userDataIndex = state.userData.categories.findIndex(
-          (cat) => cat.id === updatedCategory.id
-        );
+        
+        const userDataIndex = state.userData.categories.findIndex(cat => cat.id === updatedCategory.id);
         if (userDataIndex !== -1) {
           state.userData.categories[userDataIndex].name = updatedCategory.name;
         }
-
-        const editDataIndex = state.editData.categories.findIndex(
-          (cat) => cat.id === updatedCategory.id
-        );
+        
+        const editDataIndex = state.editData.categories.findIndex(cat => cat.id === updatedCategory.id);
         if (editDataIndex !== -1) {
           state.editData.categories[editDataIndex].name = updatedCategory.name;
         }
       })
-      .addCase("categories/deleteCategory/fulfilled", (state, action) => {
+      .addCase('categories/deleteCategory/fulfilled', (state, action) => {
         const deletedCategoryId = action.payload;
-
+        
         state.userData.categories = state.userData.categories.filter(
-          (cat) => cat.id !== deletedCategoryId
+          cat => cat.id !== deletedCategoryId
         );
         state.editData.categories = state.editData.categories.filter(
-          (cat) => cat.id !== deletedCategoryId
+          cat => cat.id !== deletedCategoryId
         );
       });
   },

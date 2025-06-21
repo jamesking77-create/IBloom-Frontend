@@ -28,9 +28,7 @@ import {
   setEditingCategory,
   setEditingItem,
   clearError,
-  syncCategoryRemoval
 } from '../../../store/slices/categoriesSlice';
-import { removeCategory } from '../../../store/slices/profile-slice';
 
 const CategoriesScreen = () => {
   const dispatch = useDispatch();
@@ -92,12 +90,10 @@ const CategoriesScreen = () => {
     setItemForm({ name: '', description: '', price: '', image: '' });
   };
 
-  // Handle category deletion with profile sync
+  // Handle category deletion - profile sync happens automatically via extraReducers
   const handleDeleteCategory = async (categoryId, categoryName) => {
     await dispatch(deleteCategory(categoryId));
-    // Also remove from profile
-    dispatch(removeCategory(categoryId));
-    dispatch(syncCategoryRemoval(categoryName));
+    // Profile sync happens automatically through extraReducers in profile slice
   };
 
   // Handle file upload simulation

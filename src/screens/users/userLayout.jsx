@@ -1,9 +1,19 @@
 // screens/user/UserLayout.js
-import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { ChevronDown, Quote, Phone, Mail, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
-import { fetchProfile } from '../../store/slices/profile-slice'; // Adjust path as needed
+import React, { useState, useEffect } from "react";
+import { Outlet, useNavigate, Link } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  ChevronDown,
+  Quote,
+  Phone,
+  Mail,
+  MapPin,
+  Facebook,
+  Twitter,
+  Instagram,
+} from "lucide-react";
+import { fetchProfile } from "../../store/slices/profile-slice"; // Adjust path as needed
+import logoimg from "../../assets/Screenshot 2025-05-09 144927.png";
 
 const UserLayout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,8 +36,8 @@ const UserLayout = () => {
       setIsScrolled(scrollPosition > 100); // Shrink after scrolling 100px
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleCategorySelect = (category) => {
@@ -38,13 +48,13 @@ const UserLayout = () => {
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isMenuOpen && !event.target.closest('.dropdown-container')) {
+      if (isMenuOpen && !event.target.closest(".dropdown-container")) {
         setIsMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMenuOpen]);
 
   return (
@@ -52,30 +62,50 @@ const UserLayout = () => {
       {/* Dynamic Floating Navigation */}
       <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-700 ease-out">
         {/* Expanded Nav (Default State) */}
-        <div className={`bg-white/95 backdrop-blur-lg rounded-2xl px-8 py-4 shadow-xl border border-gray-200/50 transition-all duration-700 ease-out ${
-          isScrolled ? 'opacity-0 scale-90 translate-y-2 pointer-events-none' : 'opacity-100 scale-100 translate-y-0'
-        }`}>
+        <div
+          className={`bg-white backdrop-blur-lg rounded-2xl px-8 py-4 shadow-xl border border-gray-200/50 transition-all duration-700 ease-out ${
+            isScrolled
+              ? "opacity-0 scale-90 translate-y-2 pointer-events-none"
+              : "opacity-100 scale-100 translate-y-0"
+          }`}
+        >
           <div className="flex items-center space-x-8 whitespace-nowrap">
-            <Link to="/" className="font-bold text-xl text-gray-800">
-              {userData.name || 'RentalPro'}
-            </Link>
-            
+            <div className="h-10 w-auto">
+              <img
+                src={logoimg}
+                alt="Dashboard Logo"
+                className="h-full w-auto"
+              />
+            </div>
+
             <div className="flex items-center space-x-6">
-              <Link to="/" className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium">
+              <Link
+                to="/"
+                className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
+              >
                 Home
               </Link>
-              
+
               {/* Rentals Dropdown */}
               <div className="relative dropdown-container">
-                <button 
+                <button
                   className="flex items-center text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
-                  Rentals <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`} />
+                  Rentals{" "}
+                  <ChevronDown
+                    className={`ml-1 w-4 h-4 transition-transform duration-300 ${
+                      isMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
-                <div className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-3 w-72 bg-white/95 rounded-xl shadow-xl border border-gray-200/50 backdrop-blur-lg transition-all duration-300 ${
-                  isMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
-                }`}>
+                <div
+                  className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-3 w-72 bg-white/95 rounded-xl shadow-xl border border-gray-200/50 backdrop-blur-lg transition-all duration-300 ${
+                    isMenuOpen
+                      ? "opacity-100 translate-y-0"
+                      : "opacity-0 -translate-y-2 pointer-events-none"
+                  }`}
+                >
                   <div className="p-2 max-h-96 overflow-y-auto">
                     {userData.categories && userData.categories.length > 0 ? (
                       userData.categories.map((category) => (
@@ -90,8 +120,12 @@ const UserLayout = () => {
                             </span>
                           </div>
                           <div>
-                            <div className="font-medium text-gray-800">{category.name}</div>
-                            <div className="text-xs text-gray-500">Premium quality rentals</div>
+                            <div className="font-medium text-gray-800">
+                              {category.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Premium quality rentals
+                            </div>
                           </div>
                         </button>
                       ))
@@ -103,37 +137,53 @@ const UserLayout = () => {
                   </div>
                 </div>
               </div>
-              
-              <Link to="/about" className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium">
+
+              <Link
+                to="/about"
+                className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
+              >
                 About Us
               </Link>
-              <Link to="/faq" className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium">
+              <Link
+                to="/faq"
+                className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
+              >
                 FAQ
               </Link>
-              <Link to="/gallery" className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium">
+              <Link
+                to="/gallery"
+                className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
+              >
                 Gallery
               </Link>
-              <Link to="/contact" className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium">
+              <Link
+                to="/contact"
+                className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
+              >
                 Contact
               </Link>
             </div>
 
-            <button 
-              onClick={() => navigate('/quote')}
+            <button
+              onClick={() => navigate("/quote")}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg font-medium"
             >
-              Get Quote
+              BOOK
             </button>
           </div>
         </div>
 
         {/* Compact Nav (Scrolled State) */}
-        <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-lg rounded-2xl px-6 py-3 shadow-lg border border-gray-200/50 transition-all duration-700 ease-out ${
-          isScrolled ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-2 pointer-events-none'
-        }`}>
+        <div
+          className={`absolute top-0 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-lg rounded-2xl px-6 py-3 shadow-lg border border-gray-200/50 transition-all duration-700 ease-out ${
+            isScrolled
+              ? "opacity-100 scale-100 translate-y-0"
+              : "opacity-0 scale-90 translate-y-2 pointer-events-none"
+          }`}
+        >
           <div className="flex items-center space-x-8">
-            <Link to="/" className="font-bold text-xl text-gray-800">
-              {userData.name || 'RentalPro'}
+            <Link to="/" className="font-bold text-xl text-green-200">
+              {userData.name || "RentalPro"}
             </Link>
             <div className="text-gray-500 text-sm">Scroll up to expand</div>
           </div>
@@ -150,9 +200,12 @@ const UserLayout = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <h3 className="text-2xl font-bold">{userData.name || 'RentalPro'}</h3>
+              <h3 className="text-2xl font-bold">
+                {userData.name || "RentalPro"}
+              </h3>
               <p className="text-gray-400">
-                {userData.bio || 'Your premier destination for event rentals. Making every occasion extraordinary.'}
+                {userData.bio ||
+                  "Your premier destination for event rentals. Making every occasion extraordinary."}
               </p>
               <div className="flex space-x-4">
                 <Facebook className="w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors duration-300" />
@@ -174,10 +227,26 @@ const UserLayout = () => {
                   ))
                 ) : (
                   <>
-                    <li><span className="hover:text-white transition-colors duration-300 cursor-pointer">Wedding Rentals</span></li>
-                    <li><span className="hover:text-white transition-colors duration-300 cursor-pointer">Corporate Events</span></li>
-                    <li><span className="hover:text-white transition-colors duration-300 cursor-pointer">Party Supplies</span></li>
-                    <li><span className="hover:text-white transition-colors duration-300 cursor-pointer">Tent Rentals</span></li>
+                    <li>
+                      <span className="hover:text-white transition-colors duration-300 cursor-pointer">
+                        Wedding Rentals
+                      </span>
+                    </li>
+                    <li>
+                      <span className="hover:text-white transition-colors duration-300 cursor-pointer">
+                        Corporate Events
+                      </span>
+                    </li>
+                    <li>
+                      <span className="hover:text-white transition-colors duration-300 cursor-pointer">
+                        Party Supplies
+                      </span>
+                    </li>
+                    <li>
+                      <span className="hover:text-white transition-colors duration-300 cursor-pointer">
+                        Tent Rentals
+                      </span>
+                    </li>
                   </>
                 )}
               </ul>
@@ -189,8 +258,8 @@ const UserLayout = () => {
                 {userData.categories && userData.categories.length > 0 ? (
                   userData.categories.slice(0, 4).map((category) => (
                     <li key={category.id}>
-                      <Link 
-                        to={`/category/${category.id}`} 
+                      <Link
+                        to={`/category/${category.id}`}
                         className="hover:text-white transition-colors duration-300"
                       >
                         {category.name}
@@ -199,10 +268,38 @@ const UserLayout = () => {
                   ))
                 ) : (
                   <>
-                    <li><Link to="/about" className="hover:text-white transition-colors duration-300">About Us</Link></li>
-                    <li><Link to="/gallery" className="hover:text-white transition-colors duration-300">Gallery</Link></li>
-                    <li><Link to="/faq" className="hover:text-white transition-colors duration-300">FAQ</Link></li>
-                    <li><Link to="/contact" className="hover:text-white transition-colors duration-300">Contact</Link></li>
+                    <li>
+                      <Link
+                        to="/about"
+                        className="hover:text-white transition-colors duration-300"
+                      >
+                        About Us
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/gallery"
+                        className="hover:text-white transition-colors duration-300"
+                      >
+                        Gallery
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/faq"
+                        className="hover:text-white transition-colors duration-300"
+                      >
+                        FAQ
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/contact"
+                        className="hover:text-white transition-colors duration-300"
+                      >
+                        Contact
+                      </Link>
+                    </li>
                   </>
                 )}
               </ul>
@@ -229,7 +326,7 @@ const UserLayout = () => {
                     <span>{userData.location}</span>
                   </div>
                 )}
-                {(!userData.phone && !userData.email && !userData.location) && (
+                {!userData.phone && !userData.email && !userData.location && (
                   <>
                     <div className="flex items-center">
                       <Phone className="w-5 h-5 mr-3" />
@@ -250,7 +347,10 @@ const UserLayout = () => {
           </div>
 
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 {userData.name || 'RentalPro'}. All rights reserved. | Privacy Policy | Terms of Service</p>
+            <p>
+              &copy; 2025 {userData.name || "RentalPro"}. All rights reserved. |
+              Privacy Policy | Terms of Service
+            </p>
           </div>
         </div>
       </footer>

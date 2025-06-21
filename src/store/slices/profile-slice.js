@@ -2,49 +2,18 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 // You would replace this with an actual API call
 const fetchProfileFromAPI = async () => {
-  // Simulate API call
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({
-        name: "Username",
-        email: "companyemail@example.com",
-        phone: "phone number",
-        location: "address",
+        name: "IBLOOM",
+        email: "ibloomrentals@gmail.com",
+        phone: "0817-225-8085",
+        location: "85B, Laifaji way, dolphin estate, ikoyi, Lagos.",
         joinDate: new Date().toLocaleDateString(),
         avatar: "/api/placeholder/150/150",
-        bio: "Software developer with 5 years of experience in React and Node.js. Passionate about building user-friendly interfaces and solving complex problems.",
+        bio: "We are a leading event rental company based in Lagos, dedicated to making your special occasions memorable. With years of experience in the industry, we provide high-quality rental equipment and exceptional service for weddings, corporate events, parties, and celebrations of all sizes",
         specialize: ["Decor", "Event Planning", "Catering", "Rental"],
-        categories: [
-          {
-            id: 1,
-            name: "Lightings",
-            types: [
-              {
-                item_name: "",
-                describtion: "",
-                quantity: " ",
-                price: "",
-              },
-            ],
-          },
-          { id: 2, name: "Dance Floor" },
-          { id: 3, name: "Glow Furniture" },
-          { id: 4, name: "LED Inflatables" },
-          { id: 5, name: "Lighted Props" },
-          { id: 6, name: "LED Backdrops" },
-          { id: 7, name: "Centerpieces / Vases" },
-          { id: 8, name: "Table Covers" },
-          { id: 9, name: "Chair Covers" },
-          { id: 10, name: "Bridal Sofas / Chairs" },
-          { id: 11, name: "Walkway Pedestals" },
-          { id: 12, name: "Mandaps" },
-          { id: 13, name: "Drape Aluminium Poles" },
-          { id: 14, name: "Gold Backdrop Panels" },
-          { id: 15, name: "Water Fountain" },
-          { id: 16, name: "Mirror Balls" },
-          { id: 17, name: "Green Mats / Balls" },
-          { id: 18, name: "Lanterns" },
-        ],
+        categories: [], // This will be populated from category slice
       });
     }, 500);
   });
@@ -146,35 +115,19 @@ const profileSlice = createSlice({
         (_, i) => i !== index
       );
     },
-    addCategory: (state, action) => {
-      const newCategory = {
-        id: Date.now(),
-        name: action.payload,
-        types: []
-      };
-      state.editData.categories.push(newCategory);
-    },
-    removeCategory: (state, action) => {
-      const index = action.payload;
-      state.editData.categories = state.editData.categories.filter(
-        (_, i) => i !== index
-      );
-    },
-    // New action to sync category addition from categories page
-    syncCategoryAddition: (state, action) => {
-      const category = action.payload;
-      const exists = state.editData.categories.some(cat => cat.name === category.name);
-      if (!exists) {
-        state.editData.categories.push({
-          id: category.id,
-          name: category.name,
-          types: []
-        });
-      }
-    },
-    // This local action is replaced by the saveProfile async thunk
+    // Clear profile error
     clearProfileError: (state) => {
       state.error = null;
+    },
+    // Sync categories from category slice
+    syncCategoriesFromCategorySlice: (state, action) => {
+      const categories = action.payload.map(cat => ({
+        id: cat.id,
+        name: cat.name
+      }));
+      
+      state.userData.categories = categories;
+      state.editData.categories = categories;
     },
   },
   extraReducers: (builder) => {
@@ -206,6 +159,63 @@ const profileSlice = createSlice({
       .addCase(saveProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      // Listen to category slice changes
+      .addCase('categories/fetchCategories/fulfilled', (state, action) => {
+        // Sync categories when they are fetched
+        const categories = action.payload.map(cat => ({
+          id: cat.id,
+          name: cat.name
+        }));
+        
+        state.userData.categories = categories;
+        if (!state.isEditing) {
+          state.editData.categories = categories;
+        }
+      })
+      .addCase('categories/createCategory/fulfilled', (state, action) => {
+        // Add new category to profile
+        const newCategory = {
+          id: action.payload.id,
+          name: action.payload.name
+        };
+        
+        const existsInUserData = state.userData.categories.some(cat => cat.id === newCategory.id);
+        if (!existsInUserData) {
+          state.userData.categories.push(newCategory);
+        }
+        
+        const existsInEditData = state.editData.categories.some(cat => cat.id === newCategory.id);
+        if (!existsInEditData) {
+          state.editData.categories.push(newCategory);
+        }
+      })
+      .addCase('categories/updateCategory/fulfilled', (state, action) => {
+        // Update category name in profile
+        const updatedCategory = action.payload;
+        
+        // Update in userData
+        const userDataIndex = state.userData.categories.findIndex(cat => cat.id === updatedCategory.id);
+        if (userDataIndex !== -1) {
+          state.userData.categories[userDataIndex].name = updatedCategory.name;
+        }
+        
+        // Update in editData
+        const editDataIndex = state.editData.categories.findIndex(cat => cat.id === updatedCategory.id);
+        if (editDataIndex !== -1) {
+          state.editData.categories[editDataIndex].name = updatedCategory.name;
+        }
+      })
+      .addCase('categories/deleteCategory/fulfilled', (state, action) => {
+        // Remove category from profile
+        const deletedCategoryId = action.payload;
+        
+        state.userData.categories = state.userData.categories.filter(
+          cat => cat.id !== deletedCategoryId
+        );
+        state.editData.categories = state.editData.categories.filter(
+          cat => cat.id !== deletedCategoryId
+        );
       });
   },
 });
@@ -219,10 +229,8 @@ export const {
   updateAvatar,
   addSpecialization,
   removeSpecialization,
-  addCategory,
-  removeCategory,
-  syncCategoryAddition,
   clearProfileError,
+  syncCategoriesFromCategorySlice,
 } = profileSlice.actions;
 
 export default profileSlice.reducer;

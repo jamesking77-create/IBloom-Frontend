@@ -1,67 +1,66 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Settings } from 'lucide-react';
 
-export const Category = ({ 
-  isEditing = false, 
-  categories = [], 
-  onAddCategory, 
-  onRemoveCategory 
+export const Category = ({
+  isEditing = false,
+  categories = [],
+  onAddCategory,
+  onRemoveCategory,
+  readOnly = false // New prop to make it read-only
 }) => {
-  const [newCategory, setNewCategory] = useState('');
+  const navigate = useNavigate();
 
-  const handleAdd = () => {
-    if (newCategory.trim() && onAddCategory) {
-      onAddCategory(newCategory.trim());
-      setNewCategory('');
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAdd();
-    }
+  const handleManageCategories = () => {
+    navigate('/dashboard/categories'); // Navigate to category management page
   };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-semibold text-gray-800 mb-4">Categories</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold text-gray-800">Categories</h3>
+        {readOnly && (
+          <button
+            onClick={handleManageCategories}
+            className="flex items-center gap-2 text-[#A61A5A] hover:text-[#8B1548] transition-colors"
+            title="Manage Categories"
+          >
+            <Settings size={18} />
+            <span className="text-sm">Manage</span>
+          </button>
+        )}
+      </div>
       
       {/* Category Display */}
       <div className="flex flex-wrap gap-2 mb-4">
         {categories.map((category, index) => (
           <span
-            key={index}
-            className="px-3 py-1 bg-[#A61A5A] text-white rounded-full text-sm flex items-center gap-1"
+            key={category.id || index}
+            className={`px-3 py-1 bg-[#A61A5A] text-white rounded-full text-sm flex items-center gap-1 ${
+              readOnly ? 'cursor-default' : ''
+            }`}
           >
-            {/* Assuming the category is an object with a 'name' property */}
             {category.name || category}
-            {isEditing && (
-              <button onClick={() => onRemoveCategory(index)}>
-                <X size={14} />
-              </button>
-            )}
           </span>
         ))}
       </div>
 
-      {/* Add Category Input */}
-      {isEditing && (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="border p-2 rounded-md w-full"
-            placeholder="Add Category"
-          />
-          <button
-            onClick={handleAdd}
-            className="bg-[#A61A5A] text-white px-4 py-2 rounded-md"
-          >
-            Add
-          </button>
+      {categories.length === 0 && (
+        <div className="text-gray-500 text-center py-4">
+          {readOnly 
+            ? "No categories available. Use the manage button to add categories."
+            : "No categories added yet."
+          }
+        </div>
+      )}
+
+      {/* Read-only message */}
+      {readOnly && (
+        <div className="mt-4 p-3 bg-gray-50 rounded-md border-l-4 border-[#A61A5A]">
+          <p className="text-sm text-gray-600">
+            <strong>Note:</strong> Categories are managed from the Category Management section. 
+            Click "Manage" above to add, edit, or remove categories.
+          </p>
         </div>
       )}
     </div>

@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Edit, Save, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Edit, Save, X, Settings } from 'lucide-react';
 import { notifySuccess } from '../../../utils/toastify';
 import { AvatarUpload } from '../../../components/Admin/proflie/avatarUpload';
 import { PersonalInfo } from '../../../components/Admin/proflie/personalInfo';
 import { Specializations } from '../../../components/Admin/proflie/specializations';
 import { Activity } from '../../../components/Admin/proflie/activity';
-import { Category } from '../../../components/Admin/proflie/categoryManagement';
 
 import {
   setUserData,
@@ -17,13 +17,15 @@ import {
   updateAvatar,
   addSpecialization,
   removeSpecialization,
-  addCategory,
-  removeCategory,
-  saveProfile // This is now the async thunk, not the local action
+  saveProfile,
+  fetchProfile
 } from '../../../store/slices/profile-slice';
+
+import { fetchCategories } from '../../../store/slices/categoriesSlice';
 
 export default function Profile({ onProfileUpdate, profileData }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const {
     userData,
@@ -31,6 +33,14 @@ export default function Profile({ onProfileUpdate, profileData }) {
     isEditing,
     loading
   } = useSelector((state) => state.profile);
+
+  const { categories } = useSelector((state) => state.categories);
+
+  useEffect(() => {
+    // Fetch profile and categories when component mounts
+    dispatch(fetchProfile());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   useEffect(() => {
     if (profileData) {
@@ -78,12 +88,8 @@ export default function Profile({ onProfileUpdate, profileData }) {
     dispatch(removeSpecialization(index));
   };
 
-  const handleCategoryAdd = (newCategory) => {
-    dispatch(addCategory(newCategory));
-  };
-
-  const handleCategoryRemove = (index) => {
-    dispatch(removeCategory(index));
+  const handleManageCategories = () => {
+    navigate('/categories'); // Navigate to category management page
   };
 
   return (
@@ -173,30 +179,45 @@ export default function Profile({ onProfileUpdate, profileData }) {
           onRemoveSpecialization={handleSpecializationRemove}
         />
 
-        {!isEditing && (
-          <div className="bg-white rounded-lg shadow-md p-6 mt-4">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Categories</h3>
-            <div className="flex flex-wrap gap-2">
-              {userData.categories?.map((category, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-[#468E36] text-white rounded-full text-sm"
-                >
-                  {category.name}
-                </span>
-              ))}
-            </div>
+        {/* Categories Section - Read-only with management link */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold text-gray-800">Categories</h3>
+            <button
+              onClick={handleManageCategories}
+              className="flex items-center gap-2 text-[#468E36] hover:text-[#2C5D22] transition-colors"
+              title="Manage Categories"
+            >
+              <Settings size={18} />
+              <span className="text-sm">Manage</span>
+            </button>
           </div>
-        )}
 
-        {isEditing && (
-          <Category
-            isEditing={isEditing}
-            categories={editData.categories}
-            onAddCategory={handleCategoryAdd}
-            onRemoveCategory={handleCategoryRemove}
-          />
-        )}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {(isEditing ? editData.categories : userData.categories)?.map((category, index) => (
+              <span
+                key={category.id || index}
+                className="px-3 py-1 bg-[#468E36] text-white rounded-full text-sm cursor-default"
+              >
+                {category.name}
+              </span>
+            ))}
+          </div>
+
+          {(!userData.categories || userData.categories.length === 0) && (
+            <div className="text-gray-500 text-center py-4">
+              No categories available. Use the manage button to add categories.
+            </div>
+          )}
+
+          {/* Read-only message */}
+          <div className="mt-4 p-3 bg-gray-50 rounded-md border-l-4 border-[#468E36]">
+            <p className="text-sm text-gray-600">
+              <strong>Note:</strong> Categories are managed from the Category Management section. 
+              Click "Manage" above to add, edit, or remove categories.
+            </p>
+          </div>
+        </div>
 
         <Activity joinDate={userData.joinDate} />
       </div>

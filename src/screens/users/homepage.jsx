@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { ChevronLeft, ChevronRight, Quote, MapPin } from 'lucide-react';
 import { fetchProfile } from '../../store/slices/profile-slice'; 
+import FloatingChatBox from '../../UI/floatingChatBox';
 
 const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -19,7 +20,7 @@ const HomePage = () => {
     dispatch(fetchProfile());
   }, [dispatch]);
 
-  // Sample hero slides - you can also move this to Redux if needed
+
   const heroSlides = [
     {
       id: 1,
@@ -41,13 +42,8 @@ const HomePage = () => {
     }
   ];
 
-  // Use categories from Redux store, fallback to default if empty
-  const rentalCategories = userData.categories && userData.categories.length > 0 
-    ? userData.categories.map(cat => ({
-        ...cat,
-        image: `https://images.unsplash.com/photo-${Math.random().toString(36).substr(2, 9)}?w=400&h=300&fit=crop` // You might want to add image URLs to your Redux store
-      }))
-    : [
+
+  const rentalCategories =  [
         { id: 1, name: "Tables & Chairs", image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop" },
         { id: 2, name: "Linens & Decor", image: "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=400&h=300&fit=crop" },
         { id: 3, name: "Lighting", image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop" },
@@ -299,6 +295,8 @@ const HomePage = () => {
           </div>
         </div>
       )}
+         {/* Floating Chat Box Component */}
+      <FloatingChatBox whatsappNumber="+2348142186524" />
     </>
   );
 };

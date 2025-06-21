@@ -251,12 +251,6 @@ const categoriesSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    // Sync with profile slice - remove category when removed from profile
-    syncCategoryRemoval: (state, action) => {
-      const categoryName = action.payload;
-      state.categories = state.categories.filter(cat => cat.name !== categoryName);
-      state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -373,7 +367,6 @@ export const {
   setEditingCategory,
   setEditingItem,
   clearError,
-  syncCategoryRemoval,
 } = categoriesSlice.actions;
 
 export default categoriesSlice.reducer;

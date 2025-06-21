@@ -217,7 +217,7 @@ const UserLayout = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4">Services</h4>
               <ul className="space-y-2 text-gray-400">
-                {userData.specialize && userData.specialize.length > 0 ? (
+                {userData?.specialize && userData?.specialize?.length > 0 ? (
                   userData.specialize.slice(0, 4).map((service, index) => (
                     <li key={index}>
                       <span className="hover:text-white transition-colors duration-300 cursor-pointer">

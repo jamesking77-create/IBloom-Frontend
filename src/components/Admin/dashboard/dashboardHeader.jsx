@@ -87,8 +87,8 @@ const DashboardHeader = () => {
     });
     
     // Add notifications based on specializations
-    if (userData.specialize && userData.specialize.length > 0) {
-      userData.specialize.forEach((specialization, index) => {
+    if (userData.specialize && userData?.specialize?.length > 0) {
+      userData?.specialize.forEach((specialization, index) => {
         notifications.push({
           id: index + 2,
           text: `Added ${specialization} specialization`,
@@ -99,8 +99,8 @@ const DashboardHeader = () => {
     }
     
     // Add notifications based on categories
-    if (userData.categories && userData.categories.length > 0) {
-      userData.categories.forEach((category, index) => {
+    if (userData.categories && userData?.categories?.length > 0) {
+      userData?.categories.forEach((category, index) => {
         notifications.push({
           id: index + userData.specialize.length + 2,
           text: `Added ${category.name} category`,

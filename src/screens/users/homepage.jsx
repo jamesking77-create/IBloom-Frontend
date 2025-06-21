@@ -53,8 +53,8 @@ const HomePage = () => {
       ];
 
   // Auto-slide cards based on specializations or default
-  const autoSlideCards = userData.specialize && userData.specialize.length > 0
-    ? userData.specialize.map((spec, index) => ({
+  const autoSlideCards = userData?.specialize && userData?.specialize?.length > 0
+    ? userData?.specialize.map((spec, index) => ({
         id: index + 1,
         title: spec,
         desc: `Professional ${spec.toLowerCase()} services`,
@@ -251,7 +251,7 @@ const HomePage = () => {
       <div className="py-16 bg-gradient-to-r from-blue-50 to-purple-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 mb-12">
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-4">
-            {userData.specialize && userData.specialize.length > 0 ? 'Our Specializations' : 'Why Choose Us'}
+            {userData?.specialize && userData?.specialize?.length > 0 ? 'Our Specializations' : 'Why Choose Us'}
           </h2>
           <p className="text-xl text-center text-gray-600">
             Experience the difference with our premium service

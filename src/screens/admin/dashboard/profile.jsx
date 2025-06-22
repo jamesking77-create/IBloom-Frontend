@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Save, X } from 'lucide-react';
@@ -6,7 +6,7 @@ import { notifySuccess } from '../../../utils/toastify';
 import { AvatarUpload } from '../../../components/Admin/proflie/avatarUpload';
 import { PersonalInfo } from '../../../components/Admin/proflie/personalInfo';
 import { Specializations } from '../../../components/Admin/proflie/specializations';
-import {  CategoryManagement } from '../../../components/Admin/proflie/categoryManagement';
+import { CategoryManagement } from '../../../components/Admin/proflie/categoryManagement';
 import { Activity } from '../../../components/Admin/proflie/activity';
 
 import {
@@ -27,12 +27,14 @@ import { fetchCategories } from '../../../store/slices/categoriesSlice';
 export default function Profile({ onProfileUpdate, profileData }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
 
   const {
     userData,
     editData,
     isEditing,
-    loading
+    loading,
+    saving
   } = useSelector((state) => state.profile);
 
   const { categories } = useSelector((state) => state.categories);
@@ -59,17 +61,26 @@ export default function Profile({ onProfileUpdate, profileData }) {
   const handleEdit = () => {
     dispatch(setEditData(userData));
     dispatch(setIsEditing(true));
+    setSelectedAvatarFile(null); // Reset selected file when entering edit mode
   };
 
   const handleSave = async () => {
-    await dispatch(saveProfile());
-    notifySuccess("Profile updated successfully!");
-    if (onProfileUpdate) onProfileUpdate(editData);
+    try {
+      // Pass the selected file to the saveProfile action
+      await dispatch(saveProfile(selectedAvatarFile)).unwrap();
+      notifySuccess("Profile updated successfully!");
+      setSelectedAvatarFile(null); // Clear selected file after successful save
+      if (onProfileUpdate) onProfileUpdate(editData);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      // Error will be handled by the slice and shown in UI
+    }
   };
 
   const handleCancel = () => {
     dispatch(resetEditData());
     dispatch(setIsEditing(false));
+    setSelectedAvatarFile(null); // Clear selected file when canceling
   };
 
   const handleChange = (e) => {
@@ -77,8 +88,16 @@ export default function Profile({ onProfileUpdate, profileData }) {
     dispatch(updateEditDataField({ name, value }));
   };
 
-  const handleAvatarChange = (newAvatar) => {
-    dispatch(updateAvatar(newAvatar));
+  const handleAvatarChange = (fileOrUrl) => {
+    if (fileOrUrl instanceof File) {
+      // If it's a file, store it locally and update the preview
+      setSelectedAvatarFile(fileOrUrl);
+      // Don't update Redux state with the file, just update the preview
+    } else {
+      // If it's a URL or null, update Redux state
+      dispatch(updateAvatar(fileOrUrl));
+      setSelectedAvatarFile(null);
+    }
   };
 
   const handleSpecializationAdd = (specialization) => {
@@ -90,7 +109,7 @@ export default function Profile({ onProfileUpdate, profileData }) {
   };
 
   const handleManageCategories = () => {
-    navigate('/dashboard/categories'); // Navigate to category management page
+    navigate('/dashboard/categories');
   };
 
   return (
@@ -131,15 +150,15 @@ export default function Profile({ onProfileUpdate, profileData }) {
             <div className="flex gap-2 mt-4">
               <button
                 onClick={handleSave}
-                disabled={loading}
+                disabled={saving}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <Save size={16} />
-                {loading ? 'Saving...' : 'Save'}
+                {saving ? 'Saving...' : 'Save'}
               </button>
               <button
                 onClick={handleCancel}
-                disabled={loading}
+                disabled={saving}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <X size={16} />

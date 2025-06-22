@@ -1,10 +1,11 @@
 // screens/user/HomePage.js
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { ChevronLeft, ChevronRight, Quote, MapPin } from 'lucide-react';
-import { fetchProfile } from '../../store/slices/profile-slice'; 
-import FloatingChatBox from '../../UI/floatingChatBox';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { ChevronLeft, ChevronRight, Quote, MapPin, Star } from "lucide-react";
+import { fetchProfile } from "../../store/slices/profile-slice";
+import { fetchCategories } from "../../store/slices/categoriesSlice"; // Import the fetchCategories thunk
+import FloatingChatBox from "../../UI/floatingChatBox";
 
 const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -13,61 +14,95 @@ const HomePage = () => {
   const dispatch = useDispatch();
 
   // Get profile data from Redux store
-  const { userData, loading } = useSelector((state) => state.profile);
+  const { userData, loading: profileLoading } = useSelector(
+    (state) => state.profile
+  );
 
-  // Fetch profile data on component mount
+  // Get categories data from Redux store
+  const { categories, isLoading: categoriesLoading } = useSelector(
+    (state) => state.categories
+  );
+
+  // Fetch profile and categories data on component mount
   useEffect(() => {
     dispatch(fetchProfile());
+    dispatch(fetchCategories());
   }, [dispatch]);
-
 
   const heroSlides = [
     {
       id: 1,
-      image: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=1200&h=800&fit=crop",
-      title: `${userData.name || 'Premium Event'} Rentals`,
-      subtitle: "Transform your special moments"
+      image:
+        "https://images.unsplash.com/photo-1511578314322-379afb476865?w=1200&h=800&fit=crop",
+      title: `${userData.name || "Premium Event"} Rentals`,
+      subtitle: "Transform your special moments",
     },
     {
       id: 2,
-      image: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=1200&h=800&fit=crop",
+      image:
+        "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=1200&h=800&fit=crop",
       title: "Wedding Perfection",
-      subtitle: "Make your dream wedding reality"
+      subtitle: "Make your dream wedding reality",
     },
     {
       id: 3,
-      image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&h=800&fit=crop",
+      image:
+        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&h=800&fit=crop",
       title: "Corporate Events",
-      subtitle: "Professional solutions for success"
-    }
+      subtitle: "Professional solutions for success",
+    },
   ];
 
-
-  const rentalCategories =  [
-        { id: 1, name: "Tables & Chairs", image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop" },
-        { id: 2, name: "Linens & Decor", image: "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=400&h=300&fit=crop" },
-        { id: 3, name: "Lighting", image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop" },
-        { id: 4, name: "Tents & Canopies", image: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400&h=300&fit=crop" },
-        { id: 5, name: "Audio Visual", image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=400&h=300&fit=crop" },
-        { id: 6, name: "Catering Equipment", image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop" }
-      ];
+  // Use categories from Redux store instead of hardcoded data
+  const rentalCategories = categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    image: category.image,
+    description: category.description,
+    itemCount: category.itemCount,
+  }));
 
   // Auto-slide cards based on specializations or default
-  const autoSlideCards = userData?.specialize && userData?.specialize?.length > 0
-    ? userData?.specialize.map((spec, index) => ({
-        id: index + 1,
-        title: spec,
-        desc: `Professional ${spec.toLowerCase()} services`,
-        icon: ["✨", "🏆", "⭐", "🎯", "💎"][index % 5]
-      }))
-    : [
-        { id: 1, title: "Premium Quality", desc: "Top-grade rental equipment", icon: "✨" },
-        { id: 2, title: "Fast Delivery", desc: "Same-day setup available", icon: "🚀" },
-        { id: 3, title: "Expert Support", desc: "Professional event planning", icon: "👥" },
-        { id: 4, title: "Flexible Pricing", desc: "Packages for every budget", icon: "💰" },
-        { id: 5, title: "24/7 Service", desc: "Round-the-clock assistance", icon: "🕐" }
-      ];
-
+  const autoSlideCards =
+    userData?.specialize && userData?.specialize?.length > 0
+      ? userData?.specialize.map((spec, index) => ({
+          id: index + 1,
+          title: spec,
+          desc: `Professional ${spec.toLowerCase()} services`,
+          icon: ["✨", "🏆", "⭐", "🎯", "💎"][index % 5],
+        }))
+      : [
+          {
+            id: 1,
+            title: "Premium Quality",
+            desc: "Top-grade rental equipment",
+            icon: "✨",
+          },
+          {
+            id: 2,
+            title: "Fast Delivery",
+            desc: "Same-day setup available",
+            icon: "🚀",
+          },
+          {
+            id: 3,
+            title: "Expert Support",
+            desc: "Professional event planning",
+            icon: "👥",
+          },
+          {
+            id: 4,
+            title: "Flexible Pricing",
+            desc: "Packages for every budget",
+            icon: "💰",
+          },
+          {
+            id: 5,
+            title: "24/7 Service",
+            desc: "Round-the-clock assistance",
+            icon: "🕐",
+          },
+        ];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -75,7 +110,6 @@ const HomePage = () => {
     }, 5000);
     return () => clearInterval(timer);
   }, [heroSlides.length]);
-
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -89,15 +123,17 @@ const HomePage = () => {
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    setCurrentSlide(
+      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length
+    );
   };
 
   const handleCategoryClick = (category) => {
     navigate(`/category/${category.id}`, { state: { category } });
   };
 
-
-  if (loading && !userData.name) {
+  // Show loading state while fetching data
+  if ((profileLoading && !userData.name) || categoriesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -133,7 +169,9 @@ const HomePage = () => {
           <div
             key={slide.id}
             className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
-              index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
+              index === currentSlide
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-105"
             }`}
           >
             <div
@@ -159,9 +197,9 @@ const HomePage = () => {
                 {userData.bio}
               </p>
             )}
-            
-            <button 
-              onClick={() => navigate('/quote')}
+
+            <button
+              onClick={() => navigate("/quote")}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center mx-auto"
             >
               <Quote className="mr-2 w-5 h-5" />
@@ -171,13 +209,13 @@ const HomePage = () => {
         </div>
 
         {/* Navigation Arrows */}
-        <button 
+        <button
           onClick={prevSlide}
           className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 transition-all duration-300 backdrop-blur-sm"
         >
           <ChevronLeft className="w-6 h-6 text-white" />
         </button>
-        <button 
+        <button
           onClick={nextSlide}
           className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 transition-all duration-300 backdrop-blur-sm"
         >
@@ -191,9 +229,9 @@ const HomePage = () => {
               key={index}
               onClick={() => setCurrentSlide(index)}
               className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === currentSlide 
-                  ? 'bg-white scale-125 shadow-lg' 
-                  : 'bg-white/50 hover:bg-white/70'
+                index === currentSlide
+                  ? "bg-white scale-125 shadow-lg"
+                  : "bg-white/50 hover:bg-white/70"
               }`}
             />
           ))}
@@ -212,62 +250,99 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {rentalCategories.map((category, index) => (
-              <div
-                key={category.id}
-                className="group cursor-pointer transform transition-all duration-500 hover:scale-105"
-                style={{ animationDelay: `${index * 100}ms` }}
-                onClick={() => handleCategoryClick(category)}
-              >
-                <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50">
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={category.image || `https://images.unsplash.com/photo-${Math.random().toString(36).substr(2, 9)}?w=400&h=300&fit=crop`}
-                      alt={category.name}
-                      className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300">
-                      {category.name}
-                    </h3>
-                    <p className="text-gray-600">Premium quality rentals for your special event</p>
-                    {category.types && category.types.length > 0 && (
-                      <p className="text-sm text-gray-500 mt-2">
-                        {category.types.length} item{category.types.length !== 1 ? 's' : ''} available
+          {/* Show message if no categories available */}
+          {rentalCategories.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">📦</div>
+              <h3 className="text-2xl font-semibold text-gray-700 mb-2">
+                No Categories Available
+              </h3>
+              <p className="text-gray-500">
+                Categories will appear here once they are added to the system.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {rentalCategories.map((category, index) => (
+                <div
+                  key={category.id}
+                  className="group cursor-pointer transform transition-all duration-500 hover:scale-105"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                  onClick={() => handleCategoryClick(category)}
+                >
+                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50">
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={
+                          category.image ||
+                          `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`
+                        }
+                        alt={category.name}
+                        className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
+                        onError={(e) => {
+                          e.target.src = `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`;
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+                        {category.name}
+                      </h3>
+                      <p className="text-gray-600 mb-2">
+                        {category.description ||
+                          "Premium quality rentals for your special event"}
                       </p>
-                    )}
+                      {category.itemCount > 0 && (
+                        <p className="text-sm text-blue-600 font-medium">
+                          {category.itemCount} item
+                          {category.itemCount !== 1 ? "s" : ""} available
+                        </p>
+                      )}
+                      {category.itemCount === 0 && (
+                        <p className="text-sm text-gray-400">
+                          Items coming soon
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Auto-sliding Cards Section */}
-      <div className="py-16 bg-gradient-to-r from-blue-50 to-purple-50 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 mb-12">
-          <h2 className="text-4xl font-bold text-center text-gray-800 mb-4">
-            {userData?.specialize && userData?.specialize?.length > 0 ? 'Our Specializations' : 'Why Choose Us'}
+      <div className="py-16 bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500 relative overflow-hidden">
+        {/* Animated background elements for extra visual interest */}
+        <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-transparent to-cyan-500/20"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-gradient-to-r from-green-400/30 to-blue-500/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+
+        <div className="max-w-7xl mx-auto px-4 mb-12 relative z-10">
+          <h2 className="text-4xl font-bold text-center text-white mb-4 drop-shadow-lg">
+            {userData?.specialize && userData?.specialize?.length > 0
+              ? "Our Specializations"
+              : "Why Choose Us"}
           </h2>
-          <p className="text-xl text-center text-gray-600">
+          <p className="text-xl text-center text-white/90 drop-shadow-md">
             Experience the difference with our premium service
           </p>
         </div>
 
-        <div className="relative">
+        <div className="relative z-10">
           <div className="flex animate-slide-left space-x-8">
             {[...autoSlideCards, ...autoSlideCards].map((card, index) => (
               <div
                 key={`${card.id}-${index}`}
-                className="flex-shrink-0 w-80 bg-white rounded-2xl p-6 shadow-lg border border-gray-200/50 transform hover:scale-105 transition-all duration-300"
+                className="flex-shrink-0 w-80 bg-white/30 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/20 transform hover:scale-105 transition-all duration-300 hover:bg-white/15"
               >
                 <div className="text-4xl mb-4">{card.icon}</div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">{card.title}</h3>
-                <p className="text-gray-600">{card.desc}</p>
+                <h3 className="text-xl font-semibold text-white/90 mb-2">
+                  {card.title}
+                </h3>
+                <p className="text-white/70">{card.desc}</p>
               </div>
             ))}
           </div>
@@ -278,7 +353,9 @@ const HomePage = () => {
       {userData.joinDate && (
         <div className="py-16 bg-white">
           <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">About {userData.name}</h2>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              About {userData.name}
+            </h2>
             <p className="text-lg text-gray-600 mb-6">{userData.bio}</p>
             <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
               <div className="flex items-center">
@@ -295,7 +372,7 @@ const HomePage = () => {
           </div>
         </div>
       )}
-         {/* Floating Chat Box Component */}
+      {/* Floating Chat Box Component */}
       <FloatingChatBox whatsappNumber="+2348142186524" />
     </>
   );

@@ -1,15 +1,39 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { get, put } from '../../utils/api';
+import { get, put, post } from "../../utils/api";
 
 // API service functions for profile operations
 export const getProfileAPI = async () => {
-  const response = await get('/api/users/profile');
+  const response = await get("/api/users/profile");
   return response?.data?.data?.user;
 };
 
 export const updateProfileAPI = async (profileData) => {
-  const response = await put('/api/users/profile', profileData);
-  return response.data;
+  // If profileData contains an avatar file, send as FormData
+  if (profileData.avatar instanceof File) {
+    const formData = new FormData();
+
+    // Append all profile data to FormData
+    Object.keys(profileData).forEach((key) => {
+      if (key === "avatar") {
+        formData.append("avatar", profileData.avatar);
+      } else if (Array.isArray(profileData[key])) {
+        formData.append(key, JSON.stringify(profileData[key]));
+      } else {
+        formData.append(key, profileData[key]);
+      }
+    });
+
+    const response = await put("/api/users/updateProfile", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } else {
+    // Regular JSON update (no file)
+    const response = await put("/api/users/updateProfile", profileData);
+    return response.data;
+  }
 };
 
 // Async thunk for fetching profile from backend
@@ -25,16 +49,37 @@ export const fetchProfile = createAsyncThunk(
   }
 );
 
-// Async thunk for saving profile changes to backend
+// Only showing the key changes to your existing profile slice
+
+// Update the saveProfile thunk (replace your existing one)
 export const saveProfile = createAsyncThunk(
   "profile/saveProfile",
-  async (_, { getState, rejectWithValue }) => {
+  async (avatarFile = null, { getState, rejectWithValue }) => {
     try {
       const state = getState();
-      const profileData = state.profile.editData;
+      const profileData = { ...state.profile.editData };
+      
+      // If there's a selected avatar file, add it to the profile data
+      if (avatarFile && avatarFile instanceof File) {
+        // Validate file before upload
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        
+        if (avatarFile.size > maxSize) {
+          throw new Error('File size must be less than 5MB');
+        }
+        
+        if (!allowedTypes.includes(avatarFile.type)) {
+          throw new Error('Only JPEG, PNG, GIF, and WebP images are allowed');
+        }
+        
+        profileData.avatar = avatarFile;
+      }
       
       const data = await updateProfileAPI(profileData);
-      return data;
+      console.log("new profile data: ",data.data.user);
+      
+      return data.data.user; // Return the updated user data
     } catch (error) {
       return rejectWithValue(error.message || "Failed to save profile");
     }
@@ -61,7 +106,7 @@ const initialState = {
     phone: "",
     location: "",
     joinDate: "",
-    avatar: "",
+    avatar: null, // Will store the avatar object from your backend
     bio: "",
     specialize: [],
     categories: [],
@@ -72,7 +117,7 @@ const initialState = {
     phone: "",
     location: "",
     joinDate: "",
-    avatar: "",
+    avatar: null, // Will store the avatar object from your backend
     bio: "",
     specialize: [],
     categories: [],
@@ -81,6 +126,7 @@ const initialState = {
   loading: false,
   error: null,
   saving: false,
+  selectedAvatarFile: null, // NEW: Store the selected file before upload
 };
 
 const profileSlice = createSlice({
@@ -106,6 +152,10 @@ const profileSlice = createSlice({
     updateAvatar: (state, action) => {
       state.editData.avatar = action.payload;
     },
+    // NEW: Set selected avatar file
+    setSelectedAvatarFile: (state, action) => {
+      state.selectedAvatarFile = action.payload;
+    },
     addSpecialization: (state, action) => {
       if (!state.editData.specialize.includes(action.payload)) {
         state.editData.specialize.push(action.payload);
@@ -125,11 +175,11 @@ const profileSlice = createSlice({
       state.saving = false;
     },
     syncCategoriesFromCategorySlice: (state, action) => {
-      const categories = action.payload.map(cat => ({
+      const categories = action.payload.map((cat) => ({
         id: cat.id,
-        name: cat.name
+        name: cat.name,
       }));
-      
+
       state.userData.categories = categories;
       state.editData.categories = categories;
     },
@@ -150,7 +200,7 @@ const profileSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Save profile cases
+      // Save profile cases (now handles both profile + avatar upload)
       .addCase(saveProfile.pending, (state) => {
         state.saving = true;
         state.error = null;
@@ -160,6 +210,7 @@ const profileSlice = createSlice({
         state.userData = action.payload;
         state.editData = { ...action.payload };
         state.isEditing = false;
+        state.selectedAvatarFile = null; // Clear selected file after save
       })
       .addCase(saveProfile.rejected, (state, action) => {
         state.saving = false;
@@ -180,54 +231,62 @@ const profileSlice = createSlice({
         state.error = action.payload;
       })
       // Listen to category slice changes
-      .addCase('categories/fetchCategories/fulfilled', (state, action) => {
-        const categories = action.payload.map(cat => ({
+      .addCase("categories/fetchCategories/fulfilled", (state, action) => {
+        const categories = action.payload.map((cat) => ({
           id: cat.id,
-          name: cat.name
+          name: cat.name,
         }));
-        
+
         state.userData.categories = categories;
         if (!state.isEditing) {
           state.editData.categories = categories;
         }
       })
-      .addCase('categories/createCategory/fulfilled', (state, action) => {
+      .addCase("categories/createCategory/fulfilled", (state, action) => {
         const newCategory = {
           id: action.payload.id,
-          name: action.payload.name
+          name: action.payload.name,
         };
-        
-        const existsInUserData = state.userData.categories.some(cat => cat.id === newCategory.id);
+
+        const existsInUserData = state.userData.categories.some(
+          (cat) => cat.id === newCategory.id
+        );
         if (!existsInUserData) {
           state.userData.categories.push(newCategory);
         }
-        
-        const existsInEditData = state.editData.categories.some(cat => cat.id === newCategory.id);
+
+        const existsInEditData = state.editData.categories.some(
+          (cat) => cat.id === newCategory.id
+        );
         if (!existsInEditData) {
           state.editData.categories.push(newCategory);
         }
       })
-      .addCase('categories/updateCategory/fulfilled', (state, action) => {
+      .addCase("categories/updateCategory/fulfilled", (state, action) => {
         const updatedCategory = action.payload;
-        
-        const userDataIndex = state.userData.categories.findIndex(cat => cat.id === updatedCategory.id);
+
+        const userDataIndex = state.userData.categories.findIndex(
+          (cat) => cat.id === updatedCategory.id
+        );
         if (userDataIndex !== -1) {
           state.userData.categories[userDataIndex].name = updatedCategory.name;
         }
-        
-        const editDataIndex = state.editData.categories.findIndex(cat => cat.id === updatedCategory.id);
+
+        const editDataIndex = state.editData.categories.findIndex(
+          (cat) => cat.id === updatedCategory.id
+        );
         if (editDataIndex !== -1) {
           state.editData.categories[editDataIndex].name = updatedCategory.name;
         }
       })
-      .addCase('categories/deleteCategory/fulfilled', (state, action) => {
+      .addCase("categories/deleteCategory/fulfilled", (state, action) => {
         const deletedCategoryId = action.payload;
-        
+
         state.userData.categories = state.userData.categories.filter(
-          cat => cat.id !== deletedCategoryId
+          (cat) => cat.id !== deletedCategoryId
         );
         state.editData.categories = state.editData.categories.filter(
-          cat => cat.id !== deletedCategoryId
+          (cat) => cat.id !== deletedCategoryId
         );
       });
   },
@@ -240,6 +299,7 @@ export const {
   resetEditData,
   updateEditDataField,
   updateAvatar,
+  setSelectedAvatarFile, // NEW
   addSpecialization,
   removeSpecialization,
   clearProfileError,

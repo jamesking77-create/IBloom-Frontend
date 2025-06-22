@@ -190,7 +190,7 @@ const DashboardHeader = () => {
             </button>
           )}
           
-          {/* Notifications dropdown */}
+        
           <div ref={notificationRef} className="relative">
             <button
               onClick={handleToggleNotifications}
@@ -234,7 +234,7 @@ const DashboardHeader = () => {
             )}
           </div>
           
-          {/* Profile dropdown */}
+      
           <div ref={profileRef} className="relative">
             <button
               onClick={handleToggleProfile}
@@ -242,9 +242,9 @@ const DashboardHeader = () => {
               aria-label="Profile"
             >
               <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-gray-200">
-                {/* Use profile avatar from Redux store if available */}
+              
                 <img 
-                  src={userData.avatar || '/api/placeholder/150/150'}
+                  src={userData.avatar.url || '/api/placeholder/150/150'}
                   alt={userData.name || 'Profile'} 
                   className="h-full w-full object-cover"
                 />

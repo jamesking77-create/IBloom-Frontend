@@ -183,7 +183,7 @@ const UserLayout = () => {
         >
           <div className="flex items-center space-x-8">
             <Link to="/" className="font-bold text-xl text-green-200">
-              {userData.name || "RentalPro"}
+              {userData.name || "IBLOOM"}
             </Link>
             <div className="text-gray-500 text-sm">Scroll up to expand</div>
           </div>
@@ -201,7 +201,7 @@ const UserLayout = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
               <h3 className="text-2xl font-bold">
-                {userData.name || "RentalPro"}
+                {userData.name || "IBLOOM"}
               </h3>
               <p className="text-gray-400">
                 {userData.bio ||
@@ -348,7 +348,7 @@ const UserLayout = () => {
 
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
             <p>
-              &copy; 2025 {userData.name || "RentalPro"}. All rights reserved. |
+              &copy; 2025 {userData.name || "IBLOOM"}. All rights reserved. |
               Privacy Policy | Terms of Service
             </p>
           </div>

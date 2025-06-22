@@ -17,6 +17,7 @@ import CategoriesScreen from './screens/admin/dashboard/categoriesScreen';
 import UserLayout from './screens/users/userLayout';
 import HomePage from './screens/users/homepage';
 import { QuotesList } from './screens/admin/dashboard/quotesList';
+import CategoriesPage from './screens/users/categoriesPage';
 
 // PrivateRoute component to handle authentication
 const PrivateRoute = ({ children }) => {
@@ -62,6 +63,7 @@ function AppContent() {
 
          <Route path="/" element={<UserLayout/>}>
           <Route index element={<HomePage />} />
+          <Route path="category/:categoryId" element={<CategoriesPage />} />
         </Route>
         
         <Route

@@ -244,7 +244,7 @@ const DashboardHeader = () => {
               <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-gray-200">
               
                 <img 
-                  src={userData.avatar.url || '/api/placeholder/150/150'}
+                  src={userData.avatar?.url || '/api/placeholder/150/150'}
                   alt={userData.name || 'Profile'} 
                   className="h-full w-full object-cover"
                 />

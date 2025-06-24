@@ -1,4 +1,5 @@
 import React from 'react';
+import dayjs from "dayjs";
 import { Mail, Phone, MapPin, Calendar } from 'lucide-react';
 import { validateEmail } from '../../../utils/validateEmail';
 
@@ -56,7 +57,7 @@ export const PersonalInfo = ({ userData, isEditing, editData, onChangeHandler, h
 
       <div className="flex items-center gap-3">
         <Calendar className="text-gray-400" size={18} />
-        <p className="text-gray-700">Member since {userData.joinDate}</p>
+        <p className="text-gray-700">Member since {dayjs(userData.joinDate).format("DD/MM/YYYY")}</p>
       </div>
     </div>
   );

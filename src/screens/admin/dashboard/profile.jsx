@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import dayjs from "dayjs";
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Save, X } from 'lucide-react';
@@ -204,7 +205,7 @@ export default function Profile({ onProfileUpdate, profileData }) {
           onManageCategories={handleManageCategories}
         />
 
-        <Activity joinDate={userData.joinDate} />
+        <Activity joinDate={dayjs(userData.joinDate).format("DD/MM/YYYY")} />
       </div>
     </div>
   );

@@ -145,7 +145,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
             <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-[#468E36] mb-2">
               {/* Use profile avatar from Redux state, fallback to default or logo */}
               <img
-                src={userData?.avatar.url || defaultAvatar}
+                src={userData?.avatar?.url || defaultAvatar}
                 alt="Profile"
                 className="h-full w-full object-cover"
                 onError={(e) => {

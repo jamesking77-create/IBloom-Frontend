@@ -1,385 +1,150 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { get, put, post, del } from "../../utils/api";
 
-// Mock API functions - replace with actual API calls
-const fetchCategoriesFromAPI = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-  {
-    id: 1,
-    name: "LIGHTINGS",
-    image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
-    description: "Professional LED strip lights, spotlights, and ambient lighting for events",
-    itemCount: 25,
-    items: [
-      {
-        id: 1,
-        name: "LED Strip Lights",
-        description: "Flexible RGB LED strips for ambient lighting and color effects",
-        price: "45.00",
-        image: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-      {
-        id: 2,
-        name: "Professional Spotlights",
-        description: "High-intensity spotlights for stage and event lighting",
-        price: "180.00",
-        image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "DANCE FLOOR",
-    image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
-    description: "LED dance floors with customizable colors and patterns",
-    itemCount: 12,
-    items: [
-      {
-        id: 3,
-        name: "LED Interactive Dance Floor",
-        description: "Programmable LED dance floor with color-changing capabilities",
-        price: "850.00",
-        image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "GLOW FURNITURE",
-    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Illuminated lounge furniture and seating for modern events",
-    itemCount: 18,
-    items: [
-      {
-        id: 4,
-        name: "LED Cocktail Tables",
-        description: "Color-changing illuminated cocktail tables",
-        price: "95.00",
-        image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: "LED INFLATABLES",
-    image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Large inflatable decorations with LED lighting systems",
-    itemCount: 8,
-    items: [
-      {
-        id: 5,
-        name: "LED Inflatable Arches",
-        description: "Customizable LED inflatable entrance arches",
-        price: "275.00",
-        image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 5,
-    name: "LIGHTED PROPS",
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Decorative illuminated props and accent pieces",
-    itemCount: 22,
-    items: [
-      {
-        id: 6,
-        name: "LED Palm Trees",
-        description: "Artificial palm trees with integrated LED lighting",
-        price: "165.00",
-        image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 6,
-    name: "LED BACKDROPS",
-    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Programmable LED backdrop panels for stage and photo areas",
-    itemCount: 15,
-    items: [
-      {
-        id: 7,
-        name: "LED Video Wall Panels",
-        description: "High-resolution LED panels for video backdrops",
-        price: "450.00",
-        image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 7,
-    name: "CENTERPIECES/VASES",
-    image: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Elegant centerpieces and decorative vases for table settings",
-    itemCount: 35,
-    items: [
-      {
-        id: 8,
-        name: "Crystal LED Vases",
-        description: "Crystal vases with LED base lighting",
-        price: "35.00",
-        image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 8,
-    name: "TABLE COVERS",
-    image: "https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Premium table linens and decorative covers",
-    itemCount: 45,
-    items: [
-      {
-        id: 9,
-        name: "Satin Table Covers",
-        description: "Elegant satin table covers in various colors",
-        price: "25.00",
-        image: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 9,
-    name: "CHAIR COVERS",
-    image: "https://images.unsplash.com/photo-1431540015161-0bf868a2d407?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Decorative chair covers and sashes for seating",
-    itemCount: 50,
-    items: [
-      {
-        id: 10,
-        name: "Spandex Chair Covers",
-        description: "Stretch spandex chair covers with bow ties",
-        price: "8.00",
-        image: "https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 10,
-    name: "BRIDAL SOFAS/CHAIRS",
-    image: "https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Elegant bridal seating and luxury furniture for ceremonies",
-    itemCount: 12,
-    items: [
-      {
-        id: 11,
-        name: "Victorian Bridal Throne",
-        description: "Ornate golden bridal throne chairs",
-        price: "125.00",
-        image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 11,
-    name: "WALKWAY PEDESTALS",
-    image: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Decorative pedestals for aisle and walkway decoration",
-    itemCount: 20,
-    items: [
-      {
-        id: 12,
-        name: "Marble Column Pedestals",
-        description: "Classical marble-style pedestals for ceremonies",
-        price: "85.00",
-        image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 12,
-    name: "MANDAPS",
-    image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Traditional and modern mandaps for wedding ceremonies",
-    itemCount: 6,
-    items: [
-      {
-        id: 13,
-        name: "Crystal Mandap",
-        description: "Elegant crystal and gold mandap structure",
-        price: "1,200.00",
-        image: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 13,
-    name: "DRAPE ALUMINIUM POLES",
-    image: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Professional draping systems and aluminum support poles",
-    itemCount: 30,
-    items: [
-      {
-        id: 14,
-        name: "Adjustable Drape Poles",
-        description: "Telescopic aluminum poles for fabric draping",
-        price: "45.00",
-        image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 14,
-    name: "GOLD BACKDROP PANELS",
-    image: "https://images.unsplash.com/photo-1511578314322-379afb476865?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Luxurious gold backdrop panels for photography and staging",
-    itemCount: 18,
-    items: [
-      {
-        id: 15,
-        name: "Sequin Gold Panels",
-        description: "Shimmering gold sequin backdrop panels",
-        price: "95.00",
-        image: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 15,
-    name: "WATER FOUNTAIN",
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Decorative water fountains for elegant ambiance",
-    itemCount: 8,
-    items: [
-      {
-        id: 16,
-        name: "LED Water Fountain",
-        description: "Illuminated tiered water fountain with LED lights",
-        price: "350.00",
-        image: "https://images.unsplash.com/photo-1511578314322-379afb476865?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 16,
-    name: "MIRROR BALLS",
-    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Classic disco mirror balls for dance floors and parties",
-    itemCount: 15,
-    items: [
-      {
-        id: 17,
-        name: "Large Mirror Ball",
-        description: "Professional 20-inch disco mirror ball with motor",
-        price: "65.00",
-        image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 17,
-    name: "GREEN MATS/BALLS",
-    image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Artificial grass mats and decorative green spheres",
-    itemCount: 25,
-    items: [
-      {
-        id: 18,
-        name: "Artificial Grass Mats",
-        description: "High-quality synthetic grass mats for outdoor themes",
-        price: "15.00",
-        image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-      {
-        id: 19,
-        name: "Topiary Green Balls",
-        description: "Decorative artificial topiary spheres in various sizes",
-        price: "45.00",
-        image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    id: 18,
-    name: "LANTERNS",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    description: "Decorative lanterns including paper, LED, and vintage styles",
-    itemCount: 32,
-    items: [
-      {
-        id: 20,
-        name: "Paper Lanterns",
-        description: "Colorful paper lanterns in various sizes for ambient lighting",
-        price: "12.00",
-        image: "https://images.unsplash.com/photo-1478147427282-58c9c25145e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-      {
-        id: 21,
-        name: "Vintage Bronze Lanterns",
-        description: "Antique-style bronze lanterns for rustic and elegant events",
-        price: "18.00",
-        image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-      {
-        id: 22,
-        name: "LED Solar Lanterns",
-        description: "Eco-friendly LED lanterns with solar charging capability",
-        price: "25.00",
-        image: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-]);
-    }, 500);
+// Helper function to get auth token
+const getAuthToken = () => {
+  return localStorage.getItem('token') || sessionStorage.getItem('token');
+};
+
+// Helper function to create form data for file uploads
+const createFormData = (data) => {
+  const formData = new FormData();
+  Object.keys(data).forEach(key => {
+    if (key === 'items' && Array.isArray(data[key])) {
+      formData.append(key, JSON.stringify(data[key]));
+    } else {
+      formData.append(key, data[key]);
+    }
   });
+  return formData;
+};
+
+// API functions using your existing utils
+const fetchCategoriesFromAPI = async () => {
+  const response = await get("/api/services/categories");
+  return response?.data?.data?.categories || [];
+};
+
+const fetchCategoryByIdAPI = async (categoryId) => {
+  const response = await get(`/api/services/categories/${categoryId}`);
+  return response?.data?.data?.category;
+};
+
+const searchCategoriesAPI = async (searchParams) => {
+  const queryString = new URLSearchParams(searchParams).toString();
+  const response = await get(`/api/services/categories/search?${queryString}`);
+  return {
+    categories: response?.data?.data?.categories || [],
+    pagination: response?.data?.data?.pagination || {},
+    searchCriteria: response?.data?.data?.searchCriteria || {}
+  };
 };
 
 const createCategoryAPI = async (categoryData) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        id: Date.now(),
-        ...categoryData,
-        itemCount: 0,
-        items: [],
-      });
-    }, 500);
-  });
+  const config = {};
+  let data;
+
+  // Check if we have file upload
+  if (categoryData.image instanceof File) {
+    data = createFormData(categoryData);
+    config.headers = {
+      'Content-Type': 'multipart/form-data',
+      ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` })
+    };
+  } else {
+    data = categoryData;
+    config.headers = {
+      ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` })
+    };
+  }
+
+  const response = await post("/api/services/categories", data, config);
+  return response?.data?.data?.category;
 };
 
-const updateCategoryAPI = async (id, categoryData) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ id, ...categoryData });
-    }, 500);
-  });
+const updateCategoryAPI = async (categoryId, categoryData) => {
+  const config = {};
+  let data;
+
+  // Check if we have file upload
+  if (categoryData.image instanceof File) {
+    data = createFormData(categoryData);
+    config.headers = {
+      'Content-Type': 'multipart/form-data',
+      ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` })
+    };
+  } else {
+    data = categoryData;
+    config.headers = {
+      ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` })
+    };
+  }
+
+  const response = await put(`/api/services/categories/${categoryId}`, data, config);
+  return response?.data?.data?.category;
 };
 
-const deleteCategoryAPI = async (id) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(id);
-    }, 500);
-  });
+const deleteCategoryAPI = async (categoryId) => {
+  const config = {
+    headers: {
+      ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` })
+    }
+  };
+  
+  const response = await del(`/api/services/categories/${categoryId}`, config);
+  return response?.data?.data?.deletedCategory;
 };
 
+// Mock item API functions (since your backend handles items within categories)
 const createItemAPI = async (categoryId, itemData) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        id: Date.now(),
-        ...itemData,
-      });
-    }, 500);
+  // Get current category
+  const currentCategory = await fetchCategoryByIdAPI(categoryId);
+  const newItem = {
+    id: Date.now(),
+    ...itemData,
+  };
+  
+  // Add item to category's items array
+  const updatedItems = [...(currentCategory.items || []), newItem];
+  
+  // Update category with new items
+  const updatedCategory = await updateCategoryAPI(categoryId, {
+    items: updatedItems
   });
+  
+  return { categoryId, item: newItem, category: updatedCategory };
 };
 
 const updateItemAPI = async (categoryId, itemId, itemData) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ id: itemId, ...itemData });
-    }, 500);
+  // Get current category
+  const currentCategory = await fetchCategoryByIdAPI(categoryId);
+  
+  // Update the specific item
+  const updatedItems = currentCategory.items.map(item => 
+    item.id === itemId ? { ...item, ...itemData } : item
+  );
+  
+  // Update category with modified items
+  const updatedCategory = await updateCategoryAPI(categoryId, {
+    items: updatedItems
   });
+  
+  return { categoryId, item: { id: itemId, ...itemData }, category: updatedCategory };
 };
 
 const deleteItemAPI = async (categoryId, itemId) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ categoryId, itemId });
-    }, 500);
+  // Get current category
+  const currentCategory = await fetchCategoryByIdAPI(categoryId);
+  
+  // Remove the item
+  const updatedItems = currentCategory.items.filter(item => item.id !== itemId);
+  
+  // Update category with remaining items
+  const updatedCategory = await updateCategoryAPI(categoryId, {
+    items: updatedItems
   });
+  
+  return { categoryId, itemId, category: updatedCategory };
 };
 
 // Async thunks
@@ -391,6 +156,30 @@ export const fetchCategories = createAsyncThunk(
       return response;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to fetch categories");
+    }
+  }
+);
+
+export const fetchCategoryById = createAsyncThunk(
+  "categories/fetchCategoryById",
+  async (categoryId, { rejectWithValue }) => {
+    try {
+      const response = await fetchCategoryByIdAPI(categoryId);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to fetch category");
+    }
+  }
+);
+
+export const searchCategories = createAsyncThunk(
+  "categories/searchCategories",
+  async (searchParams, { rejectWithValue }) => {
+    try {
+      const response = await searchCategoriesAPI(searchParams);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to search categories");
     }
   }
 );
@@ -436,7 +225,7 @@ export const createItem = createAsyncThunk(
   async ({ categoryId, itemData }, { rejectWithValue }) => {
     try {
       const response = await createItemAPI(categoryId, itemData);
-      return { categoryId, item: response };
+      return response;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to create item");
     }
@@ -448,7 +237,7 @@ export const updateItem = createAsyncThunk(
   async ({ categoryId, itemId, itemData }, { rejectWithValue }) => {
     try {
       const response = await updateItemAPI(categoryId, itemId, itemData);
-      return { categoryId, item: response };
+      return response;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to update item");
     }
@@ -459,8 +248,8 @@ export const deleteItem = createAsyncThunk(
   "categories/deleteItem",
   async ({ categoryId, itemId }, { rejectWithValue }) => {
     try {
-      await deleteItemAPI(categoryId, itemId);
-      return { categoryId, itemId };
+      const response = await deleteItemAPI(categoryId, itemId);
+      return response;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to delete item");
     }
@@ -470,18 +259,47 @@ export const deleteItem = createAsyncThunk(
 const initialState = {
   categories: [],
   filteredCategories: [],
+  searchResults: [],
   selectedCategory: null,
+  currentCategory: null,
   searchQuery: "",
   filterBy: "all", // all, hasItems, noItems
+  
+  // Search and pagination
+  isSearchMode: false,
+  pagination: {
+    currentPage: 1,
+    totalPages: 0,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+    limit: 10
+  },
+  searchCriteria: {},
+  
+  // Loading states
   isLoading: false,
+  loading: {
+    fetch: false,
+    fetchById: false,
+    search: false,
+    create: false,
+    update: false,
+    delete: false
+  },
+  
   error: null,
+  
+  // Modal states
   modals: {
     categoryModal: false,
     itemModal: false,
     itemsViewModal: false,
   },
+  
   editingCategory: null,
   editingItem: null,
+  lastUpdated: null,
 };
 
 const categoriesSlice = createSlice({
@@ -498,6 +316,17 @@ const categoriesSlice = createSlice({
     },
     setSelectedCategory: (state, action) => {
       state.selectedCategory = action.payload;
+    },
+    setCurrentCategory: (state, action) => {
+      state.currentCategory = action.payload;
+    },
+    toggleSearchMode: (state, action) => {
+      state.isSearchMode = action.payload ?? !state.isSearchMode;
+      if (!state.isSearchMode) {
+        state.searchResults = [];
+        state.searchCriteria = {};
+        state.pagination = initialState.pagination;
+      }
     },
     openModal: (state, action) => {
       state.modals[action.payload] = true;
@@ -520,87 +349,251 @@ const categoriesSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    resetPagination: (state) => {
+      state.pagination = initialState.pagination;
+    },
+    updateCategoryLocally: (state, action) => {
+      const { categoryId, updates } = action.payload;
+      const index = state.categories.findIndex(cat => cat.id === categoryId);
+      if (index !== -1) {
+        state.categories[index] = { ...state.categories[index], ...updates };
+      }
+      
+      // Update in search results too if in search mode
+      if (state.isSearchMode) {
+        const searchIndex = state.searchResults.findIndex(cat => cat.id === categoryId);
+        if (searchIndex !== -1) {
+          state.searchResults[searchIndex] = { ...state.searchResults[searchIndex], ...updates };
+        }
+      }
+      
+      // Update current category if it matches
+      if (state.currentCategory?.id === categoryId) {
+        state.currentCategory = { ...state.currentCategory, ...updates };
+      }
+      
+      // Update filtered categories
+      state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
+    },
   },
   extraReducers: (builder) => {
     builder
       // Fetch categories
       .addCase(fetchCategories.pending, (state) => {
         state.isLoading = true;
+        state.loading.fetch = true;
         state.error = null;
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.isLoading = false;
+        state.loading.fetch = false;
         state.categories = action.payload;
         state.filteredCategories = filterCategories(action.payload, state.searchQuery, state.filterBy);
+        state.lastUpdated = new Date().toISOString();
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.isLoading = false;
+        state.loading.fetch = false;
         state.error = action.payload;
       })
+      
+      // Fetch category by ID
+      .addCase(fetchCategoryById.pending, (state) => {
+        state.loading.fetchById = true;
+        state.error = null;
+      })
+      .addCase(fetchCategoryById.fulfilled, (state, action) => {
+        state.loading.fetchById = false;
+        state.currentCategory = action.payload;
+      })
+      .addCase(fetchCategoryById.rejected, (state, action) => {
+        state.loading.fetchById = false;
+        state.error = action.payload;
+        state.currentCategory = null;
+      })
+      
+      // Search categories
+      .addCase(searchCategories.pending, (state) => {
+        state.loading.search = true;
+        state.error = null;
+      })
+      .addCase(searchCategories.fulfilled, (state, action) => {
+        state.loading.search = false;
+        state.searchResults = action.payload.categories;
+        state.pagination = action.payload.pagination;
+        state.searchCriteria = action.payload.searchCriteria;
+        state.isSearchMode = true;
+      })
+      .addCase(searchCategories.rejected, (state, action) => {
+        state.loading.search = false;
+        state.error = action.payload;
+      })
+      
       // Create category
       .addCase(createCategory.pending, (state) => {
         state.isLoading = true;
+        state.loading.create = true;
         state.error = null;
       })
       .addCase(createCategory.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.categories.push(action.payload);
-        state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
-        state.modals.categoryModal = false;
-      })
-      .addCase(createCategory.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      // Update category
-      .addCase(updateCategory.fulfilled, (state, action) => {
-        const index = state.categories.findIndex(cat => cat.id === action.payload.id);
-        if (index !== -1) {
-          state.categories[index] = { ...state.categories[index], ...action.payload };
-        }
+        state.loading.create = false;
+        state.categories.unshift(action.payload); // Add to beginning
         state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
         state.modals.categoryModal = false;
         state.editingCategory = null;
+        state.lastUpdated = new Date().toISOString();
       })
-      // Delete category
-      .addCase(deleteCategory.fulfilled, (state, action) => {
-        state.categories = state.categories.filter(cat => cat.id !== action.payload);
-        state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
+      .addCase(createCategory.rejected, (state, action) => {
+        state.isLoading = false;
+        state.loading.create = false;
+        state.error = action.payload;
       })
-      // Create item
-      .addCase(createItem.fulfilled, (state, action) => {
-        const { categoryId, item } = action.payload;
-        const category = state.categories.find(cat => cat.id === categoryId);
-        if (category) {
-          category.items.push(item);
-          category.itemCount = category.items.length;
+      
+      // Update category
+      .addCase(updateCategory.pending, (state) => {
+        state.loading.update = true;
+        state.error = null;
+      })
+      .addCase(updateCategory.fulfilled, (state, action) => {
+        state.loading.update = false;
+        const updatedCategory = action.payload;
+        
+        // Update in main categories array
+        const index = state.categories.findIndex(cat => cat.id === updatedCategory.id);
+        if (index !== -1) {
+          state.categories[index] = updatedCategory;
         }
-        state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
-        state.modals.itemModal = false;
-      })
-      // Update item
-      .addCase(updateItem.fulfilled, (state, action) => {
-        const { categoryId, item } = action.payload;
-        const category = state.categories.find(cat => cat.id === categoryId);
-        if (category) {
-          const itemIndex = category.items.findIndex(i => i.id === item.id);
-          if (itemIndex !== -1) {
-            category.items[itemIndex] = item;
+        
+        // Update in search results if in search mode
+        if (state.isSearchMode) {
+          const searchIndex = state.searchResults.findIndex(cat => cat.id === updatedCategory.id);
+          if (searchIndex !== -1) {
+            state.searchResults[searchIndex] = updatedCategory;
           }
         }
+        
+        // Update current category if it matches
+        if (state.currentCategory?.id === updatedCategory.id) {
+          state.currentCategory = updatedCategory;
+        }
+        
+        state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
+        state.modals.categoryModal = false;
+        state.editingCategory = null;
+        state.lastUpdated = new Date().toISOString();
+      })
+      .addCase(updateCategory.rejected, (state, action) => {
+        state.loading.update = false;
+        state.error = action.payload;
+      })
+      
+      // Delete category
+      .addCase(deleteCategory.pending, (state) => {
+        state.loading.delete = true;
+        state.error = null;
+      })
+      .addCase(deleteCategory.fulfilled, (state, action) => {
+        state.loading.delete = false;
+        const categoryId = action.payload;
+        
+        // Remove from main categories array
+        state.categories = state.categories.filter(cat => cat.id !== categoryId);
+        
+        // Remove from search results if in search mode
+        if (state.isSearchMode) {
+          state.searchResults = state.searchResults.filter(cat => cat.id !== categoryId);
+        }
+        
+        // Clear current category if it was deleted
+        if (state.currentCategory?.id === categoryId) {
+          state.currentCategory = null;
+        }
+        
+        // Clear selected category if it was deleted
+        if (state.selectedCategory?.id === categoryId) {
+          state.selectedCategory = null;
+        }
+        
+        state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
+        state.lastUpdated = new Date().toISOString();
+      })
+      .addCase(deleteCategory.rejected, (state, action) => {
+        state.loading.delete = false;
+        state.error = action.payload;
+      })
+      
+      // Create item
+      .addCase(createItem.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createItem.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { categoryId, item, category } = action.payload;
+        
+        // Update the category with the new item data from backend
+        const categoryIndex = state.categories.findIndex(cat => cat.id === categoryId);
+        if (categoryIndex !== -1) {
+          state.categories[categoryIndex] = category;
+        }
+        
+        // Update current category if it matches
+        if (state.currentCategory?.id === categoryId) {
+          state.currentCategory = category;
+        }
+        
         state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
         state.modals.itemModal = false;
         state.editingItem = null;
       })
+      .addCase(createItem.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Update item
+      .addCase(updateItem.fulfilled, (state, action) => {
+        const { categoryId, item, category } = action.payload;
+        
+        // Update the category with the modified item data from backend
+        const categoryIndex = state.categories.findIndex(cat => cat.id === categoryId);
+        if (categoryIndex !== -1) {
+          state.categories[categoryIndex] = category;
+        }
+        
+        // Update current category if it matches
+        if (state.currentCategory?.id === categoryId) {
+          state.currentCategory = category;
+        }
+        
+        state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
+        state.modals.itemModal = false;
+        state.editingItem = null;
+      })
+      .addCase(updateItem.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      
       // Delete item
       .addCase(deleteItem.fulfilled, (state, action) => {
-        const { categoryId, itemId } = action.payload;
-        const category = state.categories.find(cat => cat.id === categoryId);
-        if (category) {
-          category.items = category.items.filter(item => item.id !== itemId);
-          category.itemCount = category.items.length;
+        const { categoryId, itemId, category } = action.payload;
+        
+        // Update the category with the remaining items from backend
+        const categoryIndex = state.categories.findIndex(cat => cat.id === categoryId);
+        if (categoryIndex !== -1) {
+          state.categories[categoryIndex] = category;
         }
+        
+        // Update current category if it matches
+        if (state.currentCategory?.id === categoryId) {
+          state.currentCategory = category;
+        }
+        
         state.filteredCategories = filterCategories(state.categories, state.searchQuery, state.filterBy);
+      })
+      .addCase(deleteItem.rejected, (state, action) => {
+        state.error = action.payload;
       });
   },
 });
@@ -631,11 +624,40 @@ export const {
   setSearchQuery,
   setFilterBy,
   setSelectedCategory,
+  setCurrentCategory,
+  toggleSearchMode,
   openModal,
   closeModal,
   setEditingCategory,
   setEditingItem,
   clearError,
+  resetPagination,
+  updateCategoryLocally,
 } = categoriesSlice.actions;
+
+// Selectors
+export const selectCategories = (state) => state.categories.categories;
+export const selectFilteredCategories = (state) => state.categories.filteredCategories;
+export const selectSearchResults = (state) => state.categories.searchResults;
+export const selectCurrentCategory = (state) => state.categories.currentCategory;
+export const selectSelectedCategory = (state) => state.categories.selectedCategory;
+export const selectPagination = (state) => state.categories.pagination;
+export const selectSearchCriteria = (state) => state.categories.searchCriteria;
+export const selectIsSearchMode = (state) => state.categories.isSearchMode;
+export const selectLoading = (state) => state.categories.loading;
+export const selectIsLoading = (state) => state.categories.isLoading;
+export const selectError = (state) => state.categories.error;
+export const selectModals = (state) => state.categories.modals;
+export const selectEditingCategory = (state) => state.categories.editingCategory;
+export const selectEditingItem = (state) => state.categories.editingItem;
+export const selectLastUpdated = (state) => state.categories.lastUpdated;
+
+// Computed selectors
+export const selectDisplayCategories = (state) => 
+  state.categories.isSearchMode ? state.categories.searchResults : state.categories.filteredCategories;
+
+export const selectCategoryById = (categoryId) => (state) =>
+  state.categories.categories.find(cat => cat.id === categoryId) ||
+  state.categories.searchResults.find(cat => cat.id === categoryId);
 
 export default categoriesSlice.reducer;

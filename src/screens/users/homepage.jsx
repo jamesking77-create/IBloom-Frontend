@@ -1,5 +1,6 @@
 // screens/user/HomePage.js
 import React, { useState, useEffect } from "react";
+import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { ChevronLeft, ChevronRight, Quote, MapPin, Star } from "lucide-react";
@@ -360,7 +361,7 @@ const HomePage = () => {
             <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
               <div className="flex items-center">
                 <span className="font-semibold">Established:</span>
-                <span className="ml-2">{userData.joinDate}</span>
+                <span className="ml-2">{dayjs(userData.joinDate).format("DD/MM/YYYY")}</span>
               </div>
               {userData.location && (
                 <div className="flex items-center">

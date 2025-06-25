@@ -46,8 +46,10 @@ const CategoriesScreen = () => {
 
   // Form states
   const [categoryForm, setCategoryForm] = useState({
+    id: "",
     name: "",
     description: "",
+    itemCount: "",
     image: "",
   });
   const [itemForm, setItemForm] = useState({
@@ -122,7 +124,9 @@ const CategoriesScreen = () => {
   const openEditCategory = (category) => {
     dispatch(setEditingCategory(category));
     setCategoryForm({
+      id: category.id,
       name: category.name,
+      itemCount: category.itemCount,
       description: category.description,
       image: category.image,
     });
@@ -311,6 +315,23 @@ const CategoriesScreen = () => {
               <form onSubmit={handleCategorySubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category ID
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={categoryForm.id}
+                    onChange={(e) =>
+                      setCategoryForm((prev) => ({
+                        ...prev,
+                        id: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Category Name
                   </label>
                   <input
@@ -338,6 +359,24 @@ const CategoriesScreen = () => {
                       setCategoryForm((prev) => ({
                         ...prev,
                         description: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Number of Items
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={categoryForm.itemCount}
+                    onChange={(e) =>
+                      setCategoryForm((prev) => ({
+                        ...prev,
+                        itemCount: e.target.value,
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

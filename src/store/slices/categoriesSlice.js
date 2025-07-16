@@ -22,6 +22,8 @@ const createFormData = (data) => {
 // API functions using your existing utils
 const fetchCategoriesFromAPI = async () => {
   const response = await get("/api/services/categories");
+  console.log("this is category: ", response);
+  
   return response?.data?.data?.categories || [];
 };
 

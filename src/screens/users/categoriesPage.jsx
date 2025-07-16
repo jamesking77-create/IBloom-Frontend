@@ -4,7 +4,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { ArrowLeft, Package, Search, Filter } from 'lucide-react';
 import { fetchCategories } from '../../store/slices/categoriesSlice';
+import { addToCart, selectCartItems, openCart } from '../../store/slices/cart-slice';
 import FloatingChatBox from '../../UI/floatingChatBox';
+import ItemAddedPopup from '../../UI/itemAddedPopup'; // Adjust path as needed
 
 const CategoriesPage = () => {
   const { categoryId } = useParams();
@@ -13,23 +15,28 @@ const CategoriesPage = () => {
   const dispatch = useDispatch();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('name'); // name, price-low, price-high
+  const [sortBy, setSortBy] = useState('name');
   const [filteredItems, setFilteredItems] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   // Get categories data from Redux store
   const { categories, isLoading } = useSelector((state) => state.categories);
+  const cartItems = useSelector(selectCartItems);
   
   // Get the specific category
   const category = categories.find(cat => cat.id === parseInt(categoryId)) || location.state?.category;
 
-  // Fetch categories if not already loaded
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     if (categories.length === 0) {
       dispatch(fetchCategories());
     }
   }, [dispatch, categories.length]);
 
-  // Filter and sort items when category or search/sort changes
   useEffect(() => {
     if (!category || !category.items) {
       setFilteredItems([]);
@@ -38,7 +45,6 @@ const CategoriesPage = () => {
 
     let items = [...category.items];
 
-    // Filter by search query
     if (searchQuery) {
       items = items.filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -46,7 +52,6 @@ const CategoriesPage = () => {
       );
     }
 
-    // Sort items
     switch (sortBy) {
       case 'name':
         items.sort((a, b) => a.name.localeCompare(b.name));
@@ -65,25 +70,47 @@ const CategoriesPage = () => {
   }, [category, searchQuery, sortBy]);
 
   const handleItemClick = (item) => {
-    // Navigate to item details or handle item selection
     console.log('Item clicked:', item);
     // You can navigate to an item detail page or open a modal here
   };
 
-  const handleQuoteRequest = (item) => {
-    // Navigate to quote page with item details
-    navigate('/quote', { state: { selectedItem: item, category: category } });
+  const addToCartProcess = (item) => {
+    // Check if cart is empty
+    const isCartEmpty = cartItems.length === 0;
+    
+    if (isCartEmpty) {
+      // If cart is empty, navigate to booking page
+      navigate('/eventbooking', { state: { selectedItem: item, category: category } });
+    } else {
+      // If cart has items, add to cart and show popup
+      dispatch(addToCart({ 
+        item: item,
+        dates: null, // Will use default dates from cart state
+        allowDuplicates: false 
+      }));
+      
+      setSelectedItem(item);
+      setShowPopup(true);
+    }
   };
 
-  // Format price with Naira symbol
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setSelectedItem(null);
+  };
+
+  const handleViewCart = () => {
+    setShowPopup(false);
+    setSelectedItem(null);
+    dispatch(openCart());
+  };
+
   const formatPrice = (price) => {
     if (!price) return '₦0';
-    // Remove any existing currency symbols and convert to number
     const numericPrice = parseFloat(price.toString().replace(/[^\d.]/g, ''));
     return `₦${numericPrice.toLocaleString('en-NG')}`;
   };
 
-  // Show loading state
   if (isLoading && !category) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -95,7 +122,6 @@ const CategoriesPage = () => {
     );
   }
 
-  // Show error if category not found
   if (!category) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -128,7 +154,6 @@ const CategoriesPage = () => {
           <div className="absolute inset-0 bg-black/50" />
         </div>
 
-        {/* Hero Content */}
         <div className="absolute inset-0 flex items-center justify-center text-center text-white z-10">
           <div className="max-w-4xl mx-auto px-4">
             <button
@@ -160,7 +185,6 @@ const CategoriesPage = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-            {/* Search Bar */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -172,7 +196,6 @@ const CategoriesPage = () => {
               />
             </div>
 
-            {/* Sort Filter */}
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-gray-400" />
               <select
@@ -187,7 +210,6 @@ const CategoriesPage = () => {
             </div>
           </div>
 
-          {/* Results Count */}
           <div className="mt-4 text-sm text-gray-600">
             Showing {filteredItems.length} of {category.itemCount || 0} items
             {searchQuery && (
@@ -244,7 +266,6 @@ const CategoriesPage = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       
-                      {/* Price Badge with Naira */}
                       <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-lg">
                         <div className="flex items-center text-green-600 font-semibold">
                           <span className="text-sm">₦</span>
@@ -269,10 +290,10 @@ const CategoriesPage = () => {
                           View Details
                         </button>
                         <button
-                          onClick={() => handleQuoteRequest(item)}
+                          onClick={() => addToCartProcess(item)}
                           className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 font-medium"
                         >
-                          Get Quote
+                          Add To Cart
                         </button>
                       </div>
                     </div>
@@ -283,6 +304,14 @@ const CategoriesPage = () => {
           )}
         </div>
       </div>
+
+      {/* Item Added Popup */}
+    <ItemAddedPopup 
+  isOpen={showPopup}
+  onClose={handleClosePopup}
+  item={selectedItem}
+  category={category}
+/>
 
       {/* Floating Chat Box Component */}
       <FloatingChatBox whatsappNumber="+2348142186524" />

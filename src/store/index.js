@@ -10,7 +10,7 @@ import bookingsReducer from "./slices/booking-slice";
 import mailerReducer from "./slices/mailer";
 import categoriesReducer from "./slices/categoriesSlice";
 import quotesReducer from "./slices/quote-slice";
-
+import cartReducer from "./slices/cart-slice";
 const categorySyncMiddleware = (store) => (next) => (action) => {
   const result = next(action);
 
@@ -43,6 +43,7 @@ export const store = configureStore({
     profile: profileReducer,
     categories: categoriesReducer,
     quotes:quotesReducer,
+    cart: cartReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

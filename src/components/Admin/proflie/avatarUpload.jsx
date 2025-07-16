@@ -57,7 +57,7 @@ export const AvatarUpload = ({ isEditing, currentAvatar, onAvatarChange }) => {
     }
   };
 
-  // Determine what avatar to display
+
   const getDisplayAvatar = () => {
     if (avatarPreview) return avatarPreview;
     if (currentAvatar?.url) return currentAvatar.url;

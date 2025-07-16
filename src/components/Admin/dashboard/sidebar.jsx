@@ -25,17 +25,17 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Get profile data from Redux store
+
   const { userData, loading } = useSelector((state) => state.profile);
 
-  // Fetch profile data when component mounts if it's not already loaded
+ 
   useEffect(() => {
     if (!userData?.name) {
       dispatch(fetchProfile());
     }
   }, [dispatch, userData]);
 
-  // Menu items configuration
+ 
   const menuItems = [
     {
       icon: <Home size={20} />,
@@ -75,37 +75,37 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
     },
   ];
 
-  // Show logout confirmation modal
+
   const showLogoutConfirmation = () => {
     setShowLogoutModal(true);
   };
 
-  // Handle logout
+ 
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser());
-      navigate("/login"); // or your login route
+      navigate("/login"); 
     } catch (err) {
       console.error("Logout failed:", err);
     }
   };
 
-  // Close logout modal
+
   const closeLogoutModal = () => {
     setShowLogoutModal(false);
   };
 
-  // If mobile and sidebar closed, don't render
+
   if (isMobile && !isOpen) {
     return null;
   }
 
-  // Default avatar if none is set
-  const defaultAvatar = "/api/placeholder/160/160"; // Placeholder image
+  
+  const defaultAvatar = "/api/placeholder/160/160"; 
 
   return (
     <div className="">
-      {/* Overlay for mobile - closes sidebar when clicking outside */}
+
       {isMobile && isOpen && (
         <div
           className="fixed inset-0 bg-black/60  z-20"
@@ -114,7 +114,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
         />
       )}
 
-      {/* Sidebar - Always visible on web view using position relative instead of transform */}
+   
       <aside
         className={`
           ${
@@ -130,7 +130,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
           flex flex-col
         `}
       >
-        {/* Mobile close button - top right corner */}
+
         {isMobile && (
           <button
             onClick={toggleSidebar}
@@ -143,18 +143,17 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
         <div className="flex-1 flex flex-col overflow-y-auto pt-5 pb-4 px-3">
           <div className="flex flex-col items-center px-4 mb-8">
             <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-[#468E36] mb-2">
-              {/* Use profile avatar from Redux state, fallback to default or logo */}
               <img
-                src={userData?.avatar?.url || defaultAvatar}
+                src={userData?.avatar || defaultAvatar}
                 alt="Profile"
                 className="h-full w-full object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = logoimg; // Fallback to logo if avatar fails to load
+                  e.target.src = logoimg; 
                 }}
               />
             </div>
-            {/* Show user name from Redux state, or "Loading..." when loading */}
+        
             <h2 className="font-medium text-gray-900">
               {loading ? "Loading..." : userData?.name || "User"}
             </h2>
@@ -190,7 +189,6 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
               );
             })}
 
-            {/* Logout button moved up to nav section in web view */}
             {!isMobile && (
               <button
                 onClick={showLogoutConfirmation}
@@ -203,7 +201,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
           </nav>
         </div>
 
-        {/* Logout button at bottom only for mobile view */}
+
         {isMobile && (
           <div className="p-4 border-t border-gray-200">
             <button
@@ -219,13 +217,13 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
 
       {showLogoutModal && (
         <>
-          {/* Modal Backdrop */}
+         
           <div
             className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center"
             onClick={closeLogoutModal}
           />
 
-          {/* Modal Content */}
+          
           <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-80 max-w-sm">
             <div className="p-5">
               <div className="flex justify-between items-center mb-4">

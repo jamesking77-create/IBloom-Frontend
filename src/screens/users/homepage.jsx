@@ -1,7 +1,7 @@
 // screens/user/HomePage.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { ChevronLeft, ChevronRight, Quote, MapPin, Star } from "lucide-react";
 import { fetchProfile } from "../../store/slices/profile-slice";
@@ -13,6 +13,8 @@ const HomePage = () => {
   const [autoSlideIndex, setAutoSlideIndex] = useState(0);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
+  const categoriesRef = useRef(null);
 
   // Get profile data from Redux store
   const { userData, loading: profileLoading } = useSelector(
@@ -24,6 +26,11 @@ const HomePage = () => {
     (state) => state.categories
   );
 
+  useEffect(() => {
+    if (location.state?.scrollToCategories && categoriesRef.current) {
+      categoriesRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [location]);
   // Fetch profile and categories data on component mount
   useEffect(() => {
     dispatch(fetchProfile());
@@ -54,7 +61,6 @@ const HomePage = () => {
     },
   ];
 
-  // Use categories from Redux store instead of hardcoded data
   const rentalCategories = categories.map((category) => ({
     id: category.id,
     name: category.name,
@@ -63,7 +69,6 @@ const HomePage = () => {
     itemCount: category.itemCount,
   }));
 
-  // Auto-slide cards based on specializations or default
   const autoSlideCards =
     userData?.specialize && userData?.specialize?.length > 0
       ? userData?.specialize.map((spec, index) => ({
@@ -134,16 +139,16 @@ const HomePage = () => {
   };
 
   // Show loading state while fetching data
-  if ((profileLoading && !userData.name) || categoriesLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // if ((profileLoading && !userData.name) || categoriesLoading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+  //         <p className="text-gray-600">Loading...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <>
@@ -240,7 +245,7 @@ const HomePage = () => {
       </div>
 
       {/* Categories Section */}
-      <div className="py-20 bg-gradient-to-br from-gray-50 to-white">
+      <div   ref={categoriesRef} className="py-20 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
@@ -361,7 +366,9 @@ const HomePage = () => {
             <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
               <div className="flex items-center">
                 <span className="font-semibold">Established:</span>
-                <span className="ml-2">{dayjs(userData.joinDate).format("DD/MM/YYYY")}</span>
+                <span className="ml-2">
+                  {dayjs(userData.joinDate).format("DD/MM/YYYY")}
+                </span>
               </div>
               {userData.location && (
                 <div className="flex items-center">

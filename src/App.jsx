@@ -18,14 +18,14 @@ import UserLayout from './screens/users/userLayout';
 import HomePage from './screens/users/homepage';
 import { QuotesList } from './screens/admin/dashboard/quotesList';
 import CategoriesPage from './screens/users/categoriesPage';
+import EventBookingPage from './screens/users/eventBookingPage';
 
-// PrivateRoute component to handle authentication
+
 const PrivateRoute = ({ children }) => {
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
   
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
-
 
 const AppWrapper = () => {
   return (
@@ -39,10 +39,12 @@ function AppContent() {
   return (
     <>
       <Routes>
+        {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/forgotPassword" element={<ForgotPassword />} />
         <Route path="/resetPassword/:token" element={<ResetPassword />} />
         
+        {/* Admin Dashboard Routes */}
         <Route
           path="/dashboard"
           element={
@@ -60,16 +62,16 @@ function AppContent() {
           <Route path="categories" element={<CategoriesScreen />} />
           <Route path="quotes" element={<QuotesList />} />
         </Route>
-
-         <Route path="/" element={<UserLayout/>}>
+        
+        
+        <Route path="/" element={<UserLayout/>}>
           <Route index element={<HomePage />} />
           <Route path="category/:categoryId" element={<CategoriesPage />} />
+          <Route path="eventbooking" element={<EventBookingPage />} />
         </Route>
         
-        <Route
-          path="/"
-          element={<Navigate to="/login" replace />}
-        />
+       
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Save, X } from 'lucide-react';
-import { notifySuccess } from '../../../utils/toastify';
+import { notifySuccess, notifyError } from '../../../utils/toastify';
 import { AvatarUpload } from '../../../components/Admin/proflie/avatarUpload';
 import { PersonalInfo } from '../../../components/Admin/proflie/personalInfo';
 import { Specializations } from '../../../components/Admin/proflie/specializations';
@@ -29,6 +29,12 @@ export default function Profile({ onProfileUpdate, profileData }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
+  
+  // Validation state
+  const [validationStatus, setValidationStatus] = useState({
+    email: true,
+    phone: true
+  });
 
   const {
     userData,
@@ -63,9 +69,28 @@ export default function Profile({ onProfileUpdate, profileData }) {
     dispatch(setEditData(userData));
     dispatch(setIsEditing(true));
     setSelectedAvatarFile(null); // Reset selected file when entering edit mode
+    // Reset validation status when entering edit mode
+    setValidationStatus({
+      email: true,
+      phone: true
+    });
   };
 
   const handleSave = async () => {
+    // Check if email and phone are valid before proceeding
+    if (!validationStatus.email || !validationStatus.phone) {
+      let errorMessage = 'Please fix the following errors:';
+      if (!validationStatus.email) {
+        errorMessage += '\n• Invalid email address';
+      }
+      if (!validationStatus.phone) {
+        errorMessage += '\n• Invalid phone number';
+      }
+      
+      notifyError(errorMessage);
+      return; // Prevent form submission
+    }
+
     try {
       // Pass the selected file to the saveProfile action
       await dispatch(saveProfile(selectedAvatarFile)).unwrap();
@@ -74,14 +99,19 @@ export default function Profile({ onProfileUpdate, profileData }) {
       if (onProfileUpdate) onProfileUpdate(editData);
     } catch (error) {
       console.error('Error saving profile:', error);
-      // Error will be handled by the slice and shown in UI
+      notifyError('Failed to save profile. Please try again.');
     }
   };
 
   const handleCancel = () => {
     dispatch(resetEditData());
     dispatch(setIsEditing(false));
-    setSelectedAvatarFile(null); // Clear selected file when canceling
+    setSelectedAvatarFile(null);
+    // Reset validation status when canceling
+    setValidationStatus({
+      email: true,
+      phone: true
+    });
   };
 
   const handleChange = (e) => {
@@ -91,11 +121,8 @@ export default function Profile({ onProfileUpdate, profileData }) {
 
   const handleAvatarChange = (fileOrUrl) => {
     if (fileOrUrl instanceof File) {
-      // If it's a file, store it locally and update the preview
       setSelectedAvatarFile(fileOrUrl);
-      // Don't update Redux state with the file, just update the preview
     } else {
-      // If it's a URL or null, update Redux state
       dispatch(updateAvatar(fileOrUrl));
       setSelectedAvatarFile(null);
     }
@@ -112,6 +139,17 @@ export default function Profile({ onProfileUpdate, profileData }) {
   const handleManageCategories = () => {
     navigate('/dashboard/categories');
   };
+
+  // Handle validation status updates from PersonalInfo component
+  const handleValidationChange = (field, isValid) => {
+    setValidationStatus(prev => ({
+      ...prev,
+      [field]: isValid
+    }));
+  };
+
+  // Check if form is valid for submission
+  const isFormValid = validationStatus.email && validationStatus.phone;
 
   return (
     <div className="flex flex-col md:flex-row gap-4 p-6 bg-gray-50 min-h-[100%] overflow-hidden">
@@ -151,8 +189,13 @@ export default function Profile({ onProfileUpdate, profileData }) {
             <div className="flex gap-2 mt-4">
               <button
                 onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                disabled={saving || !isFormValid}
+                className={`flex items-center gap-2 px-4 py-2 text-white rounded-md transition-colors ${
+                  saving || !isFormValid
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+                title={!isFormValid ? 'Please fix validation errors before saving' : ''}
               >
                 <Save size={16} />
                 {saving ? 'Saving...' : 'Save'}
@@ -174,6 +217,7 @@ export default function Profile({ onProfileUpdate, profileData }) {
           isEditing={isEditing}
           editData={editData}
           onChangeHandler={handleChange}
+          onValidationChange={handleValidationChange}
         />
       </div>
 

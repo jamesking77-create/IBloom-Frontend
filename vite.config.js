@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -11,12 +10,22 @@ export default defineConfig({
     basicSsl()
   ],
   
-    server: {
+  server: {
     https: false,
     host: '0.0.0.0', 
     port: 3000,
   }, 
-    resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx']
+  
+  resolve: {
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
+    alias: {
+      '@': '/src'
+    }
+  },
+  
+  build: {
+    rollupOptions: {
+      external: []
+    }
   }
 })

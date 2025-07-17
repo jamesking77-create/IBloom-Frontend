@@ -40,8 +40,8 @@ import {
   resetBookingCreation
 } from '../../store/slices/booking-slice';
 
-import DateSelectionStep from '../../components/users/DateSelectionStep.jsx';
-import CustomerDetailsStep from '../../components/users/CustomerDetailsStep.jsx';
+import DateSelectionStep from '../../components/users/dateSelectionStep.jsx';
+import CustomerDetailsStep from '../../components/users/customerDetailsStep.jsx';
 import BookingPreviewStep from '../../components/users/bookingPreviewStep.jsx';
 
 

@@ -40,9 +40,10 @@ import {
   resetBookingCreation
 } from '../../store/slices/booking-slice';
 
-import DateSelectionStep from '../../components/users/DateSelectionStep';
-import CustomerDetailsStep from '../../components/users/CustomerDetailsStep';
-import BookingPreviewStep from '../../components/users/BookingPreviewStep';
+import DateSelectionStep from '../../components/users/DateSelectionStep.jsx';
+import CustomerDetailsStep from '../../components/users/CustomerDetailsStep.jsx';
+import BookingPreviewStep from '../../components/users/bookingPreviewStep.jsx';
+
 
 const EventBookingPage = () => {
   const location = useLocation();

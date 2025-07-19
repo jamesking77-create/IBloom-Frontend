@@ -83,6 +83,21 @@ export const put = async (url, data, config = {}) => {
   }
 };
 
+export const patch = async (url, data, config = {}) => {
+  try {
+    const response = await api.patch(url, data, config);
+
+    if (response.status >= 200 && response.status < 300) {
+      return response;
+    }
+
+    const errorMessage = response.data?.message || response.data?.error || `Request failed with status ${response.status}`;
+    throw new Error(errorMessage);
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.message || 'Request failed');
+  }
+};
+
 export const del = async (url, config = {}) => {
   try {
     const response = await api.delete(url, config);

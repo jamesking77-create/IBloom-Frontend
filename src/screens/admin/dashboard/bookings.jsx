@@ -18,7 +18,6 @@ import {
   DollarSign
 } from 'lucide-react';
 import {
-  fetchBookings,
   updateBookingStatus,
   fetchBookingDetails,
   setStatusFilter,
@@ -26,7 +25,7 @@ import {
   setCurrentPage,
   clearSelectedBooking,
   clearError,
-  loadSampleData,
+  fetchBookings,
   selectFilteredBookings,
   selectBookingsLoading,
   selectBookingsError,
@@ -56,11 +55,7 @@ const Bookings = () => {
   const [currentViewingBooking, setCurrentViewingBooking] = useState(null);
 
   useEffect(() => {
-    // Load sample data on component mount
-    dispatch(loadSampleData());
-    
-    // Alternatively, you can fetch from API:
-    // dispatch(fetchBookings());
+    dispatch(fetchBookings());
   }, [dispatch]);
 
   // Clear error when component unmounts
@@ -265,10 +260,10 @@ const Bookings = () => {
             <div className="divide-y divide-gray-200">
               {paginatedBookings.map((booking) => {
                 const statusStyles = getStatusStyles(booking.status);
-                const isProcessing = processingBookingId === booking.id;
+                const isProcessing = processingBookingId === booking._id;
                 
                 return (
-                  <div key={booking.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div key={booking._id} className="p-6 hover:bg-gray-50 transition-colors">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                       {/* Booking Info */}
                       <div className="flex-1">
@@ -338,7 +333,7 @@ const Bookings = () => {
                           {booking.status === 'pending' && (
                             <>
                               <button
-                                onClick={() => handleApprove(booking.id)}
+                                onClick={() => handleApprove(booking._id)}
                                 disabled={isProcessing}
                                 className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
                               >
@@ -347,7 +342,7 @@ const Bookings = () => {
                               </button>
                               
                               <button
-                                onClick={() => handleReject(booking.id)}
+                                onClick={() => handleReject(booking._id)}
                                 disabled={isProcessing}
                                 className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
                               >

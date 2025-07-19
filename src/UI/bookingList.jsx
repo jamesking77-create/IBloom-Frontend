@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Import your booking slice actions and selectors
 import {
-  loadSampleData,
+  fetchBookings,
   selectBookings,
   selectBookingsLoading,
   selectBookingsStats
@@ -25,9 +25,8 @@ const BookingsList = () => {
   };
 
   useEffect(() => {
-    // Load sample data if bookings are empty
     if (bookings.length === 0) {
-      dispatch(loadSampleData());
+      dispatch(fetchBookings());
     }
   }, [dispatch, bookings.length]);
 

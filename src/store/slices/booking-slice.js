@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
+import { get, put, post, del } from "../../utils/api";
 
 // Sample data for development with enhanced date/time fields
 const sampleBookings = [
@@ -347,11 +348,11 @@ export const updateBookingItems = createAsyncThunk(
 );
 
 const initialState = {
-  bookings: sampleBookings, // Initialize with sample data
+  bookings: [], 
   selectedBooking: null,
   loading: false,
   error: null,
-  statusFilter: 'all', // all, pending, confirmed, cancelled
+  statusFilter: 'all', 
   searchQuery: '',
   pagination: {
     currentPage: 1,

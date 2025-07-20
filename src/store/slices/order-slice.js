@@ -1,22 +1,31 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
+import { get, put, post, del } from "../../utils/api";
 
 
-// Async thunk for fetching orders
+// // Async thunk for fetching orders
 export const fetchOrders = createAsyncThunk(
   'orders/fetchOrders',
-  async (params = {}) => {
-    // Replace with your actual API call
-    // const response = await fetch('/api/orders', { method: 'GET' });
-    // return response.json();
-    
-    // Dummy data for now
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(dummyOrders);
-      }, 500);
-    });
+  async () => {
+    const response = await get('/api/orders'); 
+    return response?.data;
   }
 );
+
+// export const fetchOrders = createAsyncThunk(
+//   'orders/fetchOrders',
+//   async (params = {}) => {
+//     // Replace with your actual API call 
+//     // const response = await fetch('/api/orders', { method: 'GET' });
+//     // return response.json();
+    
+//     // Dummy data for now
+//     return new Promise((resolve) => {
+//       setTimeout(() => {
+//         resolve(dummyOrders);
+//       }, 500);
+//     });
+//   }
+// );
 
 // Dummy data structure
 const dummyOrders = [
@@ -29,7 +38,7 @@ const dummyOrders = [
       phone: '+1 234-567-8900'
     },
     deliveryInfo: {
-      type: 'delivery', // 'delivery', 'warehouse_pickup'
+      type: 'delivery', 
       address: '123 Main St, City, State 12345',
       instructions: 'Leave at front door'
     },

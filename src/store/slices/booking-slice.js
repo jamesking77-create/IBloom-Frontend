@@ -1,352 +1,240 @@
-import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+} from "@reduxjs/toolkit";
+import { get, put, post, patch, del } from "../../utils/api";
 
-// Sample data for development with your exact data structure
-const sampleBookings = [
-  {
-    bookingId: 'BK518482',
-    bookingDate: '2025-07-18T13:48:38.482Z',
-    status: 'pending_confirmation',
-    orderMode: 'booking',
-    customer: {
-      personalInfo: {
-        name: 'Oluwaleke',
-        email: 'jamesasuelimen77@gmail.com',
-        phone: '08142186524'
-      },
-      eventDetails: {
-        eventType: 'Corporate Event',
-        location: '312 Herbert Macaulay Way, Sabo Yaba, Lagos',
-        numberOfGuests: 150,
-        specialRequests: 'AV equipment needed for presentations',
-        delivery: 'yes',
-        installation: 'yes'
-      }
-    },
-    eventSchedule: {
-      startDate: '2025-07-30',
-      endDate: '2025-07-30',
-      startTime: '09:00',
-      endTime: '17:00',
-      durationInDays: 1,
-      isMultiDay: false,
-      formatted: {
-        startDate: 'Wednesday, July 30, 2025',
-        endDate: 'Wednesday, July 30, 2025',
-        startTime: '9:00 AM',
-        endTime: '5:00 PM',
-        fullSchedule: 'Wednesday, July 30, 2025 from 9:00 AM to 5:00 PM'
-      }
-    },
-    services: [
-      {
-        serviceId: 'cart_1752840329508_tr2dht5v8',
-        name: 'Satin Table Covers',
-        description: 'Elegant satin table covers in various colors',
-        category: 'General',
-        quantity: 1,
-        unitPrice: 25,
-        subtotal: 25,
-        duration: 8,
-        image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-        orderMode: 'booking',
-        addedAt: '2025-07-18T12:05:29.508Z'
-      },
-      {
-        serviceId: 'cart_1752845183437_4bsnhcro3',
-        name: 'LED Inflatable Arches',
-        description: 'Customizable LED inflatable entrance arches',
-        category: 'General',
-        quantity: 1,
-        unitPrice: 275,
-        subtotal: 275,
-        duration: 8,
-        image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-        orderMode: 'booking',
-        addedAt: '2025-07-18T13:26:23.438Z'
-      }
-    ],
-    pricing: {
-      currency: 'NGN',
-      itemsSubtotal: 300,
-      taxAmount: 22.5,
-      taxRate: 0.075,
-      totalAmount: 322.5,
-      totalItems: 2,
-      totalServices: 2,
-      formatted: {
-        subtotal: '₦300.00',
-        tax: '₦22.50',
-        total: '₦322.50'
-      }
-    },
-    businessData: {
-      requiresDeposit: true,
-      depositPolicy: 'Refundable deposit varies by items selected',
-      cancellationPolicy: 'As per terms and conditions',
-      deliveryRequired: true,
-      setupRequired: true,
-      followUpRequired: true,
-      preferredContact: 'email'
-    },
-    validation: {
-      hasCustomerInfo: true,
-      hasEventSchedule: true,
-      hasPricing: true,
-      hasServices: true
-    }
-  },
-  {
-    bookingId: 'BK518483',
-    bookingDate: '2025-07-17T10:30:15.123Z',
-    status: 'confirmed',
-    orderMode: 'booking',
-    customer: {
-      personalInfo: {
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@email.com',
-        phone: '08034567890'
-      },
-      eventDetails: {
-        eventType: 'Wedding Reception',
-        location: 'Grand Ballroom, Victoria Island, Lagos',
-        numberOfGuests: 200,
-        specialRequests: 'Vegetarian options needed, live band setup required',
-        delivery: 'yes',
-        installation: 'yes'
-      }
-    },
-    eventSchedule: {
-      startDate: '2025-08-15',
-      endDate: '2025-08-15',
-      startTime: '18:00',
-      endTime: '23:30',
-      durationInDays: 1,
-      isMultiDay: false,
-      formatted: {
-        startDate: 'Friday, August 15, 2025',
-        endDate: 'Friday, August 15, 2025',
-        startTime: '6:00 PM',
-        endTime: '11:30 PM',
-        fullSchedule: 'Friday, August 15, 2025 from 6:00 PM to 11:30 PM'
-      }
-    },
-    services: [
-      {
-        serviceId: 'srv_001',
-        name: 'Wedding Decoration Package',
-        description: 'Complete wedding decoration with flowers and lighting',
-        category: 'Wedding',
-        quantity: 1,
-        unitPrice: 150000,
-        subtotal: 150000,
-        duration: 12,
-        image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-        orderMode: 'booking',
-        addedAt: '2025-07-17T09:15:20.100Z'
-      }
-    ],
-    pricing: {
-      currency: 'NGN',
-      itemsSubtotal: 150000,
-      taxAmount: 11250,
-      taxRate: 0.075,
-      totalAmount: 161250,
-      totalItems: 1,
-      totalServices: 1,
-      formatted: {
-        subtotal: '₦150,000.00',
-        tax: '₦11,250.00',
-        total: '₦161,250.00'
-      }
-    },
-    businessData: {
-      requiresDeposit: true,
-      depositPolicy: '50% deposit required for wedding bookings',
-      cancellationPolicy: '48 hours cancellation policy',
-      deliveryRequired: true,
-      setupRequired: true,
-      followUpRequired: true,
-      preferredContact: 'phone'
-    },
-    validation: {
-      hasCustomerInfo: true,
-      hasEventSchedule: true,
-      hasPricing: true,
-      hasServices: true
-    }
-  },
-  {
-    bookingId: 'BK518484',
-    bookingDate: '2025-07-16T14:20:30.456Z',
-    status: 'cancelled',
-    orderMode: 'booking',
-    customer: {
-      personalInfo: {
-        name: 'Michael Chen',
-        email: 'michael.chen@company.com',
-        phone: '08087654321'
-      },
-      eventDetails: {
-        eventType: 'Birthday Party',
-        location: 'Private Residence, Lekki, Lagos',
-        numberOfGuests: 50,
-        specialRequests: 'Children\'s party theme with bounce house',
-        delivery: 'yes',
-        installation: 'yes'
-      }
-    },
-    eventSchedule: {
-      startDate: '2025-07-28',
-      endDate: '2025-07-29',
-      startTime: '16:00',
-      endTime: '12:00',
-      durationInDays: 2,
-      isMultiDay: true,
-      formatted: {
-        startDate: 'Monday, July 28, 2025',
-        endDate: 'Tuesday, July 29, 2025',
-        startTime: '4:00 PM',
-        endTime: '12:00 PM',
-        fullSchedule: 'Monday, July 28, 2025 at 4:00 PM to Tuesday, July 29, 2025 at 12:00 PM'
-      }
-    },
-    services: [
-      {
-        serviceId: 'srv_002',
-        name: 'Bounce House Rental',
-        description: 'Large inflatable bounce house for children',
-        category: 'Entertainment',
-        quantity: 1,
-        unitPrice: 25000,
-        subtotal: 25000,
-        duration: 20,
-        image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-        orderMode: 'booking',
-        addedAt: '2025-07-16T13:45:15.200Z'
-      }
-    ],
-    pricing: {
-      currency: 'NGN',
-      itemsSubtotal: 25000,
-      taxAmount: 1875,
-      taxRate: 0.075,
-      totalAmount: 26875,
-      totalItems: 1,
-      totalServices: 1,
-      formatted: {
-        subtotal: '₦25,000.00',
-        tax: '₦1,875.00',
-        total: '₦26,875.00'
-      }
-    },
-    businessData: {
-      requiresDeposit: true,
-      depositPolicy: '30% deposit required',
-      cancellationPolicy: '24 hours cancellation policy',
-      deliveryRequired: true,
-      setupRequired: true,
-      followUpRequired: false,
-      preferredContact: 'email'
-    },
-    validation: {
-      hasCustomerInfo: true,
-      hasEventSchedule: true,
-      hasPricing: true,
-      hasServices: true
-    }
+// Sample data for development with enhanced date/time fields
+// const sampleBookings = [
+//   {
+//     id: 1,
+//     customerName: 'Sarah Johnson',
+//     eventType: 'Wedding Reception',
+//     startDate: '2024-06-15',
+//     endDate: '2024-06-15',
+//     startTime: '18:00', // 6:00 PM
+//     endTime: '23:30', // 11:30 PM
+//     singleDay: true,
+//     multiDay: false,
+//     location: 'Grand Ballroom',
+//     status: 'pending',
+//     amount: '₦2,500,000',
+//     phone: '+234 803 123 4567',
+//     email: 'sarah.johnson@email.com',
+//     guests: 150,
+//     specialRequests: 'Vegetarian options needed, live band setup required',
+//     paymentStatus: 'partial',
+//     amountPaid: '₦1,000,000',
+//     createdAt: '2024-05-20T10:30:00Z',
+//     items: []
+//   },
+//   {
+//     id: 2,
+//     customerName: 'Michael Chen',
+//     eventType: 'Corporate Event',
+//     startDate: '2024-06-18',
+//     endDate: '2024-06-19',
+//     startTime: '14:00', // 2:00 PM
+//     endTime: '10:00', // 10:00 AM next day
+//     singleDay: false,
+//     multiDay: true,
+//     location: 'Conference Center',
+//     status: 'confirmed',
+//     amount: '₦1,800,000',
+//     phone: '+234 807 987 6543',
+//     email: 'michael.chen@company.com',
+//     guests: 80,
+//     specialRequests: 'AV equipment, projector setup',
+//     paymentStatus: 'paid',
+//     amountPaid: '₦1,800,000',
+//     createdAt: '2024-05-18T14:15:00Z',
+//     items: []
+//   },
+//   {
+//     id: 3,
+//     customerName: 'Emily Rodriguez',
+//     eventType: 'Birthday Party',
+//     startDate: '2024-06-20',
+//     endDate: '2024-06-20',
+//     startTime: '16:00', // 4:00 PM
+//     endTime: '20:00', // 8:00 PM
+//     singleDay: true,
+//     multiDay: false,
+//     location: 'Garden Pavilion',
+//     status: 'pending',
+//     amount: '₦950,000',
+//     phone: '+234 901 456 7890',
+//     email: 'emily.rodriguez@email.com',
+//     guests: 45,
+//     specialRequests: 'Birthday cake, decorations in pink theme',
+//     paymentStatus: 'unpaid',
+//     amountPaid: '₦0',
+//     createdAt: '2024-05-22T09:45:00Z',
+//     items: []
+//   },
+//   {
+//     id: 4,
+//     customerName: 'David Thompson',
+//     eventType: 'Anniversary Dinner',
+//     startDate: '2024-06-22',
+//     endDate: '2024-06-22',
+//     startTime: '19:00', // 7:00 PM
+//     endTime: '22:00', // 10:00 PM
+//     singleDay: true,
+//     multiDay: false,
+//     location: 'Private Dining',
+//     status: 'confirmed',
+//     amount: '₦1,200,000',
+//     phone: '+234 805 234 5678',
+//     email: 'david.thompson@email.com',
+//     guests: 12,
+//     specialRequests: 'Romantic setup, wine pairing',
+//     paymentStatus: 'paid',
+//     amountPaid: '₦1,200,000',
+//     createdAt: '2024-05-19T16:20:00Z',
+//     items: []
+//   },
+//   {
+//     id: 5,
+//     customerName: 'Lisa Wang',
+//     eventType: 'Baby Shower',
+//     startDate: '2024-06-25',
+//     endDate: '2024-06-25',
+//     startTime: '15:00', // 3:00 PM
+//     endTime: '18:00', // 6:00 PM
+//     singleDay: true,
+//     multiDay: false,
+//     location: 'Garden Pavilion',
+//     status: 'pending',
+//     amount: '₦750,000',
+//     phone: '+234 809 876 5432',
+//     email: 'lisa.wang@email.com',
+//     guests: 35,
+//     specialRequests: 'Baby shower decorations, non-alcoholic beverages only',
+//     paymentStatus: 'partial',
+//     amountPaid: '₦300,000',
+//     createdAt: '2024-05-21T11:30:00Z',
+//     items: []
+//   },
+//   {
+//     id: 6,
+//     customerName: 'James Wilson',
+//     eventType: 'Conference Summit',
+//     startDate: '2024-06-28',
+//     endDate: '2024-06-30',
+//     startTime: '09:00', // 9:00 AM
+//     endTime: '17:00', // 5:00 PM (last day)
+//     singleDay: false,
+//     multiDay: true,
+//     location: 'Main Convention Hall',
+//     status: 'confirmed',
+//     amount: '₦4,500,000',
+//     phone: '+234 805 111 2222',
+//     email: 'james.wilson@conference.com',
+//     guests: 300,
+//     specialRequests: 'Full AV setup, catering for 3 days, accommodation assistance',
+//     paymentStatus: 'partial',
+//     amountPaid: '₦2,250,000',
+//     createdAt: '2024-05-25T08:00:00Z',
+//     items: []
+//   },
+//   {
+//     id: 7,
+//     customerName: 'Maria Santos',
+//     eventType: 'Art Exhibition Opening',
+//     startDate: '2024-07-02',
+//     endDate: '2024-07-03',
+//     startTime: '19:00', // 7:00 PM
+//     endTime: '02:00', // 2:00 AM next day
+//     singleDay: false,
+//     multiDay: true,
+//     location: 'Gallery Wing',
+//     status: 'pending',
+//     amount: '₦1,350,000',
+//     phone: '+234 809 333 4444',
+//     email: 'maria.santos@artgallery.com',
+//     guests: 120,
+//     specialRequests: 'Special lighting, wine service, art handling equipment',
+//     paymentStatus: 'unpaid',
+//     amountPaid: '₦0',
+//     createdAt: '2024-05-28T12:00:00Z',
+//     items: []
+//   }
+// ];
+
+// Utility function to calculate if event is single day or multi-day
+const calculateDayType = (startDate, endDate, startTime, endTime) => {
+  const start = new Date(`${startDate}T${startTime}`);
+  const end = new Date(`${endDate}T${endTime}`);
+
+  // If end date is different from start date, it's definitely multi-day
+  if (startDate !== endDate) {
+    return { singleDay: false, multiDay: true };
   }
-];
 
-// Utility function to calculate total amount from services
-const calculateTotalFromServices = (services) => {
-  return services.reduce((total, service) => {
-    return total + (service.subtotal || (service.unitPrice * service.quantity));
+  // If same date but end time is earlier than start time, it means it goes to next day
+  if (endTime < startTime) {
+    return { singleDay: false, multiDay: true };
+  }
+
+  // Otherwise, it's a single day event
+  return { singleDay: true, multiDay: false };
+};
+
+// Utility function to calculate total amount from cart items
+const calculateTotalFromCart = (items) => {
+  return items.reduce((total, item) => {
+    const itemPrice = parseFloat(item.price);
+    return total + itemPrice * item.quantity;
   }, 0);
 };
 
 // Async thunk for creating booking from cart
 export const createBookingFromCart = createAsyncThunk(
-  'bookings/createBookingFromCart',
+  "bookings/createBookingFromCart",
   async (cartData, { rejectWithValue }) => {
     try {
-      const { services, eventSchedule, customer, businessData } = cartData;
-      
-      // Calculate total amount from cart services
-      const itemsSubtotal = calculateTotalFromServices(services);
-      const taxAmount = itemsSubtotal * 0.075; // 7.5% tax
-      const totalAmount = itemsSubtotal + taxAmount;
-      
+      const { items, selectedDates, customerInfo } = cartData;
+
+      // Calculate total amount from cart items
+      const totalAmount = calculateTotalFromCart(items);
+
       // Prepare booking data
       const bookingData = {
-        bookingId: `BK${Date.now()}`,
-        bookingDate: new Date().toISOString(),
-        status: 'pending_confirmation',
-        orderMode: 'booking',
-        customer,
-        eventSchedule,
-        services,
-        pricing: {
-          currency: 'NGN',
-          itemsSubtotal,
-          taxAmount,
-          taxRate: 0.075,
-          totalAmount,
-          totalItems: services.length,
-          totalServices: services.length,
-          formatted: {
-            subtotal: new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(itemsSubtotal),
-            tax: new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(taxAmount),
-            total: new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(totalAmount)
-          }
-        },
-        businessData: businessData || {
-          requiresDeposit: true,
-          depositPolicy: 'Refundable deposit varies by items selected',
-          cancellationPolicy: 'As per terms and conditions',
-          deliveryRequired: true,
-          setupRequired: true,
-          followUpRequired: true,
-          preferredContact: 'email'
-        },
-        validation: {
-          hasCustomerInfo: true,
-          hasEventSchedule: true,
-          hasPricing: true,
-          hasServices: true
-        }
+        customerName: customerInfo.name,
+        email: customerInfo.email,
+        phone: customerInfo.phone,
+        eventType: customerInfo.eventType,
+        guests: customerInfo.guests,
+        specialRequests: customerInfo.specialRequests,
+        startDate: selectedDates.startDate,
+        endDate: selectedDates.endDate,
+        startTime: selectedDates.startTime,
+        endTime: selectedDates.endTime,
+        items: items,
+        amount: totalAmount,
+        status: "pending",
+        paymentStatus: "unpaid",
+        amountPaid: 0,
+        location: customerInfo.location || "TBD",
       };
-      
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookingData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create booking');
-      }
-      
-      const data = await response.json();
-      return data;
+
+      const response = await post("/api/bookings", bookingData);
+      return response?.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
 
 // Async thunk for fetching bookings
 export const fetchBookings = createAsyncThunk(
-  'bookings/fetchBookings',
+  "bookings/fetchBookings",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/bookings');
-      if (!response.ok) {
-        throw new Error('Failed to fetch bookings');
-      }
-      const data = await response.json();
-      return data;
+      const response = await get("/api/bookings");
+      return response?.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -355,110 +243,100 @@ export const fetchBookings = createAsyncThunk(
 
 // Async thunk for updating booking status
 export const updateBookingStatus = createAsyncThunk(
-  'bookings/updateBookingStatus',
+  "bookings/updateBookingStatus",
   async ({ bookingId, status }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status }),
+      const response = await patch(`/api/bookings/${bookingId}/status`, {
+        status,
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update booking status');
-      }
-      
-      const data = await response.json();
-      return { bookingId, status: data.status };
+      return { bookingId, status: response.data.status };
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Async thunk for updating booking payment status
+export const updateBookingPayment = createAsyncThunk(
+  "bookings/updateBookingPayment",
+  async ({ bookingId, paymentStatus, amountPaid }, { rejectWithValue }) => {
+    try {
+      const response = await patch(`/api/bookings/${bookingId}/payment`, {
+        paymentStatus,
+        amountPaid,
+      });
+      return {
+        bookingId,
+        paymentStatus: response.data.paymentStatus,
+        amountPaid: response.data.amountPaid,
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
 
 // Async thunk for fetching single booking details
 export const fetchBookingDetails = createAsyncThunk(
-  'bookings/fetchBookingDetails',
+  "bookings/fetchBookingDetails",
   async (bookingId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/bookings/${bookingId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch booking details');
-      }
-      const data = await response.json();
-      return data;
+      const response = await get(`/api/bookings/${bookingId}`);
+      return response?.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
   }
 );
 
-// Async thunk for updating booking services
-export const updateBookingServices = createAsyncThunk(
-  'bookings/updateBookingServices',
-  async ({ bookingId, services }, { rejectWithValue }) => {
+// Async thunk for updating booking items
+export const updateBookingItems = createAsyncThunk(
+  "bookings/updateBookingItems",
+  async ({ bookingId, items }, { rejectWithValue }) => {
     try {
-      const itemsSubtotal = calculateTotalFromServices(services);
-      const taxAmount = itemsSubtotal * 0.075;
-      const totalAmount = itemsSubtotal + taxAmount;
-      
-      const response = await fetch(`/api/bookings/${bookingId}/services`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          services, 
-          pricing: {
-            itemsSubtotal,
-            taxAmount,
-            totalAmount,
-            totalItems: services.length,
-            totalServices: services.length
-          }
-        }),
+      const totalAmount = calculateTotalFromCart(items);
+
+      const response = await patch(`/api/bookings/${bookingId}/items`, {
+        items,
+        amount: totalAmount,
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update booking services');
-      }
-      
-      const data = await response.json();
-      return { bookingId, services: data.services, pricing: data.pricing };
+      return {
+        bookingId,
+        items: response.data.items,
+        amount: response.data.amount,
+      };
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
 
 const initialState = {
-  bookings: sampleBookings,
+  bookings: [],
   selectedBooking: null,
   loading: false,
   error: null,
-  statusFilter: 'all', // all, pending_confirmation, confirmed, cancelled
-  searchQuery: '',
+  statusFilter: "all",
+  searchQuery: "",
   pagination: {
     currentPage: 1,
     totalPages: 1,
-    totalItems: sampleBookings.length,
-    itemsPerPage: 10
+    totalItems: 0,
+    itemsPerPage: 10,
   },
   stats: {
-    thisWeek: 2,
-    thisMonth: 3,
-    totalRevenue: 188447.5
+    thisWeek: 3,
+    thisMonth: 5,
+    totalRevenue: 8200000,
   },
   // Cart integration states
   creatingBooking: false,
   bookingCreated: false,
-  lastCreatedBookingId: null
+  lastCreatedBookingId: null,
 };
 
 const bookingsSlice = createSlice({
-  name: 'bookings',
+  name: "bookings",
   initialState,
   reducers: {
     setStatusFilter: (state, action) => {
@@ -481,24 +359,26 @@ const bookingsSlice = createSlice({
     // Optimistic update for status changes
     updateBookingStatusOptimistic: (state, action) => {
       const { bookingId, status } = action.payload;
-      const booking = state.bookings.find(b => b.bookingId === bookingId);
+      const booking = state.bookings.find((b) => b.id === bookingId);
       if (booking) {
         booking.status = status;
       }
     },
-    // Action to load sample data
-    loadSampleData: (state) => {
-      state.bookings = sampleBookings;
-      state.pagination.totalItems = sampleBookings.length;
-    },
-    // Action to add new booking
+    // Action to add new booking with automatic day type calculation
     addBooking: (state, action) => {
       const booking = action.payload;
+      const dayType = calculateDayType(
+        booking.startDate,
+        booking.endDate,
+        booking.startTime,
+        booking.endTime
+      );
       const newBooking = {
         ...booking,
-        bookingId: booking.bookingId || `BK${Date.now()}`,
-        bookingDate: booking.bookingDate || new Date().toISOString(),
-        services: booking.services || []
+        id: Date.now(), // Simple ID generation for demo
+        ...dayType,
+        createdAt: new Date().toISOString(),
+        items: booking.items || [],
       };
       state.bookings.unshift(newBooking);
       state.pagination.totalItems = state.bookings.length;
@@ -506,26 +386,32 @@ const bookingsSlice = createSlice({
     // Action to update booking
     updateBooking: (state, action) => {
       const { bookingId, updates } = action.payload;
-      const bookingIndex = state.bookings.findIndex(b => b.bookingId === bookingId);
+      const bookingIndex = state.bookings.findIndex((b) => b.id === bookingId);
       if (bookingIndex !== -1) {
         const updatedBooking = { ...state.bookings[bookingIndex], ...updates };
-        
-        // Recalculate pricing if services are updated
-        if (updates.services) {
-          const itemsSubtotal = calculateTotalFromServices(updates.services);
-          const taxAmount = itemsSubtotal * 0.075;
-          const totalAmount = itemsSubtotal + taxAmount;
-          
-          updatedBooking.pricing = {
-            ...updatedBooking.pricing,
-            itemsSubtotal,
-            taxAmount,
-            totalAmount,
-            totalItems: updates.services.length,
-            totalServices: updates.services.length
-          };
+
+        // Recalculate day type if date/time fields are updated
+        if (
+          updates.startDate ||
+          updates.endDate ||
+          updates.startTime ||
+          updates.endTime
+        ) {
+          const dayType = calculateDayType(
+            updatedBooking.startDate,
+            updatedBooking.endDate,
+            updatedBooking.startTime,
+            updatedBooking.endTime
+          );
+          updatedBooking.singleDay = dayType.singleDay;
+          updatedBooking.multiDay = dayType.multiDay;
         }
-        
+
+        // Recalculate total amount if items are updated
+        if (updates.items) {
+          updatedBooking.amount = calculateTotalFromCart(updates.items);
+        }
+
         state.bookings[bookingIndex] = updatedBooking;
       }
     },
@@ -534,15 +420,14 @@ const bookingsSlice = createSlice({
       state.bookingCreated = false;
       state.lastCreatedBookingId = null;
     },
-    // Add service to existing booking
-    addServiceToBooking: (state, action) => {
-      const { bookingId, service } = action.payload;
-      const booking = state.bookings.find(b => b.bookingId === bookingId);
+    // Add item to existing booking
+    addItemToBooking: (state, action) => {
+      const { bookingId, item } = action.payload;
+      const booking = state.bookings.find((b) => b.id === bookingId);
       if (booking) {
-        const existingService = booking.services?.find(s => s.serviceId === service.serviceId);
-        if (existingService) {
-          existingService.quantity += 1;
-          existingService.subtotal = existingService.unitPrice * existingService.quantity;
+        const existingItem = booking.items?.find((i) => i.id === item.id);
+        if (existingItem) {
+          existingItem.quantity += 1;
         } else {
           booking.services = booking.services || [];
           booking.services.push({ ...service, quantity: 1, subtotal: service.unitPrice });
@@ -563,54 +448,27 @@ const bookingsSlice = createSlice({
         };
       }
     },
-    // Remove service from booking
-    removeServiceFromBooking: (state, action) => {
-      const { bookingId, serviceId } = action.payload;
-      const booking = state.bookings.find(b => b.bookingId === bookingId);
-      if (booking && booking.services) {
-        booking.services = booking.services.filter(service => service.serviceId !== serviceId);
-        
-        // Recalculate pricing
-        const itemsSubtotal = calculateTotalFromServices(booking.services);
-        const taxAmount = itemsSubtotal * 0.075;
-        const totalAmount = itemsSubtotal + taxAmount;
-        
-        booking.pricing = {
-          ...booking.pricing,
-          itemsSubtotal,
-          taxAmount,
-          totalAmount,
-          totalItems: booking.services.length,
-          totalServices: booking.services.length
-        };
+    // Remove item from booking
+    removeItemFromBooking: (state, action) => {
+      const { bookingId, itemId } = action.payload;
+      const booking = state.bookings.find((b) => b.id === bookingId);
+      if (booking && booking.items) {
+        booking.items = booking.items.filter((item) => item.id !== itemId);
+        booking.amount = calculateTotalFromCart(booking.items);
       }
     },
-    // Update service quantity in booking
-    updateBookingServiceQuantity: (state, action) => {
-      const { bookingId, serviceId, quantity } = action.payload;
-      const booking = state.bookings.find(b => b.bookingId === bookingId);
-      if (booking && booking.services) {
-        const service = booking.services.find(s => s.serviceId === serviceId);
-        if (service && quantity > 0) {
-          service.quantity = quantity;
-          service.subtotal = service.unitPrice * quantity;
-          
-          // Recalculate pricing
-          const itemsSubtotal = calculateTotalFromServices(booking.services);
-          const taxAmount = itemsSubtotal * 0.075;
-          const totalAmount = itemsSubtotal + taxAmount;
-          
-          booking.pricing = {
-            ...booking.pricing,
-            itemsSubtotal,
-            taxAmount,
-            totalAmount,
-            totalItems: booking.services.length,
-            totalServices: booking.services.length
-          };
+    // Update item quantity in booking
+    updateBookingItemQuantity: (state, action) => {
+      const { bookingId, itemId, quantity } = action.payload;
+      const booking = state.bookings.find((b) => b.id === bookingId);
+      if (booking && booking.items) {
+        const item = booking.items.find((i) => i.id === itemId);
+        if (item && quantity > 0) {
+          item.quantity = quantity;
+          booking.amount = calculateTotalFromCart(booking.items);
         }
       }
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -622,18 +480,29 @@ const bookingsSlice = createSlice({
       .addCase(createBookingFromCart.fulfilled, (state, action) => {
         state.creatingBooking = false;
         state.bookingCreated = true;
-        state.lastCreatedBookingId = action.payload.bookingId;
-        
+        state.lastCreatedBookingId = action.payload.id;
+
         // Add the new booking to the list
         const booking = action.payload;
-        state.bookings.unshift(booking);
+        const dayType = calculateDayType(
+          booking.startDate,
+          booking.endDate,
+          booking.startTime,
+          booking.endTime
+        );
+        const newBooking = {
+          ...booking,
+          ...dayType,
+          items: booking.items || [],
+        };
+        state.bookings.unshift(newBooking);
         state.pagination.totalItems = state.bookings.length;
       })
       .addCase(createBookingFromCart.rejected, (state, action) => {
         state.creatingBooking = false;
         state.error = action.payload;
       })
-      
+
       // Fetch bookings
       .addCase(fetchBookings.pending, (state) => {
         state.loading = true;
@@ -648,16 +517,16 @@ const bookingsSlice = createSlice({
       .addCase(fetchBookings.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        state.bookings = sampleBookings;
+        state.bookings = [];
       })
-      
+
       // Update booking status
       .addCase(updateBookingStatus.pending, (state) => {
         state.error = null;
       })
       .addCase(updateBookingStatus.fulfilled, (state, action) => {
         const { bookingId, status } = action.payload;
-        const booking = state.bookings.find(b => b.bookingId === bookingId);
+        const booking = state.bookings.find((b) => b.id === bookingId);
         if (booking) {
           booking.status = status;
         }
@@ -665,7 +534,23 @@ const bookingsSlice = createSlice({
       .addCase(updateBookingStatus.rejected, (state, action) => {
         state.error = action.payload;
       })
-      
+
+      // Update booking payment
+      .addCase(updateBookingPayment.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(updateBookingPayment.fulfilled, (state, action) => {
+        const { bookingId, paymentStatus, amountPaid } = action.payload;
+        const booking = state.bookings.find((b) => b.id === bookingId);
+        if (booking) {
+          booking.paymentStatus = paymentStatus;
+          booking.amountPaid = amountPaid;
+        }
+      })
+      .addCase(updateBookingPayment.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+
       // Fetch booking details
       .addCase(fetchBookingDetails.pending, (state) => {
         state.loading = true;
@@ -679,14 +564,14 @@ const bookingsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
-      // Update booking services
-      .addCase(updateBookingServices.pending, (state) => {
+
+      // Update booking items
+      .addCase(updateBookingItems.pending, (state) => {
         state.error = null;
       })
-      .addCase(updateBookingServices.fulfilled, (state, action) => {
-        const { bookingId, services, pricing } = action.payload;
-        const booking = state.bookings.find(b => b.bookingId === bookingId);
+      .addCase(updateBookingItems.fulfilled, (state, action) => {
+        const { bookingId, items, amount } = action.payload;
+        const booking = state.bookings.find((b) => b.id === bookingId);
         if (booking) {
           booking.services = services;
           booking.pricing = { ...booking.pricing, ...pricing };
@@ -699,7 +584,7 @@ const bookingsSlice = createSlice({
       .addCase(updateBookingServices.rejected, (state, action) => {
         state.error = action.payload;
       });
-  }
+  },
 });
 
 export const {
@@ -709,38 +594,45 @@ export const {
   clearSelectedBooking,
   clearError,
   updateBookingStatusOptimistic,
-  loadSampleData,
   addBooking,
   updateBooking,
   resetBookingCreation,
-  addServiceToBooking,
-  removeServiceFromBooking,
-  updateBookingServiceQuantity
+  addItemToBooking,
+  removeItemFromBooking,
+  updateBookingItemQuantity,
 } = bookingsSlice.actions;
 
 // Basic selectors with safe defaults
 export const selectBookings = (state) => state.bookings?.bookings || [];
-export const selectSelectedBooking = (state) => state.bookings?.selectedBooking || null;
-export const selectBookingsLoading = (state) => state.bookings?.loading || false;
+export const selectSelectedBooking = (state) =>
+  state.bookings?.selectedBooking || null;
+export const selectBookingsLoading = (state) =>
+  state.bookings?.loading || false;
 export const selectBookingsError = (state) => state.bookings?.error || null;
-export const selectStatusFilter = (state) => state.bookings?.statusFilter || 'all';
-export const selectSearchQuery = (state) => state.bookings?.searchQuery || '';
-export const selectPagination = (state) => state.bookings?.pagination || {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10
-};
-export const selectBookingsStats = (state) => state.bookings?.stats || {
-  thisWeek: 0,
-  thisMonth: 0,
-  totalRevenue: 0
-};
+export const selectStatusFilter = (state) =>
+  state.bookings?.statusFilter || "all";
+export const selectSearchQuery = (state) => state.bookings?.searchQuery || "";
+export const selectPagination = (state) =>
+  state.bookings?.pagination || {
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+  };
+export const selectBookingsStats = (state) =>
+  state.bookings?.stats || {
+    thisWeek: 0,
+    thisMonth: 0,
+    totalRevenue: 0,
+  };
 
 // Cart integration selectors
-export const selectCreatingBooking = (state) => state.bookings?.creatingBooking || false;
-export const selectBookingCreated = (state) => state.bookings?.bookingCreated || false;
-export const selectLastCreatedBookingId = (state) => state.bookings?.lastCreatedBookingId || null;
+export const selectCreatingBooking = (state) =>
+  state.bookings?.creatingBooking || false;
+export const selectBookingCreated = (state) =>
+  state.bookings?.bookingCreated || false;
+export const selectLastCreatedBookingId = (state) =>
+  state.bookings?.lastCreatedBookingId || null;
 
 // Memoized filtered bookings selector to prevent unnecessary rerenders
 export const selectFilteredBookings = createSelector(
@@ -749,15 +641,18 @@ export const selectFilteredBookings = createSelector(
     if (!Array.isArray(bookings)) {
       return [];
     }
-    
-    return bookings.filter(booking => {
-      const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-      const matchesSearch = !searchQuery || 
-        booking.customer?.personalInfo?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.customer?.eventDetails?.eventType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.customer?.eventDetails?.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.bookingId?.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
+    return bookings.filter((booking) => {
+      const matchesStatus =
+        statusFilter === "all" || booking.status === statusFilter;
+      const matchesSearch =
+        !searchQuery ||
+        booking.customerName
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        booking.eventType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.location?.toLowerCase().includes(searchQuery.toLowerCase());
+
       return matchesStatus && matchesSearch;
     });
   }
@@ -768,19 +663,25 @@ export const selectBookingStats = createSelector(
   [selectFilteredBookings],
   (filteredBookings) => {
     const total = filteredBookings.length;
-    const pendingConfirmation = filteredBookings.filter(b => b.status === 'pending_confirmation').length;
-    const confirmed = filteredBookings.filter(b => b.status === 'confirmed').length;
-    const cancelled = filteredBookings.filter(b => b.status === 'cancelled').length;
-    const singleDay = filteredBookings.filter(b => !b.eventSchedule?.isMultiDay).length;
-    const multiDay = filteredBookings.filter(b => b.eventSchedule?.isMultiDay).length;
-    
+    const pending = filteredBookings.filter(
+      (b) => b.status === "pending"
+    ).length;
+    const confirmed = filteredBookings.filter(
+      (b) => b.status === "confirmed"
+    ).length;
+    const cancelled = filteredBookings.filter(
+      (b) => b.status === "cancelled"
+    ).length;
+    const singleDay = filteredBookings.filter((b) => b.singleDay).length;
+    const multiDay = filteredBookings.filter((b) => b.multiDay).length;
+
     return {
       total,
       pendingConfirmation,
       confirmed,
       cancelled,
       singleDay,
-      multiDay
+      multiDay,
     };
   }
 );
@@ -791,15 +692,50 @@ export const selectBookingServices = createSelector(
   (booking) => booking?.services || []
 );
 
-// Utility function to format currency
-export const formatCurrency = (amount, currency = 'NGN') => {
-  if (typeof amount === 'string' && amount.includes('₦')) {
+// Utility function to format time for display
+export const formatTime = (time24) => {
+  if (!time24) return "";
+  const [hours, minutes] = time24.split(":");
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutes} ${ampm}`;
+};
+
+// Utility function to calculate event duration
+export const calculateEventDuration = (
+  startDate,
+  endDate,
+  startTime,
+  endTime
+) => {
+  const start = new Date(`${startDate}T${startTime}`);
+  const end = new Date(`${endDate}T${endTime}`);
+
+  const diffMs = end - start;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (diffHours >= 24) {
+    const days = Math.floor(diffHours / 24);
+    const remainingHours = diffHours % 24;
+    return `${days} day${
+      days > 1 ? "s" : ""
+    } ${remainingHours}h ${diffMinutes}m`;
+  }
+
+  return `${diffHours}h ${diffMinutes}m`;
+};
+
+// Utility function to format price
+export const formatPrice = (amount) => {
+  if (typeof amount === "string") {
     return amount;
   }
-  return new Intl.NumberFormat('en-NG', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 2
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 2,
   }).format(amount);
 };
 

@@ -25,7 +25,6 @@ import {
   ChevronUp
 } from 'lucide-react';
 import {
-  fetchBookings,
   updateBookingStatus,
   fetchBookingDetails,
   setStatusFilter,
@@ -33,7 +32,7 @@ import {
   setCurrentPage,
   clearSelectedBooking,
   clearError,
-  loadSampleData,
+  fetchBookings,
   selectFilteredBookings,
   selectBookingsLoading,
   selectBookingsError,
@@ -68,11 +67,7 @@ const Bookings = () => {
   const [sendingInvoice, setSendingInvoice] = useState(false);
 
   useEffect(() => {
-    // Load sample data on component mount
-    dispatch(loadSampleData());
-    
-    // Alternatively, you can fetch from API:
-    // dispatch(fetchBookings());
+    dispatch(fetchBookings());
   }, [dispatch]);
 
   // Clear error when component unmounts
@@ -704,6 +699,7 @@ const Bookings = () => {
           ) : (
             <div className="divide-y divide-gray-200">
               {paginatedBookings.map((booking) => {
+<<<<<<< HEAD
                 const statusInfo = getStatusInfo(booking.status);
                 const isProcessing = processingBookingId === booking.bookingId;
                 const isExpanded = expandedBookings.has(booking.bookingId);
@@ -724,6 +720,22 @@ const Bookings = () => {
                               <span className="hidden sm:inline">{statusInfo.label}</span>
                               <span className="sm:hidden">{statusInfo.label.split(' ')[0]}</span>
                             </div>
+=======
+                const statusStyles = getStatusStyles(booking.status);
+                const isProcessing = processingBookingId === booking._id;
+                
+                return (
+                  <div key={booking._id} className="p-6 hover:bg-gray-50 transition-colors">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                      {/* Booking Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <User size={20} className="text-gray-500" />
+                          <h3 className="font-semibold text-lg text-gray-900">{booking.customerName}</h3>
+                          <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${statusStyles.bg} ${statusStyles.text}`}>
+                            <div className={`w-2 h-2 rounded-full ${statusStyles.dot}`}></div>
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+>>>>>>> feebfe3662f39be60da2537a28d6df8c521b6a06
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{booking.customer?.eventDetails?.eventType}</p>
                           <p className="text-xs text-gray-500">ID: {booking.bookingId}</p>
@@ -851,6 +863,7 @@ const Bookings = () => {
                             )}
                           </div>
                           
+<<<<<<< HEAD
                           <div className="text-gray-600 mb-4">{booking.customer?.eventDetails?.eventType}</div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -930,6 +943,29 @@ const Bookings = () => {
                               </>
                             )}
                           </div>
+=======
+                          {booking.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(booking._id)}
+                                disabled={isProcessing}
+                                className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
+                              >
+                                <Check size={16} />
+                                {isProcessing ? 'Processing...' : 'Approve'}
+                              </button>
+                              
+                              <button
+                                onClick={() => handleReject(booking._id)}
+                                disabled={isProcessing}
+                                className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
+                              >
+                                <X size={16} />
+                                Reject
+                              </button>
+                            </>
+                          )}
+>>>>>>> feebfe3662f39be60da2537a28d6df8c521b6a06
                         </div>
                       </div>
                     </div>

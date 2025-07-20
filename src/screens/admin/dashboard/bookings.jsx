@@ -24,6 +24,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import ibloomlogo from '../../../assets/ibloomcut.png'
 import {
   updateBookingStatus,
   fetchBookingDetails,
@@ -42,9 +43,19 @@ import {
   selectSelectedBooking,
   selectBookingStats,
   updateBookingStatusOptimistic,
-  formatCurrency,
   getStatusInfo
 } from '../../../store/slices/booking-slice';
+import { formatCurrency } from '../../../utils/formatcurrency';
+
+// Helper function to get status styles (simplified - using getStatusInfo from slice)
+const getStatusStyles = (status) => {
+  const statusInfo = getStatusInfo(status);
+  return {
+    bg: statusInfo.bgClass,
+    text: statusInfo.textClass,
+    dot: statusInfo.dotClass
+  };
+};
 
 const Bookings = () => {
   const dispatch = useDispatch();
@@ -97,6 +108,7 @@ const Bookings = () => {
   };
 
   const formatDateTimeRange = (eventSchedule) => {
+    if (!eventSchedule) return 'N/A';
     const startDate = formatDate(eventSchedule.startDate);
     const endDate = formatDate(eventSchedule.endDate);
     const startTime = formatTime(eventSchedule.startTime);
@@ -127,8 +139,9 @@ const Bookings = () => {
 
   const handleGenerateInvoice = (booking) => {
     // Initialize invoice data with booking information
+    const bookingKey = booking.bookingId || booking._id || 'unknown';
     const invoice = {
-      invoiceNumber: `INV-${booking.bookingId}`,
+      invoiceNumber: `INV-${bookingKey}`,
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
       
@@ -569,6 +582,7 @@ const Bookings = () => {
     });
   };
 
+  // Fixed status update function - using correct booking ID
   const handleStatusUpdate = async (bookingId, newStatus) => {
     setProcessingBookingId(bookingId);
     try {
@@ -576,7 +590,7 @@ const Bookings = () => {
       dispatch(updateBookingStatusOptimistic({ bookingId, status: newStatus }));
       
       // Update the currently viewing booking if it's the same one
-      if (currentViewingBooking && currentViewingBooking.bookingId === bookingId) {
+      if (currentViewingBooking && (currentViewingBooking.bookingId === bookingId || currentViewingBooking._id === bookingId)) {
         setCurrentViewingBooking(prev => ({ ...prev, status: newStatus }));
       }
       
@@ -671,7 +685,7 @@ const Bookings = () => {
                 <div className="text-gray-600 text-xs sm:text-sm">Total</div>
               </div>
               <div>
-                <div className="font-bold text-lg sm:text-xl text-orange-600">{bookingStats.pendingConfirmation}</div>
+                <div className="font-bold text-lg sm:text-xl text-orange-600">{bookingStats.pending}</div>
                 <div className="text-gray-600 text-xs sm:text-sm">Pending</div>
               </div>
               <div>
@@ -698,126 +712,135 @@ const Bookings = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {paginatedBookings.map((booking) => {
+              {paginatedBookings.map((booking, index) => {
                 const statusStyles = getStatusStyles(booking.status);
+                const statusInfo = getStatusInfo(booking.status);
+                const bookingKey = booking._id || booking.bookingId || `booking-${index}`;
                 const isProcessing = processingBookingId === booking._id;
+                const isExpanded = expandedBookings.has(bookingKey);
                 
                 return (
-                  <div key={booking._id} className="p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                      {/* Booking Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <User size={20} className="text-gray-500" />
-                          <h3 className="font-semibold text-lg text-gray-900">{booking.customerName}</h3>
-                          <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${statusStyles.bg} ${statusStyles.text}`}>
-                            <div className={`w-2 h-2 rounded-full ${statusStyles.dot}`}></div>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">{booking.customer?.eventDetails?.eventType}</p>
-                          <p className="text-xs text-gray-500">ID: {booking.bookingId}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="text-right">
-                            <div className="font-bold text-lg text-gray-900">{booking.pricing?.formatted?.total}</div>
-                            <div className="text-xs text-gray-500">{booking.pricing?.totalServices} services</div>
-                          </div>
-                          <button
-                            onClick={() => toggleBookingExpansion(booking.bookingId)}
-                            className="p-1 rounded-lg hover:bg-gray-100"
-                          >
-                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Basic Info */}
-                      <div className="grid grid-cols-1 gap-2 text-sm mb-3">
-                        <div className="flex items-center gap-2">
-                          <Calendar size={14} className="text-gray-400 flex-shrink-0" />
-                          <span className="truncate">{formatDateTimeRange(booking.eventSchedule)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                          <span className="truncate">{booking.customer?.eventDetails?.location}</span>
-                        </div>
-                      </div>
-
-                      {/* Expanded Details */}
-                      {isExpanded && (
-                        <div className="border-t pt-3 mt-3 space-y-3">
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Users size={14} className="text-gray-400" />
-                              <span>{booking.customer?.eventDetails?.numberOfGuests} guests</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Phone size={14} className="text-gray-400" />
-                              <span className="truncate">{booking.customer?.personalInfo?.phone}</span>
+                  <div key={bookingKey} className="p-6 hover:bg-gray-50 transition-colors">
+                    {/* Mobile Layout */}
+                    <div className="block lg:hidden">
+                      <div className="flex flex-col gap-4">
+                        {/* Booking Info */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <User size={20} className="text-gray-500" />
+                            <h3 className="font-semibold text-lg text-gray-900">{booking.customer?.personalInfo?.name || 'N/A'}</h3>
+                            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${statusStyles.bg} ${statusStyles.text}`}>
+                              <div className={`w-2 h-2 rounded-full ${statusStyles.dot}`}></div>
+                              {statusInfo.label}
                             </div>
                           </div>
-
-                          {booking.eventSchedule?.isMultiDay && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Clock size={14} className="text-gray-400" />
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
-                                {booking.eventSchedule.durationInDays} Day Event
-                              </span>
-                            </div>
-                          )}
-
-                          {booking.customer?.eventDetails?.specialRequests && (
-                            <div className="text-sm">
-                              <div className="flex items-start gap-2">
-                                <FileText size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                                <span className="text-gray-600">{booking.customer.eventDetails.specialRequests}</span>
+                          
+                          <p className="text-sm text-gray-600 mb-2">{booking.customer?.eventDetails?.eventType || 'N/A'}</p>
+                          <p className="text-xs text-gray-500">ID: {bookingKey}</p>
+                          
+                          <div className="flex justify-between items-end gap-2 mt-3">
+                            <div className="grid grid-cols-1 gap-2 text-sm flex-1">
+                              <div className="flex items-center gap-2">
+                                <Calendar size={14} className="text-gray-400 flex-shrink-0" />
+                                <span className="truncate">{formatDateTimeRange(booking.eventSchedule)}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                                <span className="truncate">{booking.customer?.eventDetails?.location || 'N/A'}</span>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      )}
+                            
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="text-right">
+                                <div className="font-bold text-lg text-gray-900">{booking.pricing?.formatted?.total || 'N/A'}</div>
+                                <div className="text-xs text-gray-500">{booking.pricing?.totalServices || 0} services</div>
+                              </div>
+                              <button
+                                onClick={() => toggleBookingExpansion(bookingKey)}
+                                className="p-1 rounded-lg hover:bg-gray-100"
+                              >
+                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              </button>
+                            </div>
+                          </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() => handleViewBooking(booking)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                        >
-                          <Eye size={16} />
-                          <span className="hidden sm:inline">View</span>
-                        </button>
-                        
-                        <button
-                          onClick={() => handleGenerateInvoice(booking)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
-                        >
-                          <FileText size={16} />
-                          <span className="hidden sm:inline">Invoice</span>
-                        </button>
-                        
-                        {booking.status === 'pending_confirmation' && (
-                          <>
+                          {/* Expanded Details */}
+                          {isExpanded && (
+                            <div className="border-t pt-3 mt-3 space-y-3">
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <Users size={14} className="text-gray-400" />
+                                  <span>{booking.customer?.eventDetails?.numberOfGuests || 0} guests</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Phone size={14} className="text-gray-400" />
+                                  <span className="truncate">{booking.customer?.personalInfo?.phone || 'N/A'}</span>
+                                </div>
+                              </div>
+
+                              {booking.eventSchedule?.isMultiDay && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Clock size={14} className="text-gray-400" />
+                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                                    {booking.eventSchedule.durationInDays || 'Multi'} Day Event
+                                  </span>
+                                </div>
+                              )}
+
+                              {booking.customer?.eventDetails?.specialRequests && (
+                                <div className="text-sm">
+                                  <div className="flex items-start gap-2">
+                                    <FileText size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                                    <span className="text-gray-600">{booking.customer.eventDetails.specialRequests}</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 mt-4">
                             <button
-                              onClick={() => handleApprove(booking.bookingId)}
-                              disabled={isProcessing}
-                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
+                              onClick={() => handleViewBooking(booking)}
+                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                             >
-                              <Check size={16} />
-                              <span className="hidden sm:inline">{isProcessing ? 'Processing...' : 'Approve'}</span>
-                              <span className="sm:hidden">✓</span>
+                              <Eye size={16} />
+                              <span className="hidden sm:inline">View</span>
                             </button>
                             
                             <button
-                              onClick={() => handleReject(booking.bookingId)}
-                              disabled={isProcessing}
-                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
+                              onClick={() => handleGenerateInvoice(booking)}
+                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
                             >
-                              <X size={16} />
-                              <span className="hidden sm:inline">Reject</span>
-                              <span className="sm:hidden">✗</span>
+                              <FileText size={16} />
+                              <span className="hidden sm:inline">Invoice</span>
                             </button>
-                          </>
-                        )}
+                            
+                            {(booking.status === 'pending_confirmation' || booking.status === 'pending') && (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(booking._id)}
+                                  disabled={isProcessing}
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
+                                >
+                                  <Check size={16} />
+                                  <span className="hidden sm:inline">{isProcessing ? 'Processing...' : 'Approve'}</span>
+                                  <span className="sm:hidden">✓</span>
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleReject(booking._id)}
+                                  disabled={isProcessing}
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
+                                >
+                                  <X size={16} />
+                                  <span className="hidden sm:inline">Reject</span>
+                                  <span className="sm:hidden">✗</span>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -828,7 +851,7 @@ const Bookings = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-3">
                             <User size={20} className="text-gray-500" />
-                            <h3 className="font-semibold text-lg text-gray-900">{booking.customer?.personalInfo?.name}</h3>
+                            <h3 className="font-semibold text-lg text-gray-900">{booking.customer?.personalInfo?.name || 'N/A'}</h3>
                             <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${statusInfo.bgClass} ${statusInfo.textClass}`}>
                               <div className={`w-2 h-2 rounded-full ${statusInfo.dotClass}`}></div>
                               {statusInfo.label}
@@ -840,7 +863,7 @@ const Bookings = () => {
                             )}
                           </div>
                           
-                          <div className="text-gray-600 mb-4">{booking.customer?.eventDetails?.eventType}</div>
+                          <div className="text-gray-600 mb-4">{booking.customer?.eventDetails?.eventType || 'N/A'}</div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div className="flex items-center gap-2">
@@ -849,18 +872,18 @@ const Bookings = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               <MapPin size={16} className="text-gray-400" />
-                              <span>{booking.customer?.eventDetails?.location}</span>
+                              <span>{booking.customer?.eventDetails?.location || 'N/A'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Users size={16} className="text-gray-400" />
-                              <span>{booking.customer?.eventDetails?.numberOfGuests} guests</span>
+                              <span>{booking.customer?.eventDetails?.numberOfGuests || 0} guests</span>
                             </div>
                           </div>
                           
                           <div className="mt-2 text-sm text-gray-500">
-                            <span>ID: {booking.bookingId}</span>
+                            <span>ID: {bookingKey}</span>
                             <span className="mx-2">•</span>
-                            <span>{booking.pricing?.totalServices} services</span>
+                            <span>{booking.pricing?.totalServices || 0} services</span>
                             {booking.businessData?.requiresDeposit && (
                               <>
                                 <span className="mx-2">•</span>
@@ -873,10 +896,10 @@ const Bookings = () => {
                         {/* Amount and Actions */}
                         <div className="flex items-center gap-6">
                           <div className="text-right">
-                            <div className="font-bold text-xl text-gray-900">{booking.pricing?.formatted?.total}</div>
+                            <div className="font-bold text-xl text-gray-900">{booking.pricing?.formatted?.total || 'N/A'}</div>
                             <div className="text-sm text-gray-500">Total Amount</div>
                             <div className="text-xs text-gray-400">
-                              Subtotal: {booking.pricing?.formatted?.subtotal} + Tax: {booking.pricing?.formatted?.tax}
+                              Subtotal: {booking.pricing?.formatted?.subtotal || 'N/A'} + Tax: {booking.pricing?.formatted?.tax || 'N/A'}
                             </div>
                           </div>
                           
@@ -897,10 +920,10 @@ const Bookings = () => {
                               Invoice
                             </button>
                             
-                            {booking.status === 'pending_confirmation' && (
+                            {(booking.status === 'pending_confirmation' || booking.status === 'pending') && (
                               <>
                                 <button
-                                  onClick={() => handleApprove(booking.bookingId)}
+                                  onClick={() => handleApprove(booking._id)}
                                   disabled={isProcessing}
                                   className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
                                 >
@@ -909,7 +932,7 @@ const Bookings = () => {
                                 </button>
                                 
                                 <button
-                                  onClick={() => handleReject(booking.bookingId)}
+                                  onClick={() => handleReject(booking._id)}
                                   disabled={isProcessing}
                                   className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
                                 >
@@ -919,27 +942,6 @@ const Bookings = () => {
                               </>
                             )}
                           </div>
-                          {booking.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(booking._id)}
-                                disabled={isProcessing}
-                                className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
-                              >
-                                <Check size={16} />
-                                {isProcessing ? 'Processing...' : 'Approve'}
-                              </button>
-                              
-                              <button
-                                onClick={() => handleReject(booking._id)}
-                                disabled={isProcessing}
-                                className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
-                              >
-                                <X size={16} />
-                                Reject
-                              </button>
-                            </>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -1015,7 +1017,7 @@ const Bookings = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Booking Details</h2>
-                  <p className="text-sm text-gray-500 mt-1">ID: {currentViewingBooking.bookingId}</p>
+                  <p className="text-sm text-gray-500 mt-1">ID: {currentViewingBooking.bookingId || currentViewingBooking._id}</p>
                 </div>
                 <button
                   onClick={() => setShowViewModal(false)}
@@ -1179,7 +1181,7 @@ const Bookings = () => {
                       <span>{currentViewingBooking.pricing?.formatted?.subtotal}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Tax ({(currentViewingBooking.pricing?.taxRate * 100)}%):</span>
+                      <span>Tax 7.5%:</span>
                       <span>{currentViewingBooking.pricing?.formatted?.tax}</span>
                     </div>
                     <div className="border-t pt-2 flex justify-between font-semibold">
@@ -1228,16 +1230,16 @@ const Bookings = () => {
                 {currentViewingBooking.status === 'pending_confirmation' && (
                   <>
                     <button
-                      onClick={() => handleApprove(currentViewingBooking.bookingId)}
-                      disabled={processingBookingId === currentViewingBooking.bookingId}
+                      onClick={() => handleApprove(currentViewingBooking._id)}
+                      disabled={processingBookingId === currentViewingBooking._id}
                       className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
                     >
                       <Check size={18} />
-                      {processingBookingId === currentViewingBooking.bookingId ? 'Processing...' : 'Approve Booking'}
+                      {processingBookingId === currentViewingBooking._id ? 'Processing...' : 'Approve Booking'}
                     </button>
                     <button
-                      onClick={() => handleReject(currentViewingBooking.bookingId)}
-                      disabled={processingBookingId === currentViewingBooking.bookingId}
+                      onClick={() => handleReject(currentViewingBooking._id)}
+                      disabled={processingBookingId === currentViewingBooking._id}
                       className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
                     >
                       <X size={18} />
@@ -1248,8 +1250,8 @@ const Bookings = () => {
                 
                 {currentViewingBooking.status === 'confirmed' && (
                   <button
-                    onClick={() => handleReject(currentViewingBooking.bookingId)}
-                    disabled={processingBookingId === currentViewingBooking.bookingId}
+                    onClick={() => handleReject(currentViewingBooking._id)}
+                    disabled={processingBookingId === currentViewingBooking._id}
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
                   >
                     <X size={18} />
@@ -1259,8 +1261,8 @@ const Bookings = () => {
                 
                 {currentViewingBooking.status === 'cancelled' && (
                   <button
-                    onClick={() => handleApprove(currentViewingBooking.bookingId)}
-                    disabled={processingBookingId === currentViewingBooking.bookingId}
+                    onClick={() => handleApprove(currentViewingBooking._id)}
+                    disabled={processingBookingId === currentViewingBooking._id}
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
                   >
                     <Check size={18} />
@@ -1357,8 +1359,8 @@ const Bookings = () => {
                   
                   {/* Company Logo/Info */}
                   <div className="text-right">
-                    <div className="w-24 h-24 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                      <Building size={32} className="text-gray-400" />
+                    <div className="w-24 h-24 bg-gray-200 rounded-lg mb-4 flex items-center justify-center m-2">
+                      <img src={ibloomlogo} alt="" />
                     </div>
                   </div>
                 </div>

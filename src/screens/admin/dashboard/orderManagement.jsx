@@ -30,7 +30,8 @@ import {
   selectOrderFilters,
   selectOrderPagination
 } from '../../../store/slices/order-slice';
-import { formatCurrency } from '../../../utils/formatCurrency.js';
+import { formatCurrency } from '../../../utils/formatcurrency';
+
 
 const OrdersManagement = () => {
   const dispatch = useDispatch();

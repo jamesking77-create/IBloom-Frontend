@@ -10,8 +10,8 @@ import {
   selectBookingsLoading,
   selectBookingsStats,
   getStatusInfo,
-  formatCurrency
 } from '../store/slices/booking-slice';
+import { formatCurrency } from '../utils/formatcurrency';
 
 const BookingsList = () => {
   const dispatch = useDispatch();

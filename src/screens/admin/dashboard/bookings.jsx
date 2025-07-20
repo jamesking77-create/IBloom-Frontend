@@ -46,6 +46,7 @@ import {
   getStatusInfo
 } from '../../../store/slices/booking-slice';
 import { formatCurrency } from '../../../utils/formatCcy';
+import { notifySuccess } from '../../../utils/toastify';
 
 
 // Helper function to get status styles (simplified - using getStatusInfo from slice)
@@ -496,7 +497,7 @@ const Bookings = () => {
       // 2. Send email with PDF attachment
       // 3. Save invoice record to database
       
-      alert(`Invoice ${invoiceData.invoiceNumber} sent successfully to ${invoiceData.customer.email}`);
+      notifySuccess(`Invoice ${invoiceData.invoiceNumber} sent successfully to ${invoiceData.customer.email}`);
       setShowInvoiceModal(false);
     } catch (error) {
       console.error('Failed to send invoice:', error);

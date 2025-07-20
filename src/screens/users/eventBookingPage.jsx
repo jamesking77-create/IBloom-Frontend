@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  ArrowLeft, Calendar, User, Eye, Check, ShoppingCart, Sparkles, Menu, X
+  ArrowLeft, Calendar, User, Eye, Check, ShoppingCart, Sparkles, Menu, X , Mail, MessageCircle, Heart
 } from 'lucide-react';
 
 import {

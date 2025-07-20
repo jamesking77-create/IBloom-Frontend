@@ -38,7 +38,13 @@ import {
   forceResetCart,
   resetSubmissionStatus,
 } from "../../store/slices/cart-slice";
-import BookingSuccessPopup from "../../UI/bookingSuccessPopup";
+import {
+  createBookingFromCart,
+  selectCreatingBooking,
+  selectBookingCreated,
+  selectLastCreatedBookingId,
+  resetBookingCreation,
+} from "../../store/slices/booking-slice";
 import { useNavigate } from "react-router-dom";
 
 const BookingPreviewStep = ({
@@ -49,9 +55,9 @@ const BookingPreviewStep = ({
   onEditCustomerInfo,
   error,
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  const [bookingId, setBookingId] = useState(null);
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // Get cart data from Redux store
   const cartItems = useSelector(selectCartItems);
@@ -59,11 +65,13 @@ const BookingPreviewStep = ({
   const cartSubtotal = useSelector(selectCartSubtotal);
   const selectedDates = useSelector(selectSelectedDates);
   const cartItemCount = useSelector(selectCartItemCount);
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+  
+  // Get booking creation state
+  const isLoading = useSelector(selectCreatingBooking);
+  const bookingCreated = useSelector(selectBookingCreated);
+  const lastCreatedBookingId = useSelector(selectLastCreatedBookingId);
 
   const handleConfirmBooking = async () => {
-    setIsLoading(true);
     try {
       // Create complete booking object with ALL data
       const completeBookingData = {
@@ -85,8 +93,8 @@ const BookingPreviewStep = ({
             numberOfGuests: customerInfo?.guests || 0,
             location: customerInfo?.location || "",
             specialRequests: customerInfo?.specialRequests || "",
-            delivery: customerInfo?.delivery || "",
-            installation: customerInfo?.installation || "",
+            delivery: customerInfo?.delivery || "no",
+            installation: customerInfo?.installation || "no",
           },
         },
 
@@ -173,8 +181,6 @@ const BookingPreviewStep = ({
           requiresDeposit: true,
           depositPolicy: "Refundable deposit varies by items selected",
           cancellationPolicy: "As per terms and conditions",
-          deliveryRequired: customerInfo?.location ? true : false,
-          setupRequired: true,
           deliveryRequired: customerInfo?.delivery === "yes",
           setupRequired: customerInfo?.installation === "yes",
           // Contact preferences
@@ -194,48 +200,26 @@ const BookingPreviewStep = ({
           ),
           hasServices: cartItems.length > 0,
           hasPricing: !!(cartTotal && cartTotal > 0),
-          isComplete: function () {
-            return (
-              this.hasCustomerInfo &&
-              this.hasEventSchedule &&
-              this.hasServices &&
-              this.hasPricing
-            );
-          },
         },
       };
 
-      // Log the complete booking data
-      console.log("this is complete data", completeBookingData);
+      console.log("Dispatching booking creation:", completeBookingData);
 
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Dispatch the booking creation action
+      const result = await dispatch(createBookingFromCart({
+        bookingData: completeBookingData
+      })).unwrap();
 
-      // Generate booking ID (you would get this from your API response)
-      const generatedBookingId = completeBookingData.bookingId;
-      setBookingId(generatedBookingId);
-
-      // Show success popup
-      setShowSuccessPopup(true);
+      console.log("Booking created successfully:", result);
+      
+  
     } catch (err) {
       console.error("❌ Error confirming booking:", err);
-    } finally {
-      setIsLoading(false);
+      // Error will be handled by the Redux slice
     }
   };
 
-  const handleCloseSuccessPopup = () => {
-    setShowSuccessPopup(false);
-    dispatch(forceResetCart());
-    dispatch(resetSubmissionStatus());
 
-    setTimeout(() => {
-      navigate("/", {
-        replace: true,
-        state: { transition: "fade" },
-      });
-    }, 300);
-  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -874,13 +858,7 @@ const BookingPreviewStep = ({
         </div>
       </div>
 
-      {/* Success Popup */}
-      <BookingSuccessPopup
-        isOpen={showSuccessPopup}
-        onClose={handleCloseSuccessPopup}
-        bookingId={bookingId}
-        customerInfo={customerInfo}
-      />
+ 
     </>
   );
 };

@@ -60,51 +60,103 @@ const CategoriesScreen = () => {
   });
 
   const categoryFileRef = useRef(null);
-  const itemFileRef = useRef(null);
+  const itemFileRef = useRef(null); // Fixed: Added separate ref for item file input
 
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
 
+  // Update selectedCategory when categories change (after item operations)
+  useEffect(() => {
+    if (selectedCategory && filteredCategories.length > 0) {
+      const updatedCategory = filteredCategories.find(cat => cat.id === selectedCategory.id);
+      if (updatedCategory && JSON.stringify(updatedCategory) !== JSON.stringify(selectedCategory)) {
+        dispatch(setSelectedCategory(updatedCategory));
+      }
+    }
+  }, [filteredCategories, selectedCategory, dispatch]);
+
   // Handle category form
   const handleCategorySubmit = async (e) => {
     e.preventDefault();
-    if (editingCategory) {
-      await dispatch(
-        updateCategory({ id: editingCategory.id, categoryData: categoryForm })
-      );
-    } else {
-      await dispatch(createCategory(categoryForm));
+    try {
+      if (editingCategory) {
+        await dispatch(
+          updateCategory({ id: editingCategory.id, categoryData: categoryForm })
+        );
+      } else {
+        await dispatch(createCategory(categoryForm));
+      }
+      setCategoryForm({ id: "", name: "", description: "", itemCount: "", image: "" });
+      dispatch(closeModal("categoryModal"));
+      dispatch(setEditingCategory(null));
+    } catch (error) {
+      console.error("Error saving category:", error);
     }
-    setCategoryForm({ name: "", description: "", image: "" });
   };
 
-  // Handle item form
+  // Handle item form - Fixed: Added proper state updates and modal management
   const handleItemSubmit = async (e) => {
     e.preventDefault();
-    if (editingItem) {
-      await dispatch(
-        updateItem({
-          categoryId: selectedCategory.id,
-          itemId: editingItem.id,
-          itemData: itemForm,
-        })
-      );
-    } else {
-      await dispatch(
-        createItem({
-          categoryId: selectedCategory.id,
-          itemData: itemForm,
-        })
-      );
+    try {
+      let result;
+      if (editingItem) {
+        result = await dispatch(
+          updateItem({
+            categoryId: selectedCategory.id,
+            itemId: editingItem.id,
+            itemData: itemForm,
+          })
+        );
+      } else {
+        result = await dispatch(
+          createItem({
+            categoryId: selectedCategory.id,
+            itemData: itemForm,
+          })
+        );
+      }
+      
+      // Check if the operation was successful
+      if (result.type.endsWith('/fulfilled')) {
+        // Reset form and close modal
+        setItemForm({ name: "", description: "", price: "", image: "" });
+        dispatch(closeModal("itemModal"));
+        dispatch(setEditingItem(null));
+        
+        // The selectedCategory will be automatically updated by the useEffect
+        // that watches for changes in filteredCategories
+      }
+    } catch (error) {
+      console.error("Error saving item:", error);
     }
-    setItemForm({ name: "", description: "", price: "", image: "" });
   };
 
-  // Handle category deletion - profile sync happens automatically via extraReducers
+  // Handle category deletion
   const handleDeleteCategory = async (categoryId, categoryName) => {
-    await dispatch(deleteCategory(categoryId));
-    // Profile sync happens automatically through extraReducers in profile slice
+    try {
+      await dispatch(deleteCategory(categoryId));
+      // Profile sync happens automatically through extraReducers in profile slice
+    } catch (error) {
+      console.error("Error deleting category:", error);
+    }
+  };
+
+  // Handle item deletion - Fixed: Added proper state updates
+  const handleDeleteItem = async (itemId) => {
+    try {
+      const result = await dispatch(
+        deleteItem({
+          categoryId: selectedCategory.id,
+          itemId: itemId,
+        })
+      );
+      
+      // The selectedCategory will be automatically updated by the useEffect
+      // that watches for changes in filteredCategories
+    } catch (error) {
+      console.error("Error deleting item:", error);
+    }
   };
 
   // Handle file change simulation
@@ -114,7 +166,7 @@ const CategoriesScreen = () => {
       const imageUrl = URL.createObjectURL(file);
       if (type === 'category') {
         setCategoryForm(prev => ({ ...prev, image: imageUrl }));
-      } else {
+      } else if (type === 'item') { // Fixed: Added proper condition for item
         setItemForm(prev => ({ ...prev, image: imageUrl }));
       }
     }
@@ -147,6 +199,24 @@ const CategoriesScreen = () => {
   const openViewItems = (category) => {
     dispatch(setSelectedCategory(category));
     dispatch(openModal("itemsViewModal"));
+  };
+
+  // Fixed: Added proper modal close handlers that reset editing state
+  const handleCloseCategoryModal = () => {
+    dispatch(closeModal("categoryModal"));
+    dispatch(setEditingCategory(null));
+    setCategoryForm({ id: "", name: "", description: "", itemCount: "", image: "" });
+  };
+
+  const handleCloseItemModal = () => {
+    dispatch(closeModal("itemModal"));
+    dispatch(setEditingItem(null));
+    setItemForm({ name: "", description: "", price: "", image: "" });
+  };
+
+  const handleCloseItemsViewModal = () => {
+    dispatch(closeModal("itemsViewModal"));
+    dispatch(setSelectedCategory(null));
   };
 
   return (
@@ -305,7 +375,7 @@ const CategoriesScreen = () => {
                   {editingCategory ? "Edit Category" : "Add New Category"}
                 </h2>
                 <button
-                  onClick={() => dispatch(closeModal("categoryModal"))}
+                  onClick={handleCloseCategoryModal}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-5 h-5" />
@@ -416,7 +486,7 @@ const CategoriesScreen = () => {
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => dispatch(closeModal("categoryModal"))}
+                    onClick={handleCloseCategoryModal}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                   >
                     Cancel
@@ -447,7 +517,7 @@ const CategoriesScreen = () => {
                     {selectedCategory.name} Items
                   </h2>
                   <p className="text-gray-600 text-sm">
-                    {selectedCategory.items.length} items
+                    {selectedCategory.items?.length || 0} items
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -459,7 +529,7 @@ const CategoriesScreen = () => {
                     Add Item
                   </button>
                   <button
-                    onClick={() => dispatch(closeModal("itemsViewModal"))}
+                    onClick={handleCloseItemsViewModal}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <X className="w-5 h-5" />
@@ -469,7 +539,7 @@ const CategoriesScreen = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
-              {selectedCategory.items.length === 0 ? (
+              {!selectedCategory.items || selectedCategory.items.length === 0 ? (
                 <div className="text-center py-12">
                   <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
                   <h3 className="text-lg font-medium text-gray-900 mb-1">
@@ -497,14 +567,7 @@ const CategoriesScreen = () => {
                             <Edit className="w-3 h-3 text-gray-600" />
                           </button>
                           <button
-                            onClick={() =>
-                              dispatch(
-                                deleteItem({
-                                  categoryId: selectedCategory.id,
-                                  itemId: item.id,
-                                })
-                              )
-                            }
+                            onClick={() => handleDeleteItem(item.id)}
                             className="p-1 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100"
                           >
                             <Trash2 className="w-3 h-3 text-red-600" />
@@ -541,7 +604,7 @@ const CategoriesScreen = () => {
                   {editingItem ? "Edit Item" : "Add New Item"}
                 </h2>
                 <button
-                  onClick={() => dispatch(closeModal("itemModal"))}
+                  onClick={handleCloseItemModal}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-5 h-5" />
@@ -614,17 +677,17 @@ const CategoriesScreen = () => {
                     )}
                     <button
                       type="button"
-                      onClick={() => categoryFileRef.current.click()}
+                      onClick={() => itemFileRef.current.click()}
                       className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
                     >
                       <Upload className="w-4 h-4" />
                       Upload Image
                     </button>
                     <input
-                      ref={categoryFileRef}
+                      ref={itemFileRef}
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleFileChange(e, "category")}
+                      onChange={(e) => handleFileChange(e, "item")}
                       className="hidden"
                     />
                   </div>
@@ -633,7 +696,7 @@ const CategoriesScreen = () => {
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => dispatch(closeModal("itemModal"))}
+                    onClick={handleCloseItemModal}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                   >
                     Cancel

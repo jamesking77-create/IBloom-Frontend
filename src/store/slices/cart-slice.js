@@ -572,7 +572,8 @@ const cartSlice = createSlice({
         );
 
         if (existingItemIndex !== -1) {
-          state.items[existingItemIndex].quantity += 1;
+          // FIXED: Set quantity to 1 instead of incrementing
+          state.items[existingItemIndex].quantity = 1;
           state.subtotal = utils.calculateTotal(state.items);
           state.tax = utils.calculateTax(state.subtotal);
           state.totalAmount = utils.calculateTotalWithTax(state.subtotal);

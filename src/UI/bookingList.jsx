@@ -13,6 +13,7 @@ import {
 } from '../store/slices/booking-slice';
 import { formatCurrency } from '../utils/formatcurrency';
 
+
 const BookingsList = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();

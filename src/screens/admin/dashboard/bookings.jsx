@@ -699,28 +699,6 @@ const Bookings = () => {
           ) : (
             <div className="divide-y divide-gray-200">
               {paginatedBookings.map((booking) => {
-<<<<<<< HEAD
-                const statusInfo = getStatusInfo(booking.status);
-                const isProcessing = processingBookingId === booking.bookingId;
-                const isExpanded = expandedBookings.has(booking.bookingId);
-                
-                return (
-                  <div key={booking.bookingId} className="p-4 sm:p-6">
-                    {/* Mobile/Tablet Layout */}
-                    <div className="block lg:hidden">
-                      {/* Header Row */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-base sm:text-lg text-gray-900 truncate">
-                              {booking.customer?.personalInfo?.name}
-                            </h3>
-                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusInfo.bgClass} ${statusInfo.textClass}`}>
-                              <div className={`w-2 h-2 rounded-full ${statusInfo.dotClass}`}></div>
-                              <span className="hidden sm:inline">{statusInfo.label}</span>
-                              <span className="sm:hidden">{statusInfo.label.split(' ')[0]}</span>
-                            </div>
-=======
                 const statusStyles = getStatusStyles(booking.status);
                 const isProcessing = processingBookingId === booking._id;
                 
@@ -735,7 +713,6 @@ const Bookings = () => {
                           <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${statusStyles.bg} ${statusStyles.text}`}>
                             <div className={`w-2 h-2 rounded-full ${statusStyles.dot}`}></div>
                             {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
->>>>>>> feebfe3662f39be60da2537a28d6df8c521b6a06
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{booking.customer?.eventDetails?.eventType}</p>
                           <p className="text-xs text-gray-500">ID: {booking.bookingId}</p>
@@ -863,7 +840,6 @@ const Bookings = () => {
                             )}
                           </div>
                           
-<<<<<<< HEAD
                           <div className="text-gray-600 mb-4">{booking.customer?.eventDetails?.eventType}</div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -943,7 +919,6 @@ const Bookings = () => {
                               </>
                             )}
                           </div>
-=======
                           {booking.status === 'pending' && (
                             <>
                               <button
@@ -965,7 +940,6 @@ const Bookings = () => {
                               </button>
                             </>
                           )}
->>>>>>> feebfe3662f39be60da2537a28d6df8c521b6a06
                         </div>
                       </div>
                     </div>

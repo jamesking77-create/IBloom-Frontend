@@ -30,7 +30,7 @@ import {
   selectOrderFilters,
   selectOrderPagination
 } from '../../../store/slices/order-slice';
-import { formatCurrency } from '../../../utils/formatcurrency.js';
+import { formatCurrency } from '../../../utils/formatcurrency';
 
 
 

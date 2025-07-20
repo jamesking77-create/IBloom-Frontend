@@ -11,7 +11,8 @@ import {
   selectBookingsStats,
   getStatusInfo,
 } from '../store/slices/booking-slice';
-import { formatCurrency } from '../utils/formatcurrency';
+import { formatCurrency } from '../utils/formatCcy';
+
 
 
 const BookingsList = () => {

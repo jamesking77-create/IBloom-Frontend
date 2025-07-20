@@ -45,7 +45,8 @@ import {
   updateBookingStatusOptimistic,
   getStatusInfo
 } from '../../../store/slices/booking-slice';
-import { formatCurrency } from '../../../utils/formatcurrency';
+import { formatCurrency } from '../../../utils/formatCcy';
+
 
 // Helper function to get status styles (simplified - using getStatusInfo from slice)
 const getStatusStyles = (status) => {

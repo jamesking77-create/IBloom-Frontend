@@ -6,7 +6,7 @@ import { ArrowLeft, Package, Search, Filter } from 'lucide-react';
 import { fetchCategories } from '../../store/slices/categoriesSlice';
 import { addToCart, selectCartItems, openCart } from '../../store/slices/cart-slice';
 import FloatingChatBox from '../../UI/floatingChatBox';
-import ItemAddedPopup from '../../UI/itemAddedPopup'; // Adjust path as needed
+import ItemAddedPopup from '../../UI/itemAddedPopup';   
 
 const CategoriesPage = () => {
   const { categoryId } = useParams();

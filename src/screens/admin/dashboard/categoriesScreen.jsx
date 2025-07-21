@@ -51,6 +51,7 @@ const CategoriesScreen = () => {
     description: "",
     itemCount: "",
     image: "",
+    hasQuotes: false,
   });
   const [itemForm, setItemForm] = useState({
     name: "",
@@ -76,7 +77,7 @@ const CategoriesScreen = () => {
     } else {
       await dispatch(createCategory(categoryForm));
     }
-    setCategoryForm({ name: "", description: "", image: "" });
+    setCategoryForm({ name: "", description: "", image: "", hasQuotes: false });
   };
 
   // Handle item form
@@ -112,10 +113,10 @@ const CategoriesScreen = () => {
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      if (type === 'category') {
-        setCategoryForm(prev => ({ ...prev, image: imageUrl }));
+      if (type === "category") {
+        setCategoryForm((prev) => ({ ...prev, image: imageUrl }));
       } else {
-        setItemForm(prev => ({ ...prev, image: imageUrl }));
+        setItemForm((prev) => ({ ...prev, image: imageUrl }));
       }
     }
   };
@@ -129,6 +130,7 @@ const CategoriesScreen = () => {
       itemCount: category.itemCount,
       description: category.description,
       image: category.image,
+      hasQuotes: category.hasQuotes || false,
     });
     dispatch(openModal("categoryModal"));
   };
@@ -265,10 +267,17 @@ const CategoriesScreen = () => {
                 </p>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">
-                    {category.itemCount}{" "}
-                    {category.itemCount === 1 ? "item" : "items"}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-500">
+                      {category.itemCount}{" "}
+                      {category.itemCount === 1 ? "item" : "items"}
+                    </span>
+                    {category.hasQuotes && (
+                      <span className="text-xs text-green-600 font-medium">
+                        Has Quotes
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => openViewItems(category)}
                     className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center gap-1 text-sm"
@@ -381,6 +390,25 @@ const CategoriesScreen = () => {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={categoryForm.hasQuotes}
+                      onChange={(e) =>
+                        setCategoryForm((prev) => ({
+                          ...prev,
+                          hasQuotes: e.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      Has Quotes
+                    </span>
+                  </label>
                 </div>
 
                 <div>

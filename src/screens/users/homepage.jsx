@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Quote, MapPin, Star } from "lucide-react";
 import { fetchProfile } from "../../store/slices/profile-slice";
 import { fetchCategories } from "../../store/slices/categoriesSlice"; // Import the fetchCategories thunk
 import FloatingChatBox from "../../UI/floatingChatBox";
+import QuickActionsSection from "../../components/users/quickActionSection";
 
 const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -243,6 +244,8 @@ const HomePage = () => {
           ))}
         </div>
       </div>
+
+      <QuickActionsSection/>
 
       {/* Categories Section */}
       <div   ref={categoriesRef} className="py-20 bg-gradient-to-br from-gray-50 to-white">

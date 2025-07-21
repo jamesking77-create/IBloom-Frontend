@@ -1,17 +1,13 @@
 import React from 'react';
 import { ArrowLeft, User, Phone, Mail, Calendar, Package, DollarSign, Hash } from 'lucide-react';
+import { formatCurrency } from '../../utils/formatCcy';
 
 export const QuoteDetails = ({ quote, onClose }) => {
   const calculateTotal = () => {
     return quote.items?.reduce((total, item) => total + (item.price * item.quantity), 0) || 0;
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN'
-    }).format(amount);
-  };
+
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">

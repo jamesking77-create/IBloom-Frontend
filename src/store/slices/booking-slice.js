@@ -5,225 +5,76 @@ import {
 } from "@reduxjs/toolkit";
 import { get, put, post, patch, del } from "../../utils/api";
 
-// Sample data for development with enhanced date/time fields
-// const sampleBookings = [
-//   {
-//     id: 1,
-//     customerName: 'Sarah Johnson',
-//     eventType: 'Wedding Reception',
-//     startDate: '2024-06-15',
-//     endDate: '2024-06-15',
-//     startTime: '18:00', // 6:00 PM
-//     endTime: '23:30', // 11:30 PM
-//     singleDay: true,
-//     multiDay: false,
-//     location: 'Grand Ballroom',
-//     status: 'pending',
-//     amount: '₦2,500,000',
-//     phone: '+234 803 123 4567',
-//     email: 'sarah.johnson@email.com',
-//     guests: 150,
-//     specialRequests: 'Vegetarian options needed, live band setup required',
-//     paymentStatus: 'partial',
-//     amountPaid: '₦1,000,000',
-//     createdAt: '2024-05-20T10:30:00Z',
-//     items: []
-//   },
-//   {
-//     id: 2,
-//     customerName: 'Michael Chen',
-//     eventType: 'Corporate Event',
-//     startDate: '2024-06-18',
-//     endDate: '2024-06-19',
-//     startTime: '14:00', // 2:00 PM
-//     endTime: '10:00', // 10:00 AM next day
-//     singleDay: false,
-//     multiDay: true,
-//     location: 'Conference Center',
-//     status: 'confirmed',
-//     amount: '₦1,800,000',
-//     phone: '+234 807 987 6543',
-//     email: 'michael.chen@company.com',
-//     guests: 80,
-//     specialRequests: 'AV equipment, projector setup',
-//     paymentStatus: 'paid',
-//     amountPaid: '₦1,800,000',
-//     createdAt: '2024-05-18T14:15:00Z',
-//     items: []
-//   },
-//   {
-//     id: 3,
-//     customerName: 'Emily Rodriguez',
-//     eventType: 'Birthday Party',
-//     startDate: '2024-06-20',
-//     endDate: '2024-06-20',
-//     startTime: '16:00', // 4:00 PM
-//     endTime: '20:00', // 8:00 PM
-//     singleDay: true,
-//     multiDay: false,
-//     location: 'Garden Pavilion',
-//     status: 'pending',
-//     amount: '₦950,000',
-//     phone: '+234 901 456 7890',
-//     email: 'emily.rodriguez@email.com',
-//     guests: 45,
-//     specialRequests: 'Birthday cake, decorations in pink theme',
-//     paymentStatus: 'unpaid',
-//     amountPaid: '₦0',
-//     createdAt: '2024-05-22T09:45:00Z',
-//     items: []
-//   },
-//   {
-//     id: 4,
-//     customerName: 'David Thompson',
-//     eventType: 'Anniversary Dinner',
-//     startDate: '2024-06-22',
-//     endDate: '2024-06-22',
-//     startTime: '19:00', // 7:00 PM
-//     endTime: '22:00', // 10:00 PM
-//     singleDay: true,
-//     multiDay: false,
-//     location: 'Private Dining',
-//     status: 'confirmed',
-//     amount: '₦1,200,000',
-//     phone: '+234 805 234 5678',
-//     email: 'david.thompson@email.com',
-//     guests: 12,
-//     specialRequests: 'Romantic setup, wine pairing',
-//     paymentStatus: 'paid',
-//     amountPaid: '₦1,200,000',
-//     createdAt: '2024-05-19T16:20:00Z',
-//     items: []
-//   },
-//   {
-//     id: 5,
-//     customerName: 'Lisa Wang',
-//     eventType: 'Baby Shower',
-//     startDate: '2024-06-25',
-//     endDate: '2024-06-25',
-//     startTime: '15:00', // 3:00 PM
-//     endTime: '18:00', // 6:00 PM
-//     singleDay: true,
-//     multiDay: false,
-//     location: 'Garden Pavilion',
-//     status: 'pending',
-//     amount: '₦750,000',
-//     phone: '+234 809 876 5432',
-//     email: 'lisa.wang@email.com',
-//     guests: 35,
-//     specialRequests: 'Baby shower decorations, non-alcoholic beverages only',
-//     paymentStatus: 'partial',
-//     amountPaid: '₦300,000',
-//     createdAt: '2024-05-21T11:30:00Z',
-//     items: []
-//   },
-//   {
-//     id: 6,
-//     customerName: 'James Wilson',
-//     eventType: 'Conference Summit',
-//     startDate: '2024-06-28',
-//     endDate: '2024-06-30',
-//     startTime: '09:00', // 9:00 AM
-//     endTime: '17:00', // 5:00 PM (last day)
-//     singleDay: false,
-//     multiDay: true,
-//     location: 'Main Convention Hall',
-//     status: 'confirmed',
-//     amount: '₦4,500,000',
-//     phone: '+234 805 111 2222',
-//     email: 'james.wilson@conference.com',
-//     guests: 300,
-//     specialRequests: 'Full AV setup, catering for 3 days, accommodation assistance',
-//     paymentStatus: 'partial',
-//     amountPaid: '₦2,250,000',
-//     createdAt: '2024-05-25T08:00:00Z',
-//     items: []
-//   },
-//   {
-//     id: 7,
-//     customerName: 'Maria Santos',
-//     eventType: 'Art Exhibition Opening',
-//     startDate: '2024-07-02',
-//     endDate: '2024-07-03',
-//     startTime: '19:00', // 7:00 PM
-//     endTime: '02:00', // 2:00 AM next day
-//     singleDay: false,
-//     multiDay: true,
-//     location: 'Gallery Wing',
-//     status: 'pending',
-//     amount: '₦1,350,000',
-//     phone: '+234 809 333 4444',
-//     email: 'maria.santos@artgallery.com',
-//     guests: 120,
-//     specialRequests: 'Special lighting, wine service, art handling equipment',
-//     paymentStatus: 'unpaid',
-//     amountPaid: '₦0',
-//     createdAt: '2024-05-28T12:00:00Z',
-//     items: []
-//   }
-// ];
-
-// Utility function to calculate if event is single day or multi-day
-const calculateDayType = (startDate, endDate, startTime, endTime) => {
-  const start = new Date(`${startDate}T${startTime}`);
-  const end = new Date(`${endDate}T${endTime}`);
-
-  // If end date is different from start date, it's definitely multi-day
-  if (startDate !== endDate) {
-    return { singleDay: false, multiDay: true };
-  }
-
-  // If same date but end time is earlier than start time, it means it goes to next day
-  if (endTime < startTime) {
-    return { singleDay: false, multiDay: true };
-  }
-
-  // Otherwise, it's a single day event
-  return { singleDay: true, multiDay: false };
+// Helper function to transform API data to component expected structure
+const transformBookingData = (apiBooking) => {
+  return {
+    ...apiBooking,
+    bookingId: apiBooking._id,
+    id: apiBooking._id, // For backward compatibility
+    // Transform flat structure to nested structure expected by component
+    customer: apiBooking.customer || {
+      personalInfo: {
+        name: apiBooking.customerName || 'N/A',
+        email: apiBooking.email || 'N/A', 
+        phone: apiBooking.phone || 'N/A'
+      },
+      eventDetails: {
+        eventType: apiBooking.eventType || 'N/A',
+        location: apiBooking.location || 'N/A',
+        numberOfGuests: apiBooking.guests || 0,
+        specialRequests: apiBooking.specialRequests || '',
+        delivery: 'no', // Default since not in API response
+        installation: 'no' // Default since not in API response
+      }
+    },
+    eventSchedule: apiBooking.eventSchedule || {
+      startDate: apiBooking.startDate,
+      endDate: apiBooking.endDate, 
+      startTime: apiBooking.startTime,
+      endTime: apiBooking.endTime,
+      isMultiDay: apiBooking.multiDay || false,
+      durationInDays: apiBooking.multiDay ? 
+        Math.ceil((new Date(apiBooking.endDate) - new Date(apiBooking.startDate)) / (1000 * 60 * 60 * 24)) + 1 : 1
+    },
+    pricing: apiBooking.pricing || {
+      subtotal: parseFloat(apiBooking.amount?.replace(/[₦,]/g, '') || 0),
+      tax: parseFloat(apiBooking.amount?.replace(/[₦,]/g, '') || 0) * 0.075,
+      total: parseFloat(apiBooking.amount?.replace(/[₦,]/g, '') || 0),
+      totalServices: apiBooking.items?.length || apiBooking.services?.length || 0,
+      formatted: {
+        subtotal: apiBooking.amount || '₦0',
+        tax: `₦${(parseFloat(apiBooking.amount?.replace(/[₦,]/g, '') || 0) * 0.075).toLocaleString('en-NG', {minimumFractionDigits: 2})}`,
+        total: apiBooking.amount || '₦0'
+      }
+    },
+    services: apiBooking.services || apiBooking.items || [],
+    businessData: apiBooking.businessData || {
+      requiresDeposit: false,
+      depositPolicy: 'Standard 50% deposit required',
+      cancellationPolicy: 'Cancellation allowed up to 48 hours before event'
+    },
+    bookingDate: apiBooking.createdAt,
+    // Map original API status to expected status format
+    status: apiBooking.status === 'pending' ? 'pending_confirmation' : apiBooking.status
+  };
 };
 
-// Utility function to calculate total amount from cart items
-const calculateTotalFromCart = (items) => {
-  return items.reduce((total, item) => {
-    const itemPrice = parseFloat(item.price);
-    return total + itemPrice * item.quantity;
-  }, 0);
-};
-
-// Async thunk for creating booking from cart
+// Async thunk for creating booking from cart - FIXED
 export const createBookingFromCart = createAsyncThunk(
   "bookings/createBookingFromCart",
-  async (cartData, { rejectWithValue }) => {
+  async ({ bookingData }, { rejectWithValue }) => {
     try {
-      const { items, selectedDates, customerInfo } = cartData;
-
-      // Calculate total amount from cart items
-      const totalAmount = calculateTotalFromCart(items);
-
-      // Prepare booking data
-      const bookingData = {
-        customerName: customerInfo.name,
-        email: customerInfo.email,
-        phone: customerInfo.phone,
-        eventType: customerInfo.eventType,
-        guests: customerInfo.guests,
-        specialRequests: customerInfo.specialRequests,
-        startDate: selectedDates.startDate,
-        endDate: selectedDates.endDate,
-        startTime: selectedDates.startTime,
-        endTime: selectedDates.endTime,
-        items: items,
-        amount: totalAmount,
-        status: "pending",
-        paymentStatus: "unpaid",
-        amountPaid: 0,
-        location: customerInfo.location || "TBD",
-      };
-
+      console.log("Sending booking data to API:", bookingData);
+      
       const response = await post("/api/bookings", bookingData);
-      return response?.data;
+      console.log("API response:", response);
+      
+      // Return the booking data for Redux state update
+      return response?.data || response;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      console.error("API Error:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to create booking";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -234,9 +85,10 @@ export const fetchBookings = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await get("/api/bookings");
+      console.log("bookings response: ", response)
       return response?.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -284,7 +136,7 @@ export const fetchBookingDetails = createAsyncThunk(
       const response = await get(`/api/bookings/${bookingId}`);
       return response?.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -292,19 +144,34 @@ export const fetchBookingDetails = createAsyncThunk(
 // Async thunk for updating booking items
 export const updateBookingItems = createAsyncThunk(
   "bookings/updateBookingItems",
-  async ({ bookingId, items }, { rejectWithValue }) => {
+  async ({ bookingId, items, services }, { rejectWithValue }) => {
     try {
-      const totalAmount = calculateTotalFromCart(items);
-
       const response = await patch(`/api/bookings/${bookingId}/items`, {
         items,
-        amount: totalAmount,
+        services,
       });
       return {
         bookingId,
         items: response.data.items,
+        services: response.data.services,
         amount: response.data.amount,
+        pricing: response.data.pricing,
       };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Async thunk for generating and sending invoice
+export const generateInvoice = createAsyncThunk(
+  "bookings/generateInvoice",
+  async ({ bookingId, invoiceData }, { rejectWithValue }) => {
+    try {
+      const response = await post(`/api/bookings/${bookingId}/invoice`, {
+        invoiceData,
+      });
+      return { bookingId, ...response.data };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
@@ -325,14 +192,18 @@ const initialState = {
     itemsPerPage: 10,
   },
   stats: {
-    thisWeek: 3,
-    thisMonth: 5,
-    totalRevenue: 8200000,
+    thisWeek: 0,
+    thisMonth: 0,
+    totalRevenue: 0,
   },
   // Cart integration states
   creatingBooking: false,
   bookingCreated: false,
   lastCreatedBookingId: null,
+  // Invoice states
+  generatingInvoice: false,
+  invoiceGenerated: false,
+  lastInvoiceGenerated: null,
 };
 
 const bookingsSlice = createSlice({
@@ -356,148 +227,68 @@ const bookingsSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    // Optimistic update for status changes
+    // Optimistic update for status changes - Fixed ID handling
     updateBookingStatusOptimistic: (state, action) => {
       const { bookingId, status } = action.payload;
-      const booking = state.bookings.find((b) => b.id === bookingId);
+      const booking = state.bookings.find((b) => 
+        b._id === bookingId || 
+        b.bookingId === bookingId || 
+        b.id === bookingId
+      );
       if (booking) {
         booking.status = status;
-      }
-    },
-    // Action to add new booking with automatic day type calculation
-    addBooking: (state, action) => {
-      const booking = action.payload;
-      const dayType = calculateDayType(
-        booking.startDate,
-        booking.endDate,
-        booking.startTime,
-        booking.endTime
-      );
-      const newBooking = {
-        ...booking,
-        id: Date.now(), // Simple ID generation for demo
-        ...dayType,
-        createdAt: new Date().toISOString(),
-        items: booking.items || [],
-      };
-      state.bookings.unshift(newBooking);
-      state.pagination.totalItems = state.bookings.length;
-    },
-    // Action to update booking with automatic day type recalculation
-    updateBooking: (state, action) => {
-      const { bookingId, updates } = action.payload;
-      const bookingIndex = state.bookings.findIndex((b) => b.id === bookingId);
-      if (bookingIndex !== -1) {
-        const updatedBooking = { ...state.bookings[bookingIndex], ...updates };
-
-        // Recalculate day type if date/time fields are updated
-        if (
-          updates.startDate ||
-          updates.endDate ||
-          updates.startTime ||
-          updates.endTime
-        ) {
-          const dayType = calculateDayType(
-            updatedBooking.startDate,
-            updatedBooking.endDate,
-            updatedBooking.startTime,
-            updatedBooking.endTime
-          );
-          updatedBooking.singleDay = dayType.singleDay;
-          updatedBooking.multiDay = dayType.multiDay;
-        }
-
-        // Recalculate total amount if items are updated
-        if (updates.items) {
-          updatedBooking.amount = calculateTotalFromCart(updates.items);
-        }
-
-        state.bookings[bookingIndex] = updatedBooking;
       }
     },
     // Reset booking creation status
     resetBookingCreation: (state) => {
       state.bookingCreated = false;
       state.lastCreatedBookingId = null;
+      state.creatingBooking = false;
+      state.error = null;
     },
-    // Add item to existing booking
-    addItemToBooking: (state, action) => {
-      const { bookingId, item } = action.payload;
-      const booking = state.bookings.find((b) => b.id === bookingId);
-      if (booking) {
-        const existingItem = booking.items?.find((i) => i.id === item.id);
-        if (existingItem) {
-          existingItem.quantity += 1;
-        } else {
-          booking.items = booking.items || [];
-          booking.items.push({ ...item, quantity: 1 });
-        }
-        booking.amount = calculateTotalFromCart(booking.items);
-      }
-    },
-    // Remove item from booking
-    removeItemFromBooking: (state, action) => {
-      const { bookingId, itemId } = action.payload;
-      const booking = state.bookings.find((b) => b.id === bookingId);
-      if (booking && booking.items) {
-        booking.items = booking.items.filter((item) => item.id !== itemId);
-        booking.amount = calculateTotalFromCart(booking.items);
-      }
-    },
-    // Update item quantity in booking
-    updateBookingItemQuantity: (state, action) => {
-      const { bookingId, itemId, quantity } = action.payload;
-      const booking = state.bookings.find((b) => b.id === bookingId);
-      if (booking && booking.items) {
-        const item = booking.items.find((i) => i.id === itemId);
-        if (item && quantity > 0) {
-          item.quantity = quantity;
-          booking.amount = calculateTotalFromCart(booking.items);
-        }
-      }
+    // Reset invoice generation status
+    resetInvoiceGeneration: (state) => {
+      state.invoiceGenerated = false;
+      state.lastInvoiceGenerated = null;
+      state.generatingInvoice = false;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Create booking from cart
+      // Create booking from cart - FIXED
       .addCase(createBookingFromCart.pending, (state) => {
         state.creatingBooking = true;
         state.error = null;
+        state.bookingCreated = false;
       })
       .addCase(createBookingFromCart.fulfilled, (state, action) => {
         state.creatingBooking = false;
         state.bookingCreated = true;
-        state.lastCreatedBookingId = action.payload.id;
+        state.lastCreatedBookingId = action.payload.bookingId || action.payload._id;
 
-        // Add the new booking to the list
-        const booking = action.payload;
-        const dayType = calculateDayType(
-          booking.startDate,
-          booking.endDate,
-          booking.startTime,
-          booking.endTime
-        );
-        const newBooking = {
-          ...booking,
-          ...dayType,
-          items: booking.items || [],
-        };
-        state.bookings.unshift(newBooking);
+        // Transform and add the new booking to the list
+        const transformedBooking = transformBookingData(action.payload);
+        state.bookings.unshift(transformedBooking);
         state.pagination.totalItems = state.bookings.length;
       })
       .addCase(createBookingFromCart.rejected, (state, action) => {
         state.creatingBooking = false;
         state.error = action.payload;
+        state.bookingCreated = false;
       })
 
-      // Fetch bookings
+      // Fetch bookings - Fixed with data transformation
       .addCase(fetchBookings.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchBookings.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookings = action.payload.bookings || [];
+        
+        // Transform each booking to match component expectations
+        const transformedBookings = (action.payload.bookings || []).map(transformBookingData);
+        
+        state.bookings = transformedBookings;
         state.pagination = action.payload.pagination || state.pagination;
         state.stats = action.payload.stats || state.stats;
       })
@@ -507,13 +298,17 @@ const bookingsSlice = createSlice({
         state.bookings = [];
       })
 
-      // Update booking status
+      // Update booking status - Fixed ID handling
       .addCase(updateBookingStatus.pending, (state) => {
         state.error = null;
       })
       .addCase(updateBookingStatus.fulfilled, (state, action) => {
         const { bookingId, status } = action.payload;
-        const booking = state.bookings.find((b) => b.id === bookingId);
+        const booking = state.bookings.find((b) => 
+          b._id === bookingId || 
+          b.bookingId === bookingId || 
+          b.id === bookingId
+        );
         if (booking) {
           booking.status = status;
         }
@@ -522,13 +317,17 @@ const bookingsSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Update booking payment
+      // Update booking payment - Fixed ID handling
       .addCase(updateBookingPayment.pending, (state) => {
         state.error = null;
       })
       .addCase(updateBookingPayment.fulfilled, (state, action) => {
         const { bookingId, paymentStatus, amountPaid } = action.payload;
-        const booking = state.bookings.find((b) => b.id === bookingId);
+        const booking = state.bookings.find((b) => 
+          b._id === bookingId || 
+          b.bookingId === bookingId || 
+          b.id === bookingId
+        );
         if (booking) {
           booking.paymentStatus = paymentStatus;
           booking.amountPaid = amountPaid;
@@ -538,37 +337,76 @@ const bookingsSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch booking details
+      // Fetch booking details - Fixed with data transformation
       .addCase(fetchBookingDetails.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchBookingDetails.fulfilled, (state, action) => {
         state.loading = false;
-        state.selectedBooking = action.payload;
+        state.selectedBooking = transformBookingData(action.payload);
       })
       .addCase(fetchBookingDetails.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
-      // Update booking items
+      // Update booking items - Fixed ID handling
       .addCase(updateBookingItems.pending, (state) => {
         state.error = null;
       })
       .addCase(updateBookingItems.fulfilled, (state, action) => {
-        const { bookingId, items, amount } = action.payload;
-        const booking = state.bookings.find((b) => b.id === bookingId);
+        const { bookingId, items, services, amount, pricing } = action.payload;
+        const booking = state.bookings.find((b) => 
+          b._id === bookingId || 
+          b.bookingId === bookingId || 
+          b.id === bookingId
+        );
         if (booking) {
-          booking.items = items;
-          booking.amount = amount;
+          if (services) booking.services = services;
+          if (items) booking.items = items;
+          if (amount) booking.amount = amount;
+          if (pricing) booking.pricing = pricing;
         }
-        if (state.selectedBooking && state.selectedBooking.id === bookingId) {
-          state.selectedBooking.items = items;
-          state.selectedBooking.amount = amount;
+        if (state.selectedBooking && 
+            (state.selectedBooking._id === bookingId || 
+             state.selectedBooking.bookingId === bookingId || 
+             state.selectedBooking.id === bookingId)) {
+          if (services) state.selectedBooking.services = services;
+          if (items) state.selectedBooking.items = items;
+          if (amount) state.selectedBooking.amount = amount;
+          if (pricing) state.selectedBooking.pricing = pricing;
         }
       })
       .addCase(updateBookingItems.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+
+      // Generate invoice
+      .addCase(generateInvoice.pending, (state) => {
+        state.generatingInvoice = true;
+        state.error = null;
+      })
+      .addCase(generateInvoice.fulfilled, (state, action) => {
+        state.generatingInvoice = false;
+        state.invoiceGenerated = true;
+        state.lastInvoiceGenerated = action.payload.invoiceNumber;
+        
+        // Update booking with invoice info
+        const { bookingId } = action.payload;
+        const booking = state.bookings.find((b) => 
+          b._id === bookingId || 
+          b.bookingId === bookingId || 
+          b.id === bookingId
+        );
+        if (booking) {
+          booking.invoiceGenerated = true;
+          booking.invoiceNumber = action.payload.invoiceNumber;
+          booking.invoiceSentAt = new Date().toISOString();
+        }
+      })
+      .addCase(generateInvoice.rejected, (state, action) => {
+        state.generatingInvoice = false;
         state.error = action.payload;
       });
   },
@@ -581,45 +419,38 @@ export const {
   clearSelectedBooking,
   clearError,
   updateBookingStatusOptimistic,
-  addBooking,
-  updateBooking,
   resetBookingCreation,
-  addItemToBooking,
-  removeItemFromBooking,
-  updateBookingItemQuantity,
+  resetInvoiceGeneration,
 } = bookingsSlice.actions;
 
 // Basic selectors with safe defaults
 export const selectBookings = (state) => state.bookings?.bookings || [];
-export const selectSelectedBooking = (state) =>
-  state.bookings?.selectedBooking || null;
-export const selectBookingsLoading = (state) =>
-  state.bookings?.loading || false;
+export const selectSelectedBooking = (state) => state.bookings?.selectedBooking || null;
+export const selectBookingsLoading = (state) => state.bookings?.loading || false;
 export const selectBookingsError = (state) => state.bookings?.error || null;
-export const selectStatusFilter = (state) =>
-  state.bookings?.statusFilter || "all";
+export const selectStatusFilter = (state) => state.bookings?.statusFilter || "all";
 export const selectSearchQuery = (state) => state.bookings?.searchQuery || "";
-export const selectPagination = (state) =>
-  state.bookings?.pagination || {
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-  };
-export const selectBookingsStats = (state) =>
-  state.bookings?.stats || {
-    thisWeek: 0,
-    thisMonth: 0,
-    totalRevenue: 0,
-  };
+export const selectPagination = (state) => state.bookings?.pagination || {
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 10,
+};
+export const selectBookingsStats = (state) => state.bookings?.stats || {
+  thisWeek: 0,
+  thisMonth: 0,
+  totalRevenue: 0,
+};
 
 // Cart integration selectors
-export const selectCreatingBooking = (state) =>
-  state.bookings?.creatingBooking || false;
-export const selectBookingCreated = (state) =>
-  state.bookings?.bookingCreated || false;
-export const selectLastCreatedBookingId = (state) =>
-  state.bookings?.lastCreatedBookingId || null;
+export const selectCreatingBooking = (state) => state.bookings?.creatingBooking || false;
+export const selectBookingCreated = (state) => state.bookings?.bookingCreated || false;
+export const selectLastCreatedBookingId = (state) => state.bookings?.lastCreatedBookingId || null;
+
+// Invoice selectors
+export const selectGeneratingInvoice = (state) => state.bookings?.generatingInvoice || false;
+export const selectInvoiceGenerated = (state) => state.bookings?.invoiceGenerated || false;
+export const selectLastInvoiceGenerated = (state) => state.bookings?.lastInvoiceGenerated || null;
 
 // Memoized filtered bookings selector to prevent unnecessary rerenders
 export const selectFilteredBookings = createSelector(
@@ -630,13 +461,12 @@ export const selectFilteredBookings = createSelector(
     }
 
     return bookings.filter((booking) => {
-      const matchesStatus =
-        statusFilter === "all" || booking.status === statusFilter;
-      const matchesSearch =
-        !searchQuery ||
-        booking.customerName
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
+      const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+      const matchesSearch = !searchQuery ||
+        booking.customer?.personalInfo?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.customer?.eventDetails?.eventType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.customer?.eventDetails?.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         booking.eventType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         booking.location?.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -651,7 +481,7 @@ export const selectBookingStats = createSelector(
   (filteredBookings) => {
     const total = filteredBookings.length;
     const pending = filteredBookings.filter(
-      (b) => b.status === "pending"
+      (b) => b.status === "pending_confirmation" || b.status === "pending"
     ).length;
     const confirmed = filteredBookings.filter(
       (b) => b.status === "confirmed"
@@ -659,8 +489,8 @@ export const selectBookingStats = createSelector(
     const cancelled = filteredBookings.filter(
       (b) => b.status === "cancelled"
     ).length;
-    const singleDay = filteredBookings.filter((b) => b.singleDay).length;
-    const multiDay = filteredBookings.filter((b) => b.multiDay).length;
+    const singleDay = filteredBookings.filter((b) => b.singleDay || !b.eventSchedule?.isMultiDay).length;
+    const multiDay = filteredBookings.filter((b) => b.multiDay || b.eventSchedule?.isMultiDay).length;
 
     return {
       total,
@@ -673,57 +503,43 @@ export const selectBookingStats = createSelector(
   }
 );
 
-// Selector for booking items
-export const selectBookingItems = createSelector(
-  [selectSelectedBooking],
-  (booking) => booking?.items || []
-);
-
-// Utility function to format time for display
-export const formatTime = (time24) => {
-  if (!time24) return "";
-  const [hours, minutes] = time24.split(":");
-  const hour = parseInt(hours);
-  const ampm = hour >= 12 ? "PM" : "AM";
-  const displayHour = hour % 12 || 12;
-  return `${displayHour}:${minutes} ${ampm}`;
-};
-
-// Utility function to calculate event duration
-export const calculateEventDuration = (
-  startDate,
-  endDate,
-  startTime,
-  endTime
-) => {
-  const start = new Date(`${startDate}T${startTime}`);
-  const end = new Date(`${endDate}T${endTime}`);
-
-  const diffMs = end - start;
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-  if (diffHours >= 24) {
-    const days = Math.floor(diffHours / 24);
-    const remainingHours = diffHours % 24;
-    return `${days} day${
-      days > 1 ? "s" : ""
-    } ${remainingHours}h ${diffMinutes}m`;
+// Utility function to get status display info
+export const getStatusInfo = (status) => {
+  switch (status) {
+    case 'confirmed':
+      return {
+        label: 'Confirmed',
+        color: 'green',
+        bgClass: 'bg-green-50',
+        textClass: 'text-green-600',
+        dotClass: 'bg-green-500'
+      };
+    case 'pending_confirmation':
+    case 'pending':
+      return {
+        label: 'Pending',
+        color: 'orange',
+        bgClass: 'bg-orange-50',
+        textClass: 'text-orange-600',
+        dotClass: 'bg-orange-500'
+      };
+    case 'cancelled':
+      return {
+        label: 'Cancelled',
+        color: 'red',
+        bgClass: 'bg-red-50',
+        textClass: 'text-red-600',
+        dotClass: 'bg-red-500'
+      };
+    default:
+      return {
+        label: 'Unknown',
+        color: 'gray',
+        bgClass: 'bg-gray-50',
+        textClass: 'text-gray-600',
+        dotClass: 'bg-gray-500'
+      };
   }
-
-  return `${diffHours}h ${diffMinutes}m`;
-};
-
-// Utility function to format price
-export const formatPrice = (amount) => {
-  if (typeof amount === "string") {
-    return amount;
-  }
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    minimumFractionDigits: 2,
-  }).format(amount);
 };
 
 export default bookingsSlice.reducer;

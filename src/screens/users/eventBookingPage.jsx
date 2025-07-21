@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  ArrowLeft, Calendar, User, Eye, Check, ShoppingCart, Sparkles, Menu, X
+  ArrowLeft, Calendar, User, Eye, Check, ShoppingCart, Sparkles, Menu, X , Mail, MessageCircle, Heart
 } from 'lucide-react';
 
 import {
@@ -174,13 +174,7 @@ const EventBookingPage = () => {
         return;
       }
       
-    } else if (currentStep === 2) {
-      if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone ||
-         !customerInfo?.location || !customerInfo?.guests) {
-        setLocalError('Please fill out all required customer fields');
-        return;
-      }
-    }
+    } 
 
     setLocalError('');
     dispatch(nextStep());
@@ -357,8 +351,8 @@ const EventBookingPage = () => {
         fadingOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      {/* Mobile Menu Overlay */}
-      {showMobileMenu && (
+      {/* Mobile Menu Overlay - ONLY SHOW ON FIRST STEP */}
+      {showMobileMenu && currentStep === 1 && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden" onClick={() => setShowMobileMenu(false)}>
           <div className="bg-white h-full w-80 max-w-[85vw] shadow-xl p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
@@ -443,12 +437,7 @@ const EventBookingPage = () => {
                   {cartItemCount}
                 </div>
               </div>
-              <button
-                onClick={() => setShowMobileMenu(true)}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
+           
             </div>
           </div>
         </div>

@@ -14,7 +14,9 @@ import {
   AlertCircle,
   Clock,
   ArrowLeft,
-  BadgeInfo
+  BadgeInfo,
+  Truck,
+  Settings
 } from 'lucide-react';
 
 const CustomerDetailsStep = ({ 
@@ -34,7 +36,9 @@ const CustomerDetailsStep = ({
     phone: customerInfo?.phone || '',
     email: customerInfo?.email || '',
     guests: customerInfo?.guests || '',
-    specialRequests: customerInfo?.specialRequests || ''
+    specialRequests: customerInfo?.specialRequests || '',
+    delivery: customerInfo?.delivery || '',
+    installation: customerInfo?.installation || ''
   });
 
   const [errors, setErrors] = useState({});
@@ -50,7 +54,9 @@ const CustomerDetailsStep = ({
         phone: customerInfo.phone || '',
         email: customerInfo.email || '',
         guests: customerInfo.guests || '',
-        specialRequests: customerInfo.specialRequests || ''
+        specialRequests: customerInfo.specialRequests || '',
+        delivery: customerInfo.delivery || '',
+        installation: customerInfo.installation || ''
       });
     }
   }, [customerInfo]);
@@ -67,6 +73,18 @@ const CustomerDetailsStep = ({
     'Seminar',
     'Product Launch',
     'Other'
+  ];
+
+  const deliveryOptions = [
+    { value: '', label: 'Select delivery option' },
+    { value: 'yes', label: 'Yes - Deliver to venue' },
+    { value: 'no', label: 'No - Self pickup' }
+  ];
+
+  const installationOptions = [
+    { value: '', label: 'Select installation option' },
+    { value: 'yes', label: 'Yes - Professional setup required' },
+    { value: 'no', label: 'No - Self setup' }
   ];
 
   const handleInputChange = (field, value) => {
@@ -95,7 +113,6 @@ const CustomerDetailsStep = ({
       newErrors.name = 'Customer name is required';
     }
     
-    
     if (!formData.location.trim()) {
       newErrors.location = 'Event location is required';
     }
@@ -112,11 +129,13 @@ const CustomerDetailsStep = ({
       newErrors.email = 'Please enter a valid email address';
     }
     
-    // if (!formData.guests.trim()) {
-    //   newErrors.guests = 'Number of guests is required';
-    // } else if (isNaN(formData.guests) || parseInt(formData.guests) < 1) {
-    //   newErrors.guests = 'Please enter a valid number of guests';
-    // }
+    if (!formData.delivery.trim()) {
+      newErrors.delivery = 'Please select a delivery option';
+    }
+    
+    if (!formData.installation.trim()) {
+      newErrors.installation = 'Please select an installation option';
+    }
     
     console.log('Validation errors:', newErrors); // Debug log
     
@@ -274,7 +293,7 @@ const CustomerDetailsStep = ({
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
               <Star className="w-4 h-4 mr-2" />
-              Event Type (Optional) *
+              Event Type (Optional)
             </label>
             <div className="relative">
               <select
@@ -421,7 +440,7 @@ const CustomerDetailsStep = ({
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
               <Users className="w-4 h-4 mr-2" />
-              Number of Guests *
+              Number of Guests (Optional)
             </label>
             <div className="relative">
               <input
@@ -450,6 +469,86 @@ const CustomerDetailsStep = ({
               <p className="text-red-500 text-sm flex items-center">
                 <AlertCircle className="w-4 h-4 mr-1" />
                 {errors.guests}
+              </p>
+            )}
+          </div>
+
+          {/* Delivery Option */}
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              <Truck className="w-4 h-4 mr-2" />
+              Delivery Required? *
+            </label>
+            <div className="relative">
+              <select
+                value={formData.delivery}
+                onChange={(e) => handleInputChange('delivery', e.target.value)}
+                onFocus={() => setFocusedField('delivery')}
+                onBlur={() => setFocusedField(null)}
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 ${
+                  errors.delivery 
+                    ? 'border-red-300 bg-red-50' 
+                    : isFieldValid('delivery')
+                    ? 'border-green-300 bg-green-50'
+                    : focusedField === 'delivery'
+                    ? 'border-blue-300 bg-blue-50'
+                    : 'border-gray-200 bg-gray-50'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+              >
+                {deliveryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {isFieldValid('delivery') && (
+                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
+              )}
+            </div>
+            {errors.delivery && (
+              <p className="text-red-500 text-sm flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {errors.delivery}
+              </p>
+            )}
+          </div>
+
+          {/* Installation Option */}
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              <Settings className="w-4 h-4 mr-2" />
+              Professional Setup Required? *
+            </label>
+            <div className="relative">
+              <select
+                value={formData.installation}
+                onChange={(e) => handleInputChange('installation', e.target.value)}
+                onFocus={() => setFocusedField('installation')}
+                onBlur={() => setFocusedField(null)}
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 ${
+                  errors.installation 
+                    ? 'border-red-300 bg-red-50' 
+                    : isFieldValid('installation')
+                    ? 'border-green-300 bg-green-50'
+                    : focusedField === 'installation'
+                    ? 'border-blue-300 bg-blue-50'
+                    : 'border-gray-200 bg-gray-50'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+              >
+                {installationOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {isFieldValid('installation') && (
+                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
+              )}
+            </div>
+            {errors.installation && (
+              <p className="text-red-500 text-sm flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {errors.installation}
               </p>
             )}
           </div>
@@ -488,7 +587,6 @@ const CustomerDetailsStep = ({
           </div>
         )}
       </div>
-
 
       <div className="flex justify-between items-center pt-6">
         <button

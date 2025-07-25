@@ -150,6 +150,7 @@ export default function Profile({ onProfileUpdate, profileData }) {
 
   // Check if form is valid for submission
   const isFormValid = validationStatus.email && validationStatus.phone;
+  console.log("edit data", editData);
 
   return (
     <div className="flex flex-col md:flex-row gap-4 p-6 bg-gray-50 min-h-[100%] overflow-hidden">

@@ -22,27 +22,38 @@ export const fetchBookingMails = createAsyncThunk(
   }
 );
 
-// Async thunk for uploading attachments (placeholder for Cloudinary integration)
+// Async thunk for uploading attachments - Send file to backend
 export const uploadAttachment = createAsyncThunk(
   "mailer/uploadAttachment",
   async (file, { rejectWithValue }) => {
     try {
-      // This is where you'll integrate with Cloudinary later
-      // For now, we'll simulate the upload with a promise
       const formData = new FormData();
       formData.append("file", file);
 
-      // Simulate upload delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Send file to backend for actual upload (Cloudinary or other service)
+      const response = await fetch("/api/mailer/upload-attachment", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+        body: formData,
+      });
 
-      // Return mock response - replace with actual Cloudinary response
+      if (!response.ok) {
+        throw new Error("Failed to upload attachment");
+      }
+
+      const data = await response.json();
+      
+      // Return the actual response from backend
       return {
-        id: Date.now() + Math.random(),
+        id: data.id || Date.now() + Math.random(), // Use backend ID if available
         name: file.name,
         size: file.size,
         type: file.type,
-        url: URL.createObjectURL(file), // Temporary URL for preview
-        cloudinaryUrl: `https://res.cloudinary.com/your-cloud/image/upload/v1234567890/${file.name}`, // Mock Cloudinary URL
+        url: data.url, // Actual URL from backend
+        cloudinaryUrl: data.cloudinaryUrl || data.url, // Backend provides the real Cloudinary URL
+        publicId: data.publicId, // Store Cloudinary public ID if needed
       };
     } catch (error) {
       return rejectWithValue(error.message);
@@ -58,7 +69,7 @@ export const sendIndividualMail = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await post(
+      const response = await post(
         "/api/mailer/send-individual",
         {
           to: email,
@@ -66,9 +77,11 @@ export const sendIndividualMail = createAsyncThunk(
           message,
           customerName,
           attachments: attachments.map((att) => ({
+            id: att.id,
             name: att.name,
-            url: att.cloudinaryUrl,
+            url: att.cloudinaryUrl || att.url,
             type: att.type,
+            publicId: att.publicId, // Include publicId if backend needs it
           })),
         },
         {
@@ -88,7 +101,7 @@ export const sendIndividualMail = createAsyncThunk(
         customerName,
       };
     } catch (error) {
-      return rejectWithValue(error.message || "Failed to send email1");
+      return rejectWithValue(error.message || "Failed to send email");
     }
   }
 );
@@ -101,28 +114,28 @@ export const broadcastMail = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await fetch("/api/mailer/broadcast", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await post(
+        "/api/mailer/broadcast",
+        {
           subject,
           message,
           recipients,
           attachments: attachments.map((att) => ({
+            id: att.id,
             name: att.name,
-            url: att.cloudinaryUrl,
+            url: att.cloudinaryUrl || att.url,
             type: att.type,
+            publicId: att.publicId, // Include publicId if backend needs it
           })),
-        }),
-      });
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAuthToken()}`,
+          },
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to broadcast email");
-      }
-
-      const data = await response.json();
       return {
         subject,
         message,
@@ -141,12 +154,12 @@ export const fetchMailHistory = createAsyncThunk(
   "mailer/fetchMailHistory",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch("/api/mailer/history");
-      if (!response.ok) {
-        throw new Error("Failed to fetch mail history");
-      }
-      const data = await response.json();
-      return data;
+      const response = await get("/api/mailer/history", {
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+      });
+      return response?.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }

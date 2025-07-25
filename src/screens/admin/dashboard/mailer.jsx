@@ -92,15 +92,6 @@ const MailerScreen = () => {
     }
   };
 
-  const handleClearComposition = () => {
-    dispatch(clearComposition());
-    
-    // Deselect all emails when clearing broadcast composition
-    if (mailComposition.type === "broadcast") {
-      setSelectedMails([]);
-    }
-  };
-
   const handleSendIndividual = async () => {
     if (
       !mailComposition.recipient?.email ||
@@ -535,7 +526,7 @@ const MailerScreen = () => {
                       : "Broadcast Email"}
                   </h3>
                   <button
-                    onClick={handleClearComposition}
+                    onClick={() => dispatch(clearComposition())}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -773,7 +764,7 @@ const MailerScreen = () => {
                   </button>
 
                   <button
-                    onClick={handleClearComposition}
+                    onClick={() => dispatch(clearComposition())}
                     className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors"
                   >
                     Clear

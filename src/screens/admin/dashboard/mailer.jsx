@@ -85,6 +85,20 @@ const MailerScreen = () => {
 
   const handleStartComposing = (type, recipient = null) => {
     dispatch(startComposing({ type, recipient }));
+    
+    // Auto-select all emails when starting broadcast composition
+    if (type === "broadcast") {
+      setSelectedMails(filteredMails.map((mail) => mail.id));
+    }
+  };
+
+  const handleClearComposition = () => {
+    dispatch(clearComposition());
+    
+    // Deselect all emails when clearing broadcast composition
+    if (mailComposition.type === "broadcast") {
+      setSelectedMails([]);
+    }
   };
 
   const handleSendIndividual = async () => {
@@ -451,20 +465,23 @@ const MailerScreen = () => {
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-3 flex-1 min-w-0">
                               <div className="p-2 bg-gray-100 rounded-full">
                                 <User className="w-4 h-4 text-gray-600" />
                               </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
                                   {mail.customerName}
                                 </p>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-gray-600 truncate">
                                   {mail.email}
                                 </p>
                               </div>
+                            </div>
+
+                            <div className="flex items-center space-x-3 flex-shrink-0">
                               <button
-                                className="text-blue-500 hover:underline"
+                                className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium rounded-full hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md"
                                 onClick={() =>
                                   handleStartComposing("individual", {
                                     email: mail.email,
@@ -472,11 +489,10 @@ const MailerScreen = () => {
                                   })
                                 }
                               >
+                                <Send className="w-3 h-3 mr-1.5" />
                                 Send Mail
                               </button>
-                            </div>
 
-                            <div className="flex items-center space-x-3">
                               <span
                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
                                   mail.status
@@ -519,39 +535,90 @@ const MailerScreen = () => {
                       : "Broadcast Email"}
                   </h3>
                   <button
-                    onClick={() => dispatch(clearComposition())}
+                    onClick={handleClearComposition}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
-
-                {mailComposition.type === "individual" &&
-                  mailComposition.recipient && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm font-medium text-blue-900">
-                        To: {mailComposition.recipient.customerName}
-                      </p>
-                      <p className="text-sm text-blue-700">
-                        {mailComposition.recipient.email}
-                      </p>
-                    </div>
-                  )}
-
-                {mailComposition.type === "broadcast" && (
-                  <div className="mt-4 p-3 bg-purple-50 rounded-lg">
-                    <p className="text-sm font-medium text-purple-900">
-                      Broadcasting to:{" "}
-                      {selectedMails.length > 0
-                        ? selectedMails.length
-                        : filteredMails.length}{" "}
-                      recipients
-                    </p>
-                  </div>
-                )}
               </div>
 
               <div className="p-6 space-y-6">
+                {/* To Section - Enhanced for Individual Emails */}
+                {mailComposition.type === "individual" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      To
+                    </label>
+                    {mailComposition.recipient ? (
+                      <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-blue-100 rounded-full">
+                            <User className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-blue-900">
+                              {mailComposition.recipient.customerName}
+                            </p>
+                            <p className="text-sm text-blue-700">
+                              {mailComposition.recipient.email}
+                            </p>
+                          </div>
+                          <div className="flex items-center text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Selected
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <div className="flex items-center space-x-2">
+                          <AlertCircle className="w-4 h-4 text-yellow-600" />
+                          <p className="text-sm text-yellow-800">
+                            Please select a recipient from the customer list
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Broadcast Recipients Info */}
+                {mailComposition.type === "broadcast" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Recipients
+                    </label>
+                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-purple-100 rounded-full">
+                          <Users className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-purple-900">
+                            Broadcasting to{" "}
+                            {selectedMails.length > 0
+                              ? selectedMails.length
+                              : filteredMails.length}{" "}
+                            recipients
+                          </p>
+                          <p className="text-sm text-purple-700">
+                            {selectedMails.length > 0
+                              ? "Selected customers only"
+                              : "All filtered customers"}
+                          </p>
+                        </div>
+                        <div className="flex items-center text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                          <Users className="w-3 h-3 mr-1" />
+                          {selectedMails.length > 0
+                            ? selectedMails.length
+                            : filteredMails.length}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Subject
@@ -706,7 +773,7 @@ const MailerScreen = () => {
                   </button>
 
                   <button
-                    onClick={() => dispatch(clearComposition())}
+                    onClick={handleClearComposition}
                     className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors"
                   >
                     Clear

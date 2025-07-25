@@ -24,7 +24,7 @@ import {
   fetchBookingMails,
   sendIndividualMail,
   broadcastMail,
-  uploadAttachment,
+  addFileAttachment, // Changed from uploadAttachment
   startComposing,
   updateMailSubject,
   updateMailMessage,
@@ -213,13 +213,13 @@ const MailerScreen = () => {
 
     if (validFiles.length === 0) return;
 
-    // Upload files one by one
+    // Add files one by one
     for (const file of validFiles) {
       try {
-        await dispatch(uploadAttachment(file)).unwrap();
-        notifySuccess(`${file.name} uploaded successfully`);
+        await dispatch(addFileAttachment(file)).unwrap(); // Changed from uploadAttachment
+        notifySuccess(`${file.name} added successfully`);
       } catch (err) {
-        notifyError(`Failed to upload ${file.name}`);
+        notifyError(`Failed to add ${file.name}`);
       }
     }
   };
@@ -702,9 +702,9 @@ const MailerScreen = () => {
                             </div>
 
                             <div className="flex items-center space-x-2">
-                              {attachment.url && (
+                              {attachment.preview && (
                                 <a
-                                  href={attachment.url}
+                                  href={attachment.preview}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:text-blue-800"
@@ -729,7 +729,7 @@ const MailerScreen = () => {
                   {uploadingAttachment && (
                     <div className="mt-2 flex items-center text-sm text-blue-600">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                      Uploading attachment...
+                      Adding attachment...
                     </div>
                   )}
                 </div>

@@ -22,60 +22,29 @@ export const fetchBookingMails = createAsyncThunk(
   }
 );
 
-// Async thunk for uploading attachments (placeholder for Cloudinary integration)
-export const uploadAttachment = createAsyncThunk(
-  "mailer/uploadAttachment",
+// Add file to attachments (no upload, just store file)
+export const addFileAttachment = createAsyncThunk(
+  "mailer/addFileAttachment",
   async (file, { rejectWithValue }) => {
     try {
-      console.log("Uploading file:", file); // Log the actual file being sent
-      
-      const formData = new FormData();
-      formData.append("file", file);
-
-      // Send the actual file to backend
-      const response = await fetch("/api/upload-attachment", {
-        method: "POST",
-        body: formData,
-      });
-
-      console.log("Response status:", response.status);
-      console.log("Response headers:", response.headers.get('content-type'));
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log("Error response:", errorText);
-        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-      }
-
-      const responseText = await response.text();
-      console.log("Raw response:", responseText);
-
-      let uploadResult;
-      try {
-        uploadResult = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("JSON parse error:", parseError);
-        throw new Error(`Invalid JSON response: ${responseText}`);
-      }
-
-      console.log("Upload result from backend:", uploadResult); // Log backend response
+      console.log("Adding file attachment:", file);
       
       return {
-        id: uploadResult.public_id || Date.now(),
+        id: Date.now() + Math.random(),
         name: file.name,
         size: file.size,
         type: file.type,
-        url: uploadResult.secure_url, // Real Cloudinary URL from backend
-        cloudinaryUrl: uploadResult.secure_url,
-        publicId: uploadResult.public_id,
+        file: file, // Store the actual file object
+        preview: URL.createObjectURL(file), // For preview
       };
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error("Error adding attachment:", error);
       return rejectWithValue(error.message);
     }
   }
 );
-// Async thunk for sending individual email with attachments
+
+// Send individual email WITH files attached
 export const sendIndividualMail = createAsyncThunk(
   "mailer/sendIndividualMail",
   async (
@@ -83,42 +52,58 @@ export const sendIndividualMail = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await post(
-        "/api/mailer/send-individual",
-        {
-          to: email,
-          subject,
-          message,
-          customerName,
-          attachments: attachments.map((att) => ({
-            name: att.name,
-            url: att.cloudinaryUrl,
-            type: att.type,
-          })),
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getAuthToken()}`,
-          },
+      console.log("Sending email with attachments:", attachments);
+      
+      const formData = new FormData();
+      
+      // Add email data
+      formData.append("to", email);
+      formData.append("subject", subject);
+      formData.append("message", message);
+      formData.append("customerName", customerName);
+      
+      // Add files to FormData
+      attachments.forEach((attachment, index) => {
+        if (attachment.file) {
+          formData.append(`attachments`, attachment.file);
         }
-      );
+      });
+
+      const response = await fetch("/api/mailer/send-individual", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to send email: ${errorText}`);
+      }
+
+      const result = await response.json();
 
       return {
         email,
         subject,
         message,
-        attachments,
+        attachments: attachments.map(att => ({
+          name: att.name,
+          size: att.size,
+          type: att.type
+        })),
         sentAt: new Date().toISOString(),
         customerName,
       };
     } catch (error) {
-      return rejectWithValue(error.message || "Failed to send email1");
+      console.error("Send email error:", error);
+      return rejectWithValue(error.message || "Failed to send email");
     }
   }
 );
 
-// Async thunk for broadcasting email with attachments
+// Send broadcast email WITH files attached
 export const broadcastMail = createAsyncThunk(
   "mailer/broadcastMail",
   async (
@@ -126,36 +111,50 @@ export const broadcastMail = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
+      console.log("Broadcasting email with attachments:", attachments);
+      
+      const formData = new FormData();
+      
+      // Add email data
+      formData.append("subject", subject);
+      formData.append("message", message);
+      formData.append("recipients", JSON.stringify(recipients));
+      
+      // Add files to FormData
+      attachments.forEach((attachment, index) => {
+        if (attachment.file) {
+          formData.append(`attachments`, attachment.file);
+        }
+      });
+
       const response = await fetch("/api/mailer/broadcast", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAuthToken()}`,
         },
-        body: JSON.stringify({
-          subject,
-          message,
-          recipients,
-          attachments: attachments.map((att) => ({
-            name: att.name,
-            url: att.cloudinaryUrl,
-            type: att.type,
-          })),
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Failed to broadcast email");
+        const errorText = await response.text();
+        throw new Error(`Failed to broadcast email: ${errorText}`);
       }
 
-      const data = await response.json();
+      const result = await response.json();
+
       return {
         subject,
         message,
-        attachments,
+        attachments: attachments.map(att => ({
+          name: att.name,
+          size: att.size,
+          type: att.type
+        })),
         recipientCount: recipients.length,
         sentAt: new Date().toISOString(),
       };
     } catch (error) {
+      console.error("Broadcast email error:", error);
       return rejectWithValue(error.message);
     }
   }
@@ -347,16 +346,16 @@ const mailerSlice = createSlice({
         state.bookingMails = sampleMails;
       })
 
-      // Upload attachment
-      .addCase(uploadAttachment.pending, (state) => {
+      // Add file attachment
+      .addCase(addFileAttachment.pending, (state) => {
         state.uploadingAttachment = true;
         state.error = null;
       })
-      .addCase(uploadAttachment.fulfilled, (state, action) => {
+      .addCase(addFileAttachment.fulfilled, (state, action) => {
         state.uploadingAttachment = false;
         state.mailComposition.attachments.push(action.payload);
       })
-      .addCase(uploadAttachment.rejected, (state, action) => {
+      .addCase(addFileAttachment.rejected, (state, action) => {
         state.uploadingAttachment = false;
         state.error = action.payload;
       })

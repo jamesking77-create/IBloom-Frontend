@@ -32,7 +32,6 @@ import {
 
 const CategoriesScreen = () => {
   const dispatch = useDispatch();
-  const [selectedFile, setSelectedFile] = useState(null);
   const {
     filteredCategories,
     selectedCategory,
@@ -51,8 +50,7 @@ const CategoriesScreen = () => {
     name: "",
     description: "",
     itemCount: "",
-    image: null,
-    imagePreview: "", // <-- This will store the preview URL
+    image: "",
     hasQuotes: false,
   });
   const [itemForm, setItemForm] = useState({
@@ -72,13 +70,8 @@ const CategoriesScreen = () => {
   // Update selectedCategory when categories change (after item operations)
   useEffect(() => {
     if (selectedCategory && filteredCategories.length > 0) {
-      const updatedCategory = filteredCategories.find(
-        (cat) => cat.id === selectedCategory.id
-      );
-      if (
-        updatedCategory &&
-        JSON.stringify(updatedCategory) !== JSON.stringify(selectedCategory)
-      ) {
+      const updatedCategory = filteredCategories.find(cat => cat.id === selectedCategory.id);
+      if (updatedCategory && JSON.stringify(updatedCategory) !== JSON.stringify(selectedCategory)) {
         dispatch(setSelectedCategory(updatedCategory));
       }
     }
@@ -88,34 +81,14 @@ const CategoriesScreen = () => {
   const handleCategorySubmit = async (e) => {
     e.preventDefault();
     try {
-      const formData = new FormData();
-      formData.append("id", categoryForm.id);
-      formData.append("name", categoryForm.name);
-      formData.append("description", categoryForm.description);
-      formData.append("itemCount", categoryForm.itemCount);
-      formData.append("hasQuotes", categoryForm.hasQuotes);
-      formData.append("image", selectedFile);
-
       if (editingCategory) {
         await dispatch(
-          updateCategory({ id: editingCategory.id, categoryData: formData })
+          updateCategory({ id: editingCategory.id, categoryData: categoryForm })
         );
       } else {
-        await dispatch(createCategory(formData));
+        await dispatch(createCategory(categoryForm));
       }
-
-      if (categoryForm.imagePreview) {
-        URL.revokeObjectURL(categoryForm.imagePreview);
-      }
-
-      setCategoryForm({
-        id: "",
-        name: "",
-        description: "",
-        itemCount: "",
-        image: null,
-        hasQuotes: false,
-      });
+      setCategoryForm({ id: "", name: "", description: "", itemCount: "", image: "", hasQuotes: false });
       dispatch(closeModal("categoryModal"));
       dispatch(setEditingCategory(null));
     } catch (error) {
@@ -144,14 +117,14 @@ const CategoriesScreen = () => {
           })
         );
       }
-
+      
       // Check if the operation was successful
-      if (result.type.endsWith("/fulfilled")) {
+      if (result.type.endsWith('/fulfilled')) {
         // Reset form and close modal
         setItemForm({ name: "", description: "", price: "", image: "" });
         dispatch(closeModal("itemModal"));
         dispatch(setEditingItem(null));
-
+        
         // The selectedCategory will be automatically updated by the useEffect
         // that watches for changes in filteredCategories
       }
@@ -179,7 +152,7 @@ const CategoriesScreen = () => {
           itemId: itemId,
         })
       );
-
+      
       // The selectedCategory will be automatically updated by the useEffect
       // that watches for changes in filteredCategories
     } catch (error) {
@@ -190,22 +163,12 @@ const CategoriesScreen = () => {
   // Handle file change simulation
   const handleFileChange = (e, type) => {
     const file = e.target.files[0];
-    console.log("file", file);
     if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setSelectedFile(file);
-      if (type === "category") {
-        setCategoryForm((prev) => ({
-          ...prev,
-          image: file,
-          imagePreview: previewUrl,
-        }));
-      } else if (type === "item") {
-        setItemForm((prev) => ({
-          ...prev,
-          image: file,
-          imagePreview: previewUrl,
-        }));
+      const imageUrl = URL.createObjectURL(file);
+      if (type === 'category') {
+        setCategoryForm(prev => ({ ...prev, image: imageUrl }));
+      } else if (type === 'item') { // Fixed: Added proper condition for item
+        setItemForm(prev => ({ ...prev, image: imageUrl }));
       }
     }
   };
@@ -244,15 +207,7 @@ const CategoriesScreen = () => {
   const handleCloseCategoryModal = () => {
     dispatch(closeModal("categoryModal"));
     dispatch(setEditingCategory(null));
-    setCategoryForm({
-      id: "",
-      name: "",
-      description: "",
-      itemCount: "",
-      image: null,
-      hasQuotes: false,
-    });
-    setSelectedFile(file);
+    setCategoryForm({ id: "", name: "", description: "", itemCount: "", image: "" });
   };
 
   const handleCloseItemModal = () => {
@@ -612,8 +567,7 @@ const CategoriesScreen = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
-              {!selectedCategory.items ||
-              selectedCategory.items.length === 0 ? (
+              {!selectedCategory.items || selectedCategory.items.length === 0 ? (
                 <div className="text-center py-12">
                   <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
                   <h3 className="text-lg font-medium text-gray-900 mb-1">

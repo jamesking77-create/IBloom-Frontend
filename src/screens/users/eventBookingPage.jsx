@@ -148,8 +148,13 @@ const EventBookingPage = () => {
     setLocalError('');
   };
 
+  // FIXED: Complete handleNext function
   const handleNext = () => {
+    console.log('=== EventBookingPage handleNext called ===');
+    console.log('Current step:', currentStep);
+    
     if (currentStep === 1) {
+      console.log('Processing step 1 validation...');
       // Check if start date is selected
       if (selectedDates?.multiDay && !selectedDates?.startDate) {
         setLocalError('Please select a start date for your event');
@@ -173,11 +178,36 @@ const EventBookingPage = () => {
         setLocalError('Add at least one item to your cart');
         return;
       }
-      
     } 
+    else if (currentStep === 2) {
+      console.log('Processing step 2 validation...');
+      // The CustomerDetailsStep component handles its own validation
+      // So we just need to check if we have the basic customer info
+      if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
+        setLocalError('Please provide your name, email, and phone.');
+        return;
+      }
+      
+      if (!customerInfo?.location) {
+        setLocalError('Please provide the event location.');
+        return;
+      }
+      
+      if (!customerInfo?.delivery) {
+        setLocalError('Please select a delivery option.');
+        return;
+      }
+      
+      if (!customerInfo?.installation) {
+        setLocalError('Please select an installation option.');
+        return;
+      }
+    }
 
+    console.log('All validations passed, moving to next step...');
     setLocalError('');
     dispatch(nextStep());
+    console.log('✅ nextStep() dispatched');
   };
 
   const handlePrevious = () => {

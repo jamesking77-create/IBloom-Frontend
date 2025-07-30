@@ -550,76 +550,79 @@ const cartSlice = createSlice({
       storage.save(state);
     },
 
-    addToCart: (state, action) => {
-      const { item, dates, allowDuplicates = false } = action.payload;
+  // FIXED: Update the addToCart action in cart-slice.js
 
-      if (!item || !item.name || item.price === undefined) {
-        state.error = "Invalid item data";
-        return;
-      }
+addToCart: (state, action) => {
+  const { item, dates, allowDuplicates = false } = action.payload;
 
-      // Clear previous errors
-      state.error = null;
-      state.validationErrors = {};
+  if (!item || !item.name || item.price === undefined) {
+    state.error = "Invalid item data";
+    return;
+  }
 
-      // Normalize item
-      const normalizedItem = utils.normalizeItem(item);
+  // Clear previous errors
+  state.error = null;
+  state.validationErrors = {};
 
-      // Check for existing item
-      if (!allowDuplicates) {
-        const existingItemIndex = state.items.findIndex(
-          (i) => i.id === normalizedItem.id
-        );
+  // Normalize item
+  const normalizedItem = utils.normalizeItem(item);
 
-        if (existingItemIndex !== -1) {
-          // FIXED: Set quantity to 1 instead of incrementing
-          state.items[existingItemIndex].quantity = 1;
-          state.subtotal = utils.calculateTotal(state.items);
-          state.tax = utils.calculateTax(state.subtotal);
-          state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
-          state.isOpen = true;
-          storage.save(state);
-          return;
-        }
-      }
+  // Check for existing item
+  if (!allowDuplicates) {
+    const existingItemIndex = state.items.findIndex(
+      (i) => i.id === normalizedItem.id
+    );
 
-      let duration = 1;
-      if (state.orderMode === ORDER_MODES.BOOKING) {
-        duration = utils.calculateDurationHours(
-          dates?.startDate || state.selectedDates.startDate,
-          dates?.endDate || state.selectedDates.endDate,
-          dates?.startTime || state.selectedDates.startTime,
-          dates?.endTime || state.selectedDates.endTime
-        );
-      } else if (state.orderMode === ORDER_MODES.ORDER_BY_DATE) {
-        duration = utils.calculateDurationDays(
-          dates?.startDate || state.selectedDates.startDate,
-          dates?.endDate || state.selectedDates.endDate
-        );
-      }
-
-      const cartItem = {
-        cartId: utils.generateCartItemId(),
-        id: normalizedItem.id,
-        name: normalizedItem.name,
-        description: normalizedItem.description,
-        price: normalizedItem.price,
-        image: normalizedItem.image,
-        category: normalizedItem.category,
-        quantity: 1,
-        duration,
-        bookingDates: dates || { ...state.selectedDates },
-        orderMode: state.orderMode,
-        addedAt: new Date().toISOString(),
-      };
-
-      state.items.push(cartItem);
+    if (existingItemIndex !== -1) {
+      // FIXED: Set quantity to 1 instead of incrementing
+      state.items[existingItemIndex].quantity = 1;
       state.subtotal = utils.calculateTotal(state.items);
       state.tax = utils.calculateTax(state.subtotal);
       state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
       state.isOpen = true;
       storage.save(state);
-    },
+      return;
+    }
+  }
+
+  let duration = 1;
+  if (state.orderMode === ORDER_MODES.BOOKING) {
+    duration = utils.calculateDurationHours(
+      dates?.startDate || state.selectedDates.startDate,
+      dates?.endDate || state.selectedDates.endDate,
+      dates?.startTime || state.selectedDates.startTime,
+      dates?.endTime || state.selectedDates.endTime
+    );
+  } else if (state.orderMode === ORDER_MODES.ORDER_BY_DATE) {
+    duration = utils.calculateDurationDays(
+      dates?.startDate || state.selectedDates.startDate,
+      dates?.endDate || state.selectedDates.endDate
+    );
+  }
+
+  const cartItem = {
+    cartId: utils.generateCartItemId(),
+    id: normalizedItem.id,
+    name: normalizedItem.name,
+    itemName: normalizedItem.name,  // ← ADD THIS LINE - Keep both for compatibility
+    description: normalizedItem.description,
+    price: normalizedItem.price,
+    image: normalizedItem.image,
+    category: normalizedItem.category,
+    quantity: 1,
+    duration,
+    bookingDates: dates || { ...state.selectedDates },
+    orderMode: state.orderMode,
+    addedAt: new Date().toISOString(),
+  };
+
+  state.items.push(cartItem);
+  state.subtotal = utils.calculateTotal(state.items);
+  state.tax = utils.calculateTax(state.subtotal);
+  state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
+  state.isOpen = true;
+  storage.save(state);
+},
 
     removeFromCart: (state, action) => {
       const cartId = action.payload;

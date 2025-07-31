@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { fetchProfile } from "../../store/slices/profile-slice"; // Adjust path as needed
 import logoimg from "../../assets/ibloomcut.png";
-import fullLogo from "../../assets/Screenshot 2025-05-09 144927.png";
+import fullLogo from "../../assets/ibloomcut.png";
 
 const UserLayout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -98,27 +98,20 @@ const UserLayout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-200">
       {/* Desktop Navigation - Hidden on mobile */}
       <nav className="hidden md:block fixed top-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-700 ease-out">
         {/* Expanded Nav (Default State) */}
         <div
-          className={`bg-white backdrop-blur-lg rounded-2xl px-8 py-4 shadow-xl border border-gray-200/50 transition-all duration-700 ease-out ${
+          className={`bg-gray-200 backdrop-blur-lg rounded-4xl px-16 py-4 shadow-xl border border-gray-200/50 transition-all duration-700 ease-out w-[75vw] max-w-none ${
             isScrolled
               ? "opacity-0 scale-90 translate-y-2 pointer-events-none"
               : "opacity-100 scale-100 translate-y-0"
           }`}
         >
-          <div className="flex items-center space-x-8 whitespace-nowrap">
-            <div className="h-10 w-auto">
-              <img
-                src={fullLogo}
-                alt="Dashboard Logo"
-                className="h-full w-auto"
-              />
-            </div>
-
-            <div className="flex items-center space-x-6">
+          <div className="flex items-center justify-between w-full">
+            {/* Left Navigation Links */}
+            <div className="flex items-center space-x-8">
               <Link
                 to="/"
                 className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
@@ -140,7 +133,7 @@ const UserLayout = () => {
                   />
                 </button>
                 <div
-                  className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-3 w-72 bg-white/95 rounded-xl shadow-xl border border-gray-200/50 backdrop-blur-lg transition-all duration-300 ${
+                  className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-3 w-72 bg-white/95 rounded-xl shadow-xl border border-gray-200/50 backdrop-blur-lg transition-all duration-300 z-50 ${
                     isMenuOpen
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 -translate-y-2 pointer-events-none"
@@ -178,23 +171,56 @@ const UserLayout = () => {
                 </div>
               </div>
 
-              {navigationLinks.slice(1).map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {/* First half of navigation links */}
+              <Link
+                to="/about"
+                className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
+              >
+                About Us
+              </Link>
+
+              <Link
+                to="/faq"
+                className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
+              >
+                FAQ
+              </Link>
             </div>
 
-            <button
-              onClick={() => navigate("/eventbooking")}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg font-medium"
-            >
-              BOOK
-            </button>
+            {/* Centered Logo */}
+            <div className="absolute left-1/2 transform -translate-x-1/2">
+              <div className="h-12 w-auto">
+                <img
+                  src={fullLogo}
+                  alt="Dashboard Logo"
+                  className="h-full w-auto"
+                />
+              </div>
+            </div>
+
+            {/* Right Navigation Links */}
+            <div className="flex items-center space-x-8">
+              <Link
+                to="/gallery"
+                className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
+              >
+                Gallery
+              </Link>
+
+              <Link
+                to="/contact"
+                className="text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 font-medium"
+              >
+                Contact
+              </Link>
+
+              <button
+                onClick={() => navigate("/eventbooking")}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-2.5 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg font-medium"
+              >
+                BOOK
+              </button>
+            </div>
           </div>
         </div>
 

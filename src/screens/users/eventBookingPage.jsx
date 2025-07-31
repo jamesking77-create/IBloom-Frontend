@@ -1,9 +1,9 @@
 // screens/user/EventBookingPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  ArrowLeft, Calendar, User, Eye, Check, ShoppingCart, Sparkles, Menu, X , Mail, MessageCircle, Heart
+  ArrowLeft, Calendar, User, Eye, Check, ShoppingCart, Sparkles, Menu, X, Mail, MessageCircle, Heart
 } from 'lucide-react';
 
 import {
@@ -29,7 +29,8 @@ import {
   clearCart,
   forceResetCart,
   setOrderMode,
-  formatPrice
+  formatPrice,
+  clearCartFromLocalStorage
 } from '../../store/slices/cart-slice';
 
 import {
@@ -44,7 +45,6 @@ import DateSelectionStep from '../../components/users/dateSelectionStep.jsx';
 import CustomerDetailsStep from '../../components/users/customerDetailsStep.jsx';
 import BookingPreviewStep from '../../components/users/bookingPreviewStep.jsx';
 
-
 const EventBookingPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -52,6 +52,7 @@ const EventBookingPage = () => {
 
   const { selectedItem, category, fromBooking } = location.state || {};
 
+  // Redux selectors
   const cartItems = useSelector(selectCartItems);
   const cartTotal = useSelector(selectCartTotal);
   const selectedDates = useSelector(selectSelectedDates);
@@ -64,11 +65,17 @@ const EventBookingPage = () => {
   const bookingCreated = useSelector(selectBookingCreated);
   const lastCreatedBookingId = useSelector(selectLastCreatedBookingId);
 
+  // Local state
   const [localError, setLocalError] = useState('');
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [fadingOut, setFadingOut] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  // Refs for timeout management
+  const redirectTimeoutRef = useRef(null);
+  const safetyTimeoutRef = useRef(null);
 
   const steps = [
     { id: 1, title: 'Date & Time', icon: Calendar, description: 'Choose when', shortTitle: 'Date' },
@@ -76,17 +83,75 @@ const EventBookingPage = () => {
     { id: 3, title: 'Review & Book', icon: Eye, description: 'Confirm everything', shortTitle: 'Review' }
   ];
 
-  // Function to scroll to top smoothly
-  const scrollToTop = () => {
+  // Smooth scroll to top
+  const scrollToTop = useCallback(() => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
-  };
+  }, []);
 
-  // FIXED: Better initialization logic that handles returning from item selection
+  // Cleanup function for timeouts
+  const clearAllTimeouts = useCallback(() => {
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current);
+      redirectTimeoutRef.current = null;
+    }
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Navigation function with proper cleanup
+  const navigateToHome = useCallback(() => {
+    console.log('🏠 Starting navigation to home...');
+      
+    try {
+      // Clear all timeouts first
+      clearAllTimeouts();
+      
+      // Reset booking state
+      console.log('🔄 Resetting booking creation state...');
+      dispatch(resetBookingCreation());
+      
+      // Clear cart
+      console.log('🗑️ Force resetting cart...');
+      dispatch(forceResetCart());
+      
+      // Store admin notification
+      if (lastCreatedBookingId) {
+        localStorage.setItem('newBookingCreated', 'true');
+        localStorage.setItem('newBookingId', lastCreatedBookingId);
+      }
+      
+      // Reset local state
+      setShowSuccessAnimation(false);
+      setLocalError('');
+      setIsNavigating(false);
+      setInitialized(false);
+      
+      // Navigate to home
+      console.log('🚀 Navigating to home page...');
+      navigate('/', { 
+        replace: true,
+        state: { fromBookingSuccess: true }
+      });
+      
+      console.log('✅ Navigation completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Error during navigation:', error);
+      // Fallback to force reload
+      window.location.replace('/');
+    }
+  }, [clearAllTimeouts, dispatch, lastCreatedBookingId, navigate]);
+
+  // Better initialization with proper dependency handling
   useEffect(() => {
-    console.log('EventBookingPage initialized');
+    if (initialized) return;
+
+    console.log('🔄 EventBookingPage initializing...');
     console.log('selectedItem:', selectedItem);
     console.log('cartItems:', cartItems);
     console.log('cartItemCount:', cartItemCount);
@@ -97,7 +162,7 @@ const EventBookingPage = () => {
     
     // Only add selectedItem if we have one AND we're not returning from booking flow
     if (selectedItem && !fromBooking) {
-      console.log('Adding selectedItem to cart (new booking)');
+      console.log('✅ Adding selectedItem to cart (new booking)');
       dispatch(addToCart({ 
         item: selectedItem, 
         dates: selectedDates,
@@ -106,7 +171,7 @@ const EventBookingPage = () => {
     }
     // If we have selectedItem and we're returning from booking, add it to existing cart
     else if (selectedItem && fromBooking) {
-      console.log('Adding selectedItem to existing cart (returning from booking)');
+      console.log('✅ Adding selectedItem to existing cart (returning from booking)');
       dispatch(addToCart({ 
         item: selectedItem, 
         dates: selectedDates,
@@ -115,213 +180,339 @@ const EventBookingPage = () => {
     }
     
     setInitialized(true);
-  }, [selectedItem, fromBooking]);
+    console.log('✅ EventBookingPage initialized');
+  }, [selectedItem, fromBooking, initialized, dispatch, selectedDates]);
 
-  // NEW: Scroll to top when step changes
+  // Better step change handling with debouncing
   useEffect(() => {
-    if (initialized) {
+    if (!initialized) return;
+    
+    const scrollTimeout = setTimeout(() => {
       scrollToTop();
-    }
-  }, [currentStep, initialized]);
+    }, 100);
 
-  // FIXED: Handle booking success
+    return () => clearTimeout(scrollTimeout);
+  }, [currentStep, initialized, scrollToTop]);
+
+  // FIXED: Booking success handling with proper timeout management
   useEffect(() => {
-    if (bookingCreated && lastCreatedBookingId) {
-      setShowSuccessAnimation(true);
-      setTimeout(() => {
-        dispatch(resetBookingCreation());
-        dispatch(forceResetCart());
-        navigate('/booking-success', { state: { bookingId: lastCreatedBookingId } });
-      }, 2000);
-    }
-  }, [bookingCreated, lastCreatedBookingId, dispatch, navigate]);
+    console.log('🔄 Booking success useEffect triggered');
+    console.log('bookingCreated:', bookingCreated);
+    console.log('lastCreatedBookingId:', lastCreatedBookingId);
+    console.log('showSuccessAnimation:', showSuccessAnimation);
 
-  const handleDateChange = (dateData) => {
-    console.log('Date changed:', dateData);
+    if (bookingCreated && lastCreatedBookingId && !showSuccessAnimation) {
+      console.log('✅ Booking created successfully:', lastCreatedBookingId);
+      console.log('🎉 Starting success animation sequence...');
+      
+      // Clear any existing timeouts
+      clearAllTimeouts();
+      
+      // Scroll to top immediately
+      scrollToTop();
+      
+      // Show success animation
+      setShowSuccessAnimation(true);
+      
+      console.log('⏰ Setting up 3-second navigation timeout...');
+      
+      // Create a timeout for navigation
+      redirectTimeoutRef.current = setTimeout(() => {
+        console.log('🚀 3 seconds elapsed, navigating to home...');
+        navigateToHome();
+      }, 3000);
+
+      // Safety timeout - force navigation after 5 seconds
+      safetyTimeoutRef.current = setTimeout(() => {
+        console.log('⚠️ Safety timeout: forcing navigation after 5 seconds');
+        navigateToHome();
+      }, 5000);
+    }
+
+    // Cleanup function
+    return () => {
+      if (showSuccessAnimation) {
+        console.log('🧹 Cleaning up booking success useEffect');
+        clearAllTimeouts();
+      }
+    };
+  }, [bookingCreated, lastCreatedBookingId, showSuccessAnimation, clearAllTimeouts, scrollToTop, navigateToHome]);
+
+  // Component unmount cleanup
+  useEffect(() => {
+    return () => {
+      console.log('🧹 Component unmounting...');
+      clearAllTimeouts();
+      
+      // Store admin notification if we're in success state
+      if (showSuccessAnimation && lastCreatedBookingId) {
+        localStorage.setItem('newBookingCreated', 'true');
+        localStorage.setItem('newBookingId', lastCreatedBookingId);
+      }
+    };
+  }, [clearAllTimeouts, showSuccessAnimation, lastCreatedBookingId]);
+
+  // Optimized handlers with proper validation
+  const handleDateChange = useCallback((dateData) => {
+    console.log('📅 Date changed:', dateData);
     dispatch(setSelectedDates(dateData));
     setLocalError('');
-  };
+  }, [dispatch]);
 
-  const handleCustomerInfoChange = (data) => {
-    console.log('Customer info changed:', data);
+  const handleCustomerInfoChange = useCallback((data) => {
+    console.log('👤 Customer info changed:', data);
     dispatch(setCustomerInfo(data));
     setLocalError('');
-  };
+  }, [dispatch]);
 
-  // FIXED: Complete handleNext function
-  const handleNext = () => {
-    console.log('=== EventBookingPage handleNext called ===');
-    console.log('Current step:', currentStep);
+  // Improved handleNext with better validation and state management
+  const handleNext = useCallback(() => {
+    if (isNavigating) return;
     
-    if (currentStep === 1) {
-      console.log('Processing step 1 validation...');
-      // Check if start date is selected
-      if (selectedDates?.multiDay && !selectedDates?.startDate) {
-        setLocalError('Please select a start date for your event');
-        return;
+    console.log('=== 🚀 EventBookingPage handleNext called ===');
+    console.log('Current step:', currentStep);
+    console.log('Cart items:', cartItems.length);
+    console.log('Selected dates:', selectedDates);
+    console.log('Customer info:', customerInfo);
+    
+    setIsNavigating(true);
+    setLocalError('');
+    
+    try {
+      // Step 1 validation - Date and Cart
+      if (currentStep === 1) {
+        console.log('🔍 Validating step 1...');
+        
+        if (!cartItems || cartItems.length === 0) {
+          setLocalError('Add at least one item to your cart');
+          setIsNavigating(false);
+          return;
+        }
+        
+        
+        
+        if (selectedDates?.multiDay && !selectedDates?.endDate) {
+          setLocalError('Please select an end date for your multi-day event');
+          setIsNavigating(false);
+          return;
+        }
+        
+        if (!selectedDates?.startTime || !selectedDates?.endTime) {
+          setLocalError('Please select both start and end times for your event');
+          setIsNavigating(false);
+          return;
+        }
+        
+        console.log('✅ Step 1 validation passed');
+      } 
+      // Step 2 validation - Customer Details
+      else if (currentStep === 2) {
+        console.log('🔍 Validating step 2...');
+        
+        if (!customerInfo?.name?.trim()) {
+          setLocalError('Please provide your name.');
+          setIsNavigating(false);
+          return;
+        }
+        
+        if (!customerInfo?.email?.trim()) {
+          setLocalError('Please provide your email address.');
+          setIsNavigating(false);
+          return;
+        }
+        
+        if (!customerInfo?.phone?.trim()) {
+          setLocalError('Please provide your phone number.');
+          setIsNavigating(false);
+          return;
+        }
+        
+        if (!customerInfo?.location?.trim()) {
+          setLocalError('Please provide the event location.');
+          setIsNavigating(false);
+          return;
+        }
+        
+        if (!customerInfo?.delivery) {
+          setLocalError('Please select a delivery option.');
+          setIsNavigating(false);
+          return;
+        }
+        
+        if (!customerInfo?.installation) {
+          setLocalError('Please select an installation option.');
+          setIsNavigating(false);
+          return;
+        }
+        
+        console.log('✅ Step 2 validation passed');
       }
+
+      console.log('✅ All validations passed, moving to next step...');
       
-      // For multi-day events, check if end date is selected
-      if (selectedDates?.multiDay && !selectedDates?.endDate) {
-        setLocalError('Please select an end date for your multi-day event');
-        return;
-      }
+      setTimeout(() => {
+        dispatch(nextStep());
+        setIsNavigating(false);
+        console.log('✅ nextStep() dispatched successfully');
+      }, 100);
       
-      // Check if times are selected
-      if (!selectedDates?.startTime || !selectedDates?.endTime) {
-        setLocalError('Please select both start and end times for your event');
-        return;
-      }
-      
-      // Check if cart has items
-      if (cartItems.length === 0) {
-        setLocalError('Add at least one item to your cart');
-        return;
-      }
-    } 
-    else if (currentStep === 2) {
-      console.log('Processing step 2 validation...');
-      // The CustomerDetailsStep component handles its own validation
-      // So we just need to check if we have the basic customer info
-      if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
-        setLocalError('Please provide your name, email, and phone.');
-        return;
-      }
-      
-      if (!customerInfo?.location) {
-        setLocalError('Please provide the event location.');
-        return;
-      }
-      
-      if (!customerInfo?.delivery) {
-        setLocalError('Please select a delivery option.');
-        return;
-      }
-      
-      if (!customerInfo?.installation) {
-        setLocalError('Please select an installation option.');
-        return;
-      }
+    } catch (error) {
+      console.error('❌ Error in handleNext:', error);
+      setLocalError('An error occurred. Please try again.');
+      setIsNavigating(false);
     }
+  }, [currentStep, cartItems, selectedDates, customerInfo, isNavigating, dispatch]);
 
-    console.log('All validations passed, moving to next step...');
+  const handlePrevious = useCallback(() => {
+    if (isNavigating) return;
+    
+    setIsNavigating(true);
     setLocalError('');
-    dispatch(nextStep());
-    console.log('✅ nextStep() dispatched');
-  };
+    
+    setTimeout(() => {
+      dispatch(prevStep());
+      setIsNavigating(false);
+    }, 100);
+  }, [isNavigating, dispatch]);
 
-  const handlePrevious = () => {
-    setLocalError('');
-    dispatch(prevStep());
-  };
-
-  const handleAddMoreItems = () => {
+  const handleAddMoreItems = useCallback(() => {
     setFadingOut(true);
     setTimeout(() => {
       navigate('/', { state: { scrollToCategories: true } });
     }, 700);
-  };
+  }, [navigate]);
 
-  const handleRemoveItem = (itemId) => {
+  const handleRemoveItem = useCallback((itemId) => {
     dispatch(removeFromCart(itemId));
-  };
+  }, [dispatch]);
 
-  const handleQuantityChange = (itemId, quantity) => {
+  const handleQuantityChange = useCallback((itemId, quantity) => {
     console.log('Changing quantity for item:', itemId, 'to:', quantity);
     if (quantity > 0) {
       dispatch(updateQuantity({ itemId, quantity }));
     }
-  };
+  }, [dispatch]);
 
-  const handleIncrementQuantity = (itemId) => {
+  const handleIncrementQuantity = useCallback((itemId) => {
     console.log('Incrementing quantity for item:', itemId);
     dispatch(incrementQuantity(itemId));
-  };
+  }, [dispatch]);
 
-  const handleDecrementQuantity = (itemId) => {
+  const handleDecrementQuantity = useCallback((itemId) => {
     console.log('Decrementing quantity for item:', itemId);
     dispatch(decrementQuantity(itemId));
-  };
+  }, [dispatch]);
 
-  const handleSubmitBooking = () => {
-    if (cartItems.length === 0) {
-      setLocalError('Your cart is empty.');
-      return;
-    }
+  // Improved booking submission
+  const handleSubmitBooking = useCallback(async (bookingData) => {
+    console.log('🚀 handleSubmitBooking called with:', bookingData);
     
-    if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
-      setLocalError('Please provide your name, email, and phone.');
-      return;
+    try {
+      // Clear any existing timeouts
+      clearAllTimeouts();
+      
+      // Scroll to top when booking is confirmed
+      scrollToTop();
+      
+      // Reset any error states
+      setLocalError('');
+      
+      // Dispatch the Redux action that makes the API call
+      const result = await dispatch(createBookingFromCart(bookingData));
+      
+      console.log('📝 Booking creation result:', result);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Error in handleSubmitBooking:', error);
+      setLocalError('Failed to create booking. Please try again.');
+      throw error;
     }
-    
-    if (!selectedDates?.startDate || !selectedDates?.endDate) {
-      setLocalError('Select event start and end dates.');
-      return;
-    }
+  }, [dispatch, scrollToTop, clearAllTimeouts]);
 
-    dispatch(createBookingFromCart({
-      items: cartItems,
-      selectedDates,
-      customerInfo: { ...customerInfo, location: customerInfo.location || 'TBD' },
-      total: cartTotal,
-      itemCount: cartItemCount,
-      orderMode: 'booking'
-    }));
-  };
-
-  const handleClearCart = () => {
-    console.log('Clearing cart manually');
+  const handleClearCart = useCallback(() => {
+    console.log('🗑️ Clearing cart manually');
     dispatch(forceResetCart());
-  };
+  }, [dispatch]);
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <DateSelectionStep
-            onNext={handleNext}
-            onAddMoreItems={handleAddMoreItems}
-            error={localError}
-          />
-        );
-      case 2:
-        return (
-          <CustomerDetailsStep
-            customerInfo={customerInfo}
-            selectedDates={selectedDates}
-            onCustomerInfoChange={handleCustomerInfoChange}
-            onNext={handleNext}
-            onPrevious={handlePrevious}
-            onAddMoreItems={handleAddMoreItems}
-            onRemoveItem={handleRemoveItem}
-            onIncrementQuantity={handleIncrementQuantity}
-            onDecrementQuantity={handleDecrementQuantity}
-            cartItems={cartItems}
-            cartTotal={cartTotal}
-            error={localError}
-          />
-        );
-      case 3:
-        return (
-          <BookingPreviewStep
-            cartItems={cartItems}
-            selectedDates={selectedDates}
-            customerInfo={customerInfo}
-            total={cartTotal}
-            onSubmit={handleSubmitBooking}
-            onPrevious={handlePrevious}
-            onAddMoreItems={handleAddMoreItems}
-            onRemoveItem={handleRemoveItem}
-            onIncrementQuantity={handleIncrementQuantity}
-            onDecrementQuantity={handleDecrementQuantity}
-            loading={creatingBooking}
-            error={localError || cartError}
-          />
-        );
-      default:
-        return null;
+  // Optimized step rendering with error boundaries
+  const renderStep = useCallback(() => {
+    try {
+      switch (currentStep) {
+        case 1:
+          return (
+            <DateSelectionStep
+              onNext={handleNext}
+              onAddMoreItems={handleAddMoreItems}
+              error={localError}
+            />
+          );
+        case 2:
+          return (
+            <CustomerDetailsStep
+              customerInfo={customerInfo}
+              selectedDates={selectedDates}
+              onCustomerInfoChange={handleCustomerInfoChange}
+              onNext={handleNext}
+              onPrevious={handlePrevious}
+              onAddMoreItems={handleAddMoreItems}
+              onRemoveItem={handleRemoveItem}
+              onIncrementQuantity={handleIncrementQuantity}
+              onDecrementQuantity={handleDecrementQuantity}
+              cartItems={cartItems}
+              cartTotal={cartTotal}
+              error={localError}
+            />
+          );
+        case 3:
+          return (
+            <BookingPreviewStep
+              cartItems={cartItems}
+              selectedDates={selectedDates}
+              customerInfo={customerInfo}
+              total={cartTotal}
+              onSubmit={handleSubmitBooking}
+              onPrevious={handlePrevious}
+              onAddMoreItems={handleAddMoreItems}
+              onRemoveItem={handleRemoveItem}
+              onIncrementQuantity={handleIncrementQuantity}
+              onDecrementQuantity={handleDecrementQuantity}
+              loading={creatingBooking}
+              error={localError || cartError}
+              onEditDates={() => dispatch(setStep(1))}
+              onEditCustomerInfo={() => dispatch(setStep(2))}
+            />
+          );
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error('❌ Error rendering step:', error);
+      return (
+        <div className="text-center py-8">
+          <p className="text-red-600">An error occurred. Please refresh the page.</p>
+        </div>
+      );
     }
-  };
+  }, [
+    currentStep,
+    handleNext,
+    handleAddMoreItems,
+    localError,
+    customerInfo,
+    selectedDates,
+    handleCustomerInfoChange,
+    handlePrevious,
+    handleRemoveItem,
+    handleIncrementQuantity,
+    handleDecrementQuantity,
+    cartItems,
+    cartTotal,
+    handleSubmitBooking,
+    creatingBooking,
+    cartError,
+    dispatch
+  ]);
 
   // Show loading while initializing
   if (!initialized) {
@@ -329,13 +520,14 @@ const EventBookingPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 px-4">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 rounded-full mx-auto mb-4" />
-          <p className="text-gray-600 text-sm sm:text-base">Loading...</p>
+          <p className="text-gray-600 text-sm sm:text-base">Initializing booking...</p>
         </div>
       </div>
     );
   }
 
-  if (cartItems.length === 0 && !selectedItem) {
+  // Show empty cart state
+  if (!cartItems || cartItems.length === 0 && !selectedItem) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 px-4">
         <div className="text-center max-w-md mx-auto">
@@ -359,17 +551,65 @@ const EventBookingPage = () => {
     );
   }
 
+  // ENHANCED: Success animation with manual continue button
   if (showSuccessAnimation) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 px-4">
-        <div className="text-center">
-          <div className="animate-bounce mb-6 sm:mb-8">
-            <div className="w-16 h-16 sm:w-24 sm:h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 sm:w-12 sm:h-12 text-white" />
+        <div className="text-center max-w-lg mx-auto">
+          {/* Animated Success Icon */}
+          <div className="relative mb-8">
+            <div className="animate-bounce">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <Check className="w-10 h-10 sm:w-14 sm:h-14 text-white" />
+              </div>
+            </div>
+            {/* Animated rings around the icon */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-green-300 rounded-full animate-ping opacity-30"></div>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-32 h-32 sm:w-40 sm:h-40 border-2 border-green-200 rounded-full animate-ping opacity-20 animation-delay-150"></div>
             </div>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Booking Created!</h2>
-          <p className="text-gray-600 text-sm sm:text-base">Redirecting you to confirmation...</p>
+
+          {/* Success Message */}
+          <div className="space-y-4">
+            <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              Booking Completed! 🎉
+            </h2>
+            <p className="text-gray-600 text-lg sm:text-xl leading-relaxed">
+              Your event booking has been sent successfully!
+            </p>
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-green-100">
+              <p className="text-gray-500 text-sm mb-2">Booking ID:</p>
+              <p className="font-mono text-lg font-semibold text-gray-800">
+                #{lastCreatedBookingId}
+              </p>
+            </div>
+            <p className="text-gray-500 text-sm animate-pulse">
+              Redirecting you to home page...
+            </p>
+            
+            {/* Manual continue button as fallback */}
+            <div className="mt-6">
+              <button
+                onClick={() => {
+                  console.log('🖱️ Manual continue button clicked');
+                  dispatch(clearCart());
+                  navigateToHome();
+                }}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:scale-105 transition-transform shadow-lg font-medium"
+              >
+                Continue to Home
+              </button>
+            </div>
+          </div>
+
+          {/* Decorative elements */}
+          <div className="absolute top-10 left-10 text-2xl animate-bounce animation-delay-300">🎊</div>
+          <div className="absolute top-20 right-10 text-2xl animate-bounce animation-delay-500">✨</div>
+          <div className="absolute bottom-20 left-20 text-2xl animate-bounce animation-delay-700">🎈</div>
+          <div className="absolute bottom-10 right-20 text-2xl animate-bounce animation-delay-900">🎉</div>
         </div>
       </div>
     );
@@ -467,7 +707,6 @@ const EventBookingPage = () => {
                   {cartItemCount}
                 </div>
               </div>
-           
             </div>
           </div>
         </div>
@@ -552,7 +791,7 @@ const EventBookingPage = () => {
         {renderStep()}
       </div>
 
-      {/* Loading */}
+      {/* Loading Overlay */}
       {(cartLoading || creatingBooking) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center max-w-sm mx-auto w-full">
@@ -568,9 +807,9 @@ const EventBookingPage = () => {
       )}
 
       {/* Error Toast */}
-      {cartError && (
+      {(cartError || localError) && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto bg-red-500 text-white px-4 sm:px-6 py-3 rounded-lg shadow-lg z-50">
-          <p className="font-medium text-sm sm:text-base">{cartError}</p>
+          <p className="font-medium text-sm sm:text-base">{cartError || localError}</p>
         </div>
       )}
     </div>

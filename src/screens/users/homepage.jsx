@@ -1,21 +1,34 @@
-// screens/user/HomePage.js
 import React, { useState, useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { ChevronLeft, ChevronRight, Quote, MapPin, Star } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Quote,
+  MapPin,
+  Star,
+  Calendar,
+  Users,
+  Award,
+  Sparkles,
+} from "lucide-react";
 import { fetchProfile } from "../../store/slices/profile-slice";
-import { fetchCategories } from "../../store/slices/categoriesSlice"; // Import the fetchCategories thunk
+import { fetchCategories } from "../../store/slices/categoriesSlice";
 import FloatingChatBox from "../../UI/floatingChatBox";
 import QuickActionsSection from "../../components/users/quickActionSection";
 
 const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [autoSlideIndex, setAutoSlideIndex] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+  const [isVisible, setIsVisible] = useState({});
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
   const categoriesRef = useRef(null);
+  const parallaxRef = useRef(null);
+  const statsRef = useRef(null);
 
   // Get profile data from Redux store
   const { userData, loading: profileLoading } = useSelector(
@@ -27,11 +40,67 @@ const HomePage = () => {
     (state) => state.categories
   );
 
+  // Optimized scroll handler with throttling for smooth performance
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrollY(window.scrollY);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    // Passive event listener for better performance
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Optimized Intersection Observer - runs after categories are loaded
+  useEffect(() => {
+    // Only run observer after categories are loaded or if there are no categories
+    if (categoriesLoading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible((prev) => ({
+              ...prev,
+              [entry.target.dataset.animate]: true,
+            }));
+            // Unobserve after animation to improve performance
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "50px 0px -50px 0px", // Start animation earlier for smoother experience
+      }
+    );
+
+    // Use setTimeout to ensure DOM is ready after categories render
+    const timer = setTimeout(() => {
+      const animateElements = document.querySelectorAll("[data-animate]");
+      animateElements.forEach((el) => observer.observe(el));
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [categoriesLoading, categories]); // Re-run when categories change
+
   useEffect(() => {
     if (location.state?.scrollToCategories && categoriesRef.current) {
       categoriesRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [location]);
+
   // Fetch profile and categories data on component mount
   useEffect(() => {
     dispatch(fetchProfile());
@@ -69,6 +138,66 @@ const HomePage = () => {
     description: category.description,
     itemCount: category.itemCount,
   }));
+
+  // Rental items for 3D floating effect
+  const rentalItems = [
+    {
+      id: 1,
+      name: "Elegant Chairs",
+      image:
+        "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=300&h=300&fit=crop",
+      category: "Furniture",
+    },
+    {
+      id: 2,
+      name: "Wedding Tent",
+      image:
+        "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=300&h=300&fit=crop",
+      category: "Tents",
+    },
+    {
+      id: 3,
+      name: "Sound System",
+      image:
+        "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop",
+      category: "Audio",
+    },
+    {
+      id: 4,
+      name: "Dining Table",
+      image:
+        "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300&h=300&fit=crop",
+      category: "Tables",
+    },
+    {
+      id: 5,
+      name: "Party Lights",
+      image:
+        "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop",
+      category: "Lighting",
+    },
+    {
+      id: 6,
+      name: "Floral Decor",
+      image:
+        "https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=300&h=300&fit=crop",
+      category: "Decoration",
+    },
+    {
+      id: 7,
+      name: "Catering Setup",
+      image:
+        "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=300&h=300&fit=crop",
+      category: "Catering",
+    },
+    {
+      id: 8,
+      name: "Photo Booth",
+      image:
+        "https://images.unsplash.com/photo-1511578314322-379afb476865?w=300&h=300&fit=crop",
+      category: "Entertainment",
+    },
+  ];
 
   const autoSlideCards =
     userData?.specialize && userData?.specialize?.length > 0
@@ -111,6 +240,13 @@ const HomePage = () => {
           },
         ];
 
+  const stats = [
+    { number: "500+", label: "Happy Clients", icon: "👥" },
+    { number: "1000+", label: "Events Completed", icon: "🎉" },
+    { number: "50+", label: "Rental Categories", icon: "📦" },
+    { number: "24/7", label: "Customer Support", icon: "🔧" },
+  ];
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
@@ -139,38 +275,85 @@ const HomePage = () => {
     navigate(`/category/${category.id}`, { state: { category } });
   };
 
-  // Show loading state while fetching data
-  // if ((profileLoading && !userData.name) || categoriesLoading) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-  //       <div className="text-center">
-  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-  //         <p className="text-gray-600">Loading...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  // Optimized parallax calculations with reduced intensity
+  const parallaxOffset = scrollY * 0.2; // Reduced from 0.5 for smoother performance
+  const floatingItems = scrollY * 0.1; // Reduced from 0.3 for better performance
 
   return (
     <>
       <style>
         {`
           @keyframes slide-left {
-            0% {
-              transform: translateX(0);
-            }
-            100% {
-              transform: translateX(-50%);
-            }
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
           }
           
-          .animate-slide-left {
-            animation: slide-left 20s linear infinite;
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+          }
+          
+          @keyframes float-reverse {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(-3deg); }
+          }
+          
+          @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(40px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          
+          @keyframes scaleIn {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+          
+          @keyframes slideInLeft {
+            0% { opacity: 0; transform: translateX(-50px); }
+            100% { opacity: 1; transform: translateX(0); }
+          }
+          
+          @keyframes slideInRight {
+            0% { opacity: 0; transform: translateX(50px); }
+            100% { opacity: 1; transform: translateX(0); }
+          }
+          
+          .animate-slide-left { animation: slide-left 20s linear infinite; }
+          .animate-float { animation: float 6s ease-in-out infinite; }
+          .animate-float-reverse { animation: float-reverse 8s ease-in-out infinite; }
+          .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
+          .animate-scale-in { animation: scaleIn 0.6s ease-out forwards; }
+          .animate-slide-in-left { animation: slideInLeft 0.8s ease-out forwards; }
+          .animate-slide-in-right { animation: slideInRight 0.8s ease-out forwards; }
+          
+          .floating-item {
+            transition: transform 0.3s ease;
+          }
+          
+          .floating-item:hover {
+            transform: scale(1.1) rotate(5deg);
+          }
+          
+          .text-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+          
+          .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+          }
+          
+          .parallax-bg {
+            transform: translateY(${parallaxOffset}px);
           }
         `}
       </style>
 
-      {/* Hero Section with Slideshow */}
+      {/* Hero Section with Enhanced Effects */}
       <div className="relative h-screen overflow-hidden">
         {heroSlides.map((slide, index) => (
           <div
@@ -182,85 +365,245 @@ const HomePage = () => {
             }`}
           >
             <div
-              className="w-full h-full bg-cover bg-center"
+              className="w-full h-full bg-cover bg-center parallax-bg"
               style={{ backgroundImage: `url(${slide.image})` }}
             >
-              <div className="absolute inset-0 bg-black/40" />
+              <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/60" />
             </div>
           </div>
         ))}
 
-        {/* Hero Content */}
+        {/* Enhanced Hero Content */}
         <div className="absolute inset-0 flex items-center justify-center text-center text-white z-10">
           <div className="max-w-4xl mx-auto px-4">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              {heroSlides[currentSlide].title}
-            </h1>
-            <p className="text-xl md:text-2xl mb-4 text-gray-200">
-              {heroSlides[currentSlide].subtitle}
-            </p>
-            {userData.bio && (
-              <p className="text-lg mb-8 text-gray-300 max-w-2xl mx-auto">
-                {userData.bio}
-              </p>
-            )}
-
-            <button
-              onClick={() => navigate("/quote")}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center mx-auto"
+            <div
+              className="transform transition-all duration-500 ease-out"
+              style={{ transform: `translate3d(0, ${scrollY * -0.05}px, 0)` }}
             >
-              <Quote className="mr-2 w-5 h-5" />
-              Get Your Quote
-            </button>
+              <h1 className="text-5xl md:text-7xl font-bold mb-6 text-gray-300 animate-fade-in-up">
+                {heroSlides[currentSlide].title}
+              </h1>
+              <p
+                className="text-xl md:text-2xl mb-4 text-white animate-fade-in-up"
+                style={{ animationDelay: "0.2s" }}
+              >
+                {heroSlides[currentSlide].subtitle}
+              </p>
+              {userData.bio && (
+                <p
+                  className="text-lg mb-8 text-white max-w-2xl mx-auto animate-fade-in-up"
+                  style={{ animationDelay: "0.4s" }}
+                >
+                  {userData.bio}
+                </p>
+              )}
+
+              <button
+                onClick={() => navigate("/quote")}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center mx-auto animate-scale-in"
+                style={{ animationDelay: "0.6s" }}
+              >
+                <Quote className="mr-2 w-5 h-5" />
+                Get Your Quote
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Navigation Arrows */}
+        {/* Navigation Arrows with Glass Effect */}
         <button
           onClick={prevSlide}
-          className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 transition-all duration-300 backdrop-blur-sm"
+          className="absolute left-6 top-1/2 transform -translate-y-1/2 glass-effect hover:bg-white/20 rounded-full p-3 transition-all duration-300"
         >
           <ChevronLeft className="w-6 h-6 text-white" />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-3 transition-all duration-300 backdrop-blur-sm"
+          className="absolute right-6 top-1/2 transform -translate-y-1/2 glass-effect hover:bg-white/20 rounded-full p-3 transition-all duration-300"
         >
           <ChevronRight className="w-6 h-6 text-white" />
         </button>
 
-        {/* Pagination Indicators */}
+        {/* Enhanced Pagination */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3">
           {heroSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              className={`h-2 rounded-full transition-all duration-300 ${
                 index === currentSlide
-                  ? "bg-white scale-125 shadow-lg"
-                  : "bg-white/50 hover:bg-white/70"
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 w-8 shadow-lg"
+                  : "bg-white/50 hover:bg-white/70 w-2"
               }`}
             />
           ))}
         </div>
       </div>
 
-      <QuickActionsSection/>
+      <QuickActionsSection navigate={navigate}/>
 
-      {/* Categories Section */}
-      <div   ref={categoriesRef} className="py-20 bg-gradient-to-br from-gray-50 to-white">
+      {/* 3D Floating Items Section */}
+    <div className="relative py-32 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+  {/* Animated Background */}
+  <div className="absolute inset-0">
+    <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+    <div
+      className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-full blur-3xl animate-pulse"
+      style={{ animationDelay: "2s" }}
+    ></div>
+    <div
+      className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-indigo-600/20 to-blue-600/20 rounded-full blur-3xl animate-pulse"
+      style={{ animationDelay: "4s" }}
+    ></div>
+  </div>
+
+  {/* Floating Rental Items - Better Positioned */}
+  <div className="absolute inset-0 overflow-hidden">
+    {rentalItems.slice(0, 4).map((item, index) => ( // Reduced to 4 items
+      <div
+        key={item.id}
+        className={`absolute floating-item ${
+          index % 2 === 0 ? "animate-float" : "animate-float-reverse"
+        }`}
+        style={{
+          // Better positioning - spread them to corners and edges
+          left: index === 0 ? '5%' : index === 1 ? '85%' : index === 2 ? '10%' : '80%',
+          top: index === 0 ? '15%' : index === 1 ? '20%' : index === 2 ? '75%' : '70%',
+          animationDelay: `${index * 1.2}s`,
+          transform: `translate3d(0, ${
+            floatingItems * (index % 2 === 0 ? 1 : -1) * 0.5
+          }px, 0)`,
+        }}
+      >
+        <div className="group relative">
+          <div className="w-32 h-32 md:w-40 md:h-40 rounded-xl overflow-hidden shadow-xl transform rotate-6 group-hover:rotate-0 transition-all duration-300 bg-white/10 backdrop-blur-lg border border-white/20 blur-sm group-hover:blur-none">
+            <img
+              src={item.image}
+              alt={item.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-80"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+            <div className="absolute bottom-1 left-1 right-1 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 truncate">
+              {item.name}
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* Central Content */}
+  <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
+    <div
+      data-animate="floating-section"
+      className={`transition-all duration-1000 ${
+        isVisible["floating-section"] ? "animate-fade-in-up" : "opacity-0"
+      }`}
+    >
+      <h2 className="text-5xl md:text-7xl font-bold text-white mb-6">
+        <span className="text-gray-200">Everything</span> You Need
+      </h2>
+      <p className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed">
+        From intimate gatherings to grand celebrations, we bring your vision to life with our premium rental collection
+      </p>
+
+      <div className="flex flex-wrap justify-center gap-4 mb-12">
+        <div className="bg-white/80 backdrop-blur-lg border border-gray-200/50 shadow-lg px-6 py-3 rounded-full text-gray-700 font-medium transform hover:scale-105 transition-all duration-300 hover:bg-white/90">
+          <Sparkles className="inline-block w-5 h-5 mr-2" />
+          Premium Quality
+        </div>
+        <div className="bg-white/80 backdrop-blur-lg border border-gray-200/50 shadow-lg px-6 py-3 rounded-full text-gray-700 font-medium transform hover:scale-105 transition-all duration-300 hover:bg-white/90">
+          <Calendar className="inline-block w-5 h-5 mr-2" />
+          Flexible Booking
+        </div>
+        <div className="bg-white/80 backdrop-blur-lg border border-gray-200/50 shadow-lg px-6 py-3 rounded-full text-gray-700 font-medium transform hover:scale-105 transition-all duration-300 hover:bg-white/90">
+          <Users className="inline-block w-5 h-5 mr-2" />
+          Expert Setup
+        </div>
+      </div>
+
+      <button
+        onClick={() => navigate("/eventbooking")}
+        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl"
+      >
+        Explore Our Collection
+      </button>
+    </div>
+  </div>
+</div>
+
+      {/* Enhanced Stats Section */}
+      <div
+        ref={statsRef}
+        data-animate="stats"
+        className="py-20 bg-white relative overflow-hidden"
+      >
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div
+                key={index}
+                className={`text-center transform transition-all duration-700 ${
+                  isVisible["stats"]
+                    ? index % 2 === 0
+                      ? "animate-slide-in-left"
+                      : "animate-slide-in-right"
+                    : "opacity-0"
+                }`}
+                style={{ animationDelay: `${index * 0.2}s` }}
+              >
+                <div className="text-6xl mb-4">{stat.icon}</div>
+                <div className="text-4xl font-bold text-gradient mb-2">
+                  {stat.number}
+                </div>
+                <div className="text-gray-600 font-medium">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Enhanced Categories Section */}
+      <div
+        ref={categoriesRef}
+        className="py-20 bg-gradient-to-br from-gray-50 to-white"
+      >
+        <div className="max-w-7xl mx-auto px-4">
+          <div
+            data-animate="categories-header"
+            className={`text-center mb-16 transition-all duration-1000 ${
+              isVisible["categories-header"]
+                ? "animate-fade-in-up"
+                : "opacity-0"
+            }`}
+          >
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
               Our Rental Categories
             </h2>
             <p className="text-xl text-gray-600">
               Everything you need for your perfect event
             </p>
+            <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto mt-8 rounded-full"></div>
           </div>
 
-          {/* Show message if no categories available */}
-          {rentalCategories.length === 0 ? (
+          {/* Show loading state or categories */}
+          {categoriesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3, 4, 5, 6].map((index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="bg-gray-200 rounded-2xl shadow-lg overflow-hidden">
+                    <div className="bg-gray-300 h-48 w-full"></div>
+                    <div className="p-6">
+                      <div className="bg-gray-300 h-6 w-3/4 mb-2 rounded"></div>
+                      <div className="bg-gray-300 h-4 w-full mb-2 rounded"></div>
+                      <div className="bg-gray-300 h-4 w-1/2 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : rentalCategories.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">📦</div>
               <h3 className="text-2xl font-semibold text-gray-700 mb-2">
@@ -275,11 +618,19 @@ const HomePage = () => {
               {rentalCategories.map((category, index) => (
                 <div
                   key={category.id}
-                  className="group cursor-pointer transform transition-all duration-500 hover:scale-105"
+                  data-animate={`category-${index}`}
+                  className={`group cursor-pointer transform transition-all duration-700 hover:scale-105 ${
+                    isVisible[`category-${index}`]
+                      ? "animate-fade-in-up"
+                      : "opacity-0"
+                  }`}
                   style={{ animationDelay: `${index * 100}ms` }}
                   onClick={() => handleCategoryClick(category)}
                 >
-                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50">
+                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50 relative">
+                    <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                      View Items
+                    </div>
                     <div className="relative overflow-hidden">
                       <img
                         src={
@@ -295,7 +646,7 @@ const HomePage = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                     <div className="p-6">
-                      <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all duration-300">
                         {category.name}
                       </h3>
                       <p className="text-gray-600 mb-2">
@@ -303,7 +654,7 @@ const HomePage = () => {
                           "Premium quality rentals for your special event"}
                       </p>
                       {category.itemCount > 0 && (
-                        <p className="text-sm text-blue-600 font-medium">
+                        <p className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                           {category.itemCount} item
                           {category.itemCount !== 1 ? "s" : ""} available
                         </p>
@@ -322,14 +673,18 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Auto-sliding Cards Section */}
+      {/* Enhanced Auto-sliding Cards Section */}
       <div className="py-16 bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500 relative overflow-hidden">
-        {/* Animated background elements for extra visual interest */}
         <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-transparent to-cyan-500/20"></div>
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-gradient-to-r from-green-400/30 to-blue-500/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
-        <div className="max-w-7xl mx-auto px-4 mb-12 relative z-10">
+        <div
+          data-animate="specializations"
+          className={`max-w-7xl mx-auto px-4 mb-12 relative z-10 transition-all duration-1000 ${
+            isVisible["specializations"] ? "animate-fade-in-up" : "opacity-0"
+          }`}
+        >
           <h2 className="text-4xl font-bold text-center text-white mb-4 drop-shadow-lg">
             {userData?.specialize && userData?.specialize?.length > 0
               ? "Our Specializations"
@@ -345,7 +700,7 @@ const HomePage = () => {
             {[...autoSlideCards, ...autoSlideCards].map((card, index) => (
               <div
                 key={`${card.id}-${index}`}
-                className="flex-shrink-0 w-80 bg-white/30 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/20 transform hover:scale-105 transition-all duration-300 hover:bg-white/15"
+                className="flex-shrink-0 w-80 glass-effect rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-all duration-300 hover:bg-white/15"
               >
                 <div className="text-4xl mb-4">{card.icon}</div>
                 <h3 className="text-xl font-semibold text-white/90 mb-2">
@@ -358,23 +713,33 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Company Info Section */}
+      {/* Enhanced Company Info Section */}
       {userData.joinDate && (
-        <div className="py-16 bg-white">
+        <div
+          data-animate="company-info"
+          className={`py-16 bg-white transition-all duration-1000 ${
+            isVisible["company-info"] ? "animate-fade-in-up" : "opacity-0"
+          }`}
+        >
           <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">
-              About {userData.name}
-            </h2>
-            <p className="text-lg text-gray-600 mb-6">{userData.bio}</p>
+            <div className="mb-8">
+              <Award className="w-16 h-16 mx-auto text-gradient mb-4" />
+              <h2 className="text-3xl font-bold text-gray-800 mb-4">
+                About {userData.name}
+              </h2>
+            </div>
+            <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+              {userData.bio}
+            </p>
             <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
-              <div className="flex items-center">
+              <div className="flex items-center glass-effect px-4 py-2 rounded-full">
                 <span className="font-semibold">Established:</span>
                 <span className="ml-2">
                   {dayjs(userData.joinDate).format("DD/MM/YYYY")}
                 </span>
               </div>
               {userData.location && (
-                <div className="flex items-center">
+                <div className="flex items-center glass-effect px-4 py-2 rounded-full">
                   <MapPin className="w-4 h-4 mr-1" />
                   <span>{userData.location}</span>
                 </div>
@@ -383,6 +748,68 @@ const HomePage = () => {
           </div>
         </div>
       )}
+
+      {/* Call to Action Section */}
+      <div className="py-20 bg-gradient-to-r from-gray-900 via-slate-900 to-gray-900 relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-full blur-3xl animate-pulse"></div>
+          <div
+            className="absolute bottom-10 right-10 w-96 h-96 bg-gradient-to-r from-purple-600/30 to-pink-600/30 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "2s" }}
+          ></div>
+        </div>
+
+        <div
+          data-animate="cta-section"
+          className={`relative z-10 max-w-4xl mx-auto px-4 text-center transition-all duration-1000 ${
+            isVisible["cta-section"] ? "animate-fade-in-up" : "opacity-0"
+          }`}
+        >
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6">
+            Ready to Create Your
+            <span className="text-gradient block mt-2">Perfect Event?</span>
+          </h2>
+          <p className="text-xl text-gray-300 mb-8 leading-relaxed max-w-2xl mx-auto">
+            Join thousands of satisfied customers who trust us with their most
+            important moments. Let's make your next event unforgettable.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <button
+              onClick={() => navigate("/eventbooking")}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center"
+            >
+              <Calendar className="mr-2 w-5 h-5" />
+              Book Your Event
+            </button>
+            <button
+              onClick={() => navigate("/quote")}
+              className="glass-effect text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center hover:bg-white/20"
+            >
+              <Quote className="mr-2 w-5 h-5" />
+              Get Free Quote
+            </button>
+          </div>
+
+          {/* Trust Indicators */}
+          <div className="mt-12 flex flex-wrap justify-center items-center gap-8 opacity-70">
+            <div className="flex items-center text-gray-400">
+              <Star className="w-5 h-5 text-yellow-400 mr-2" />
+              <span className="text-sm">4.9/5 Rating</span>
+            </div>
+            <div className="flex items-center text-gray-400">
+              <Users className="w-5 h-5 mr-2" />
+              <span className="text-sm">500+ Happy Clients</span>
+            </div>
+            <div className="flex items-center text-gray-400">
+              <Award className="w-5 h-5 mr-2" />
+              <span className="text-sm">Premium Quality</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Floating Chat Box Component */}
       <FloatingChatBox whatsappNumber="+2348142186524" />
     </>

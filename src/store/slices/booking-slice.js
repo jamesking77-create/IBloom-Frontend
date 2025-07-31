@@ -14,67 +14,103 @@ const transformBookingData = (apiBooking) => {
     // Transform flat structure to nested structure expected by component
     customer: apiBooking.customer || {
       personalInfo: {
-        name: apiBooking.customerName || 'N/A',
-        email: apiBooking.email || 'N/A', 
-        phone: apiBooking.phone || 'N/A'
+        name: apiBooking.customerName || "N/A",
+        email: apiBooking.email || "N/A",
+        phone: apiBooking.phone || "N/A",
       },
       eventDetails: {
-        eventType: apiBooking.eventType || 'N/A',
-        location: apiBooking.location || 'N/A',
+        eventType: apiBooking.eventType || "N/A",
+        location: apiBooking.location || "N/A",
         numberOfGuests: apiBooking.guests || 0,
-        specialRequests: apiBooking.specialRequests || '',
-        delivery: 'no', // Default since not in API response
-        installation: 'no' // Default since not in API response
-      }
+        specialRequests: apiBooking.specialRequests || "",
+        delivery: "no", // Default since not in API response
+        installation: "no", // Default since not in API response
+      },
     },
     eventSchedule: apiBooking.eventSchedule || {
       startDate: apiBooking.startDate,
-      endDate: apiBooking.endDate, 
+      endDate: apiBooking.endDate,
       startTime: apiBooking.startTime,
       endTime: apiBooking.endTime,
       isMultiDay: apiBooking.multiDay || false,
-      durationInDays: apiBooking.multiDay ? 
-        Math.ceil((new Date(apiBooking.endDate) - new Date(apiBooking.startDate)) / (1000 * 60 * 60 * 24)) + 1 : 1
+      durationInDays: apiBooking.multiDay
+        ? Math.ceil(
+            (new Date(apiBooking.endDate) - new Date(apiBooking.startDate)) /
+              (1000 * 60 * 60 * 24)
+          ) + 1
+        : 1,
     },
     pricing: apiBooking.pricing || {
-      subtotal: parseFloat(apiBooking.amount?.replace(/[₦,]/g, '') || 0),
-      tax: parseFloat(apiBooking.amount?.replace(/[₦,]/g, '') || 0) * 0.075,
-      total: parseFloat(apiBooking.amount?.replace(/[₦,]/g, '') || 0),
-      totalServices: apiBooking.items?.length || apiBooking.services?.length || 0,
+      subtotal: parseFloat(apiBooking.amount?.replace(/[₦,]/g, "") || 0),
+      tax: parseFloat(apiBooking.amount?.replace(/[₦,]/g, "") || 0) * 0.075,
+      total: parseFloat(apiBooking.amount?.replace(/[₦,]/g, "") || 0),
+      totalServices:
+        apiBooking.items?.length || apiBooking.services?.length || 0,
       formatted: {
-        subtotal: apiBooking.amount || '₦0',
-        tax: `₦${(parseFloat(apiBooking.amount?.replace(/[₦,]/g, '') || 0) * 0.075).toLocaleString('en-NG', {minimumFractionDigits: 2})}`,
-        total: apiBooking.amount || '₦0'
-      }
+        subtotal: apiBooking.amount || "₦0",
+        tax: `₦${(
+          parseFloat(apiBooking.amount?.replace(/[₦,]/g, "") || 0) * 0.075
+        ).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`,
+        total: apiBooking.amount || "₦0",
+      },
     },
     services: apiBooking.services || apiBooking.items || [],
     businessData: apiBooking.businessData || {
       requiresDeposit: false,
-      depositPolicy: 'Standard 50% deposit required',
-      cancellationPolicy: 'Cancellation allowed up to 48 hours before event'
+      depositPolicy: "Standard 50% deposit required",
+      cancellationPolicy: "Cancellation allowed up to 48 hours before event",
     },
     bookingDate: apiBooking.createdAt,
     // Map original API status to expected status format
-    status: apiBooking.status === 'pending' ? 'pending_confirmation' : apiBooking.status
+    status:
+      apiBooking.status === "pending"
+        ? "pending_confirmation"
+        : apiBooking.status,
   };
 };
 
 // Async thunk for creating booking from cart - FIXED
 export const createBookingFromCart = createAsyncThunk(
-  "bookings/createBookingFromCart",
-  async ({ bookingData }, { rejectWithValue }) => {
+  "booking/createFromCart",
+  async (bookingData, { rejectWithValue }) => {
     try {
-      console.log("Sending booking data to API:", bookingData);
-      
-      const response = await post("/api/bookings", bookingData);
-      console.log("API response:", response);
-      
-      // Return the booking data for Redux state update
-      return response?.data || response;
+      console.log("🚀 Making API call to create booking...");
+      console.log(
+        "📦 Booking data being sent:",
+        JSON.stringify(bookingData, null, 2)
+      );
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_BASEURL}api/bookings`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bookingData), // Make sure this is properly stringified
+        }
+      );
+
+      console.log("📡 API Response status:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("❌ API Error response:", errorData);
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+      console.log("✅ API Success response:", result);
+
+      return result;
     } catch (error) {
-      console.error("API Error:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Failed to create booking";
-      return rejectWithValue(errorMessage);
+      console.error("❌ API Call failed:", error);
+      return rejectWithValue({
+        message: error.message || "Failed to create booking",
+        error: error.toString(),
+      });
     }
   }
 );
@@ -85,7 +121,7 @@ export const fetchBookings = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await get("/api/bookings");
-      console.log("bookings response: ", response)
+      console.log("bookings response: ", response);
       return response?.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -230,10 +266,9 @@ const bookingsSlice = createSlice({
     // Optimistic update for status changes - Fixed ID handling
     updateBookingStatusOptimistic: (state, action) => {
       const { bookingId, status } = action.payload;
-      const booking = state.bookings.find((b) => 
-        b._id === bookingId || 
-        b.bookingId === bookingId || 
-        b.id === bookingId
+      const booking = state.bookings.find(
+        (b) =>
+          b._id === bookingId || b.bookingId === bookingId || b.id === bookingId
       );
       if (booking) {
         booking.status = status;
@@ -264,12 +299,20 @@ const bookingsSlice = createSlice({
       .addCase(createBookingFromCart.fulfilled, (state, action) => {
         state.creatingBooking = false;
         state.bookingCreated = true;
-        state.lastCreatedBookingId = action.payload.bookingId || action.payload._id;
+        state.lastCreatedBookingId =
+          action.payload.bookingId || action.payload._id;
 
         // Transform and add the new booking to the list
         const transformedBooking = transformBookingData(action.payload);
         state.bookings.unshift(transformedBooking);
         state.pagination.totalItems = state.bookings.length;
+        if (typeof window !== "undefined") {
+          localStorage.setItem("newBookingCreated", "true");
+          localStorage.setItem(
+            "newBookingId",
+            action.payload.bookingId || action.payload._id
+          );
+        }
       })
       .addCase(createBookingFromCart.rejected, (state, action) => {
         state.creatingBooking = false;
@@ -284,10 +327,12 @@ const bookingsSlice = createSlice({
       })
       .addCase(fetchBookings.fulfilled, (state, action) => {
         state.loading = false;
-        
+
         // Transform each booking to match component expectations
-        const transformedBookings = (action.payload.bookings || []).map(transformBookingData);
-        
+        const transformedBookings = (action.payload.bookings || []).map(
+          transformBookingData
+        );
+
         state.bookings = transformedBookings;
         state.pagination = action.payload.pagination || state.pagination;
         state.stats = action.payload.stats || state.stats;
@@ -304,10 +349,11 @@ const bookingsSlice = createSlice({
       })
       .addCase(updateBookingStatus.fulfilled, (state, action) => {
         const { bookingId, status } = action.payload;
-        const booking = state.bookings.find((b) => 
-          b._id === bookingId || 
-          b.bookingId === bookingId || 
-          b.id === bookingId
+        const booking = state.bookings.find(
+          (b) =>
+            b._id === bookingId ||
+            b.bookingId === bookingId ||
+            b.id === bookingId
         );
         if (booking) {
           booking.status = status;
@@ -323,10 +369,11 @@ const bookingsSlice = createSlice({
       })
       .addCase(updateBookingPayment.fulfilled, (state, action) => {
         const { bookingId, paymentStatus, amountPaid } = action.payload;
-        const booking = state.bookings.find((b) => 
-          b._id === bookingId || 
-          b.bookingId === bookingId || 
-          b.id === bookingId
+        const booking = state.bookings.find(
+          (b) =>
+            b._id === bookingId ||
+            b.bookingId === bookingId ||
+            b.id === bookingId
         );
         if (booking) {
           booking.paymentStatus = paymentStatus;
@@ -357,10 +404,11 @@ const bookingsSlice = createSlice({
       })
       .addCase(updateBookingItems.fulfilled, (state, action) => {
         const { bookingId, items, services, amount, pricing } = action.payload;
-        const booking = state.bookings.find((b) => 
-          b._id === bookingId || 
-          b.bookingId === bookingId || 
-          b.id === bookingId
+        const booking = state.bookings.find(
+          (b) =>
+            b._id === bookingId ||
+            b.bookingId === bookingId ||
+            b.id === bookingId
         );
         if (booking) {
           if (services) booking.services = services;
@@ -368,10 +416,12 @@ const bookingsSlice = createSlice({
           if (amount) booking.amount = amount;
           if (pricing) booking.pricing = pricing;
         }
-        if (state.selectedBooking && 
-            (state.selectedBooking._id === bookingId || 
-             state.selectedBooking.bookingId === bookingId || 
-             state.selectedBooking.id === bookingId)) {
+        if (
+          state.selectedBooking &&
+          (state.selectedBooking._id === bookingId ||
+            state.selectedBooking.bookingId === bookingId ||
+            state.selectedBooking.id === bookingId)
+        ) {
           if (services) state.selectedBooking.services = services;
           if (items) state.selectedBooking.items = items;
           if (amount) state.selectedBooking.amount = amount;
@@ -391,13 +441,14 @@ const bookingsSlice = createSlice({
         state.generatingInvoice = false;
         state.invoiceGenerated = true;
         state.lastInvoiceGenerated = action.payload.invoiceNumber;
-        
+
         // Update booking with invoice info
         const { bookingId } = action.payload;
-        const booking = state.bookings.find((b) => 
-          b._id === bookingId || 
-          b.bookingId === bookingId || 
-          b.id === bookingId
+        const booking = state.bookings.find(
+          (b) =>
+            b._id === bookingId ||
+            b.bookingId === bookingId ||
+            b.id === bookingId
         );
         if (booking) {
           booking.invoiceGenerated = true;
@@ -425,32 +476,43 @@ export const {
 
 // Basic selectors with safe defaults
 export const selectBookings = (state) => state.bookings?.bookings || [];
-export const selectSelectedBooking = (state) => state.bookings?.selectedBooking || null;
-export const selectBookingsLoading = (state) => state.bookings?.loading || false;
+export const selectSelectedBooking = (state) =>
+  state.bookings?.selectedBooking || null;
+export const selectBookingsLoading = (state) =>
+  state.bookings?.loading || false;
 export const selectBookingsError = (state) => state.bookings?.error || null;
-export const selectStatusFilter = (state) => state.bookings?.statusFilter || "all";
+export const selectStatusFilter = (state) =>
+  state.bookings?.statusFilter || "all";
 export const selectSearchQuery = (state) => state.bookings?.searchQuery || "";
-export const selectPagination = (state) => state.bookings?.pagination || {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10,
-};
-export const selectBookingsStats = (state) => state.bookings?.stats || {
-  thisWeek: 0,
-  thisMonth: 0,
-  totalRevenue: 0,
-};
+export const selectPagination = (state) =>
+  state.bookings?.pagination || {
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+  };
+export const selectBookingsStats = (state) =>
+  state.bookings?.stats || {
+    thisWeek: 0,
+    thisMonth: 0,
+    totalRevenue: 0,
+  };
 
 // Cart integration selectors
-export const selectCreatingBooking = (state) => state.bookings?.creatingBooking || false;
-export const selectBookingCreated = (state) => state.bookings?.bookingCreated || false;
-export const selectLastCreatedBookingId = (state) => state.bookings?.lastCreatedBookingId || null;
+export const selectCreatingBooking = (state) =>
+  state.bookings?.creatingBooking || false;
+export const selectBookingCreated = (state) =>
+  state.bookings?.bookingCreated || false;
+export const selectLastCreatedBookingId = (state) =>
+  state.bookings?.lastCreatedBookingId || null;
 
 // Invoice selectors
-export const selectGeneratingInvoice = (state) => state.bookings?.generatingInvoice || false;
-export const selectInvoiceGenerated = (state) => state.bookings?.invoiceGenerated || false;
-export const selectLastInvoiceGenerated = (state) => state.bookings?.lastInvoiceGenerated || null;
+export const selectGeneratingInvoice = (state) =>
+  state.bookings?.generatingInvoice || false;
+export const selectInvoiceGenerated = (state) =>
+  state.bookings?.invoiceGenerated || false;
+export const selectLastInvoiceGenerated = (state) =>
+  state.bookings?.lastInvoiceGenerated || null;
 
 // Memoized filtered bookings selector to prevent unnecessary rerenders
 export const selectFilteredBookings = createSelector(
@@ -461,12 +523,22 @@ export const selectFilteredBookings = createSelector(
     }
 
     return bookings.filter((booking) => {
-      const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-      const matchesSearch = !searchQuery ||
-        booking.customer?.personalInfo?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.customer?.eventDetails?.eventType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.customer?.eventDetails?.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      const matchesStatus =
+        statusFilter === "all" || booking.status === statusFilter;
+      const matchesSearch =
+        !searchQuery ||
+        booking.customer?.personalInfo?.name
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        booking.customer?.eventDetails?.eventType
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        booking.customer?.eventDetails?.location
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        booking.customerName
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         booking.eventType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         booking.location?.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -489,8 +561,12 @@ export const selectBookingStats = createSelector(
     const cancelled = filteredBookings.filter(
       (b) => b.status === "cancelled"
     ).length;
-    const singleDay = filteredBookings.filter((b) => b.singleDay || !b.eventSchedule?.isMultiDay).length;
-    const multiDay = filteredBookings.filter((b) => b.multiDay || b.eventSchedule?.isMultiDay).length;
+    const singleDay = filteredBookings.filter(
+      (b) => b.singleDay || !b.eventSchedule?.isMultiDay
+    ).length;
+    const multiDay = filteredBookings.filter(
+      (b) => b.multiDay || b.eventSchedule?.isMultiDay
+    ).length;
 
     return {
       total,
@@ -506,38 +582,38 @@ export const selectBookingStats = createSelector(
 // Utility function to get status display info
 export const getStatusInfo = (status) => {
   switch (status) {
-    case 'confirmed':
+    case "confirmed":
       return {
-        label: 'Confirmed',
-        color: 'green',
-        bgClass: 'bg-green-50',
-        textClass: 'text-green-600',
-        dotClass: 'bg-green-500'
+        label: "Confirmed",
+        color: "green",
+        bgClass: "bg-green-50",
+        textClass: "text-green-600",
+        dotClass: "bg-green-500",
       };
-    case 'pending_confirmation':
-    case 'pending':
+    case "pending_confirmation":
+    case "pending":
       return {
-        label: 'Pending',
-        color: 'orange',
-        bgClass: 'bg-orange-50',
-        textClass: 'text-orange-600',
-        dotClass: 'bg-orange-500'
+        label: "Pending",
+        color: "orange",
+        bgClass: "bg-orange-50",
+        textClass: "text-orange-600",
+        dotClass: "bg-orange-500",
       };
-    case 'cancelled':
+    case "cancelled":
       return {
-        label: 'Cancelled',
-        color: 'red',
-        bgClass: 'bg-red-50',
-        textClass: 'text-red-600',
-        dotClass: 'bg-red-500'
+        label: "Cancelled",
+        color: "red",
+        bgClass: "bg-red-50",
+        textClass: "text-red-600",
+        dotClass: "bg-red-500",
       };
     default:
       return {
-        label: 'Unknown',
-        color: 'gray',
-        bgClass: 'bg-gray-50',
-        textClass: 'text-gray-600',
-        dotClass: 'bg-gray-500'
+        label: "Unknown",
+        color: "gray",
+        bgClass: "bg-gray-50",
+        textClass: "text-gray-600",
+        dotClass: "bg-gray-500",
       };
   }
 };

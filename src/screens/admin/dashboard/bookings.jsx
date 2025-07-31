@@ -23,6 +23,7 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from "lucide-react";
 import ibloomlogo from "../../../assets/ibloomcut.png";
 import {
@@ -70,6 +71,9 @@ const Bookings = () => {
   const selectedBooking = useSelector(selectSelectedBooking);
   const bookingStats = useSelector(selectBookingStats);
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState(null);
+  const [deletingBooking, setDeletingBooking] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [processingBookingId, setProcessingBookingId] = useState(null);
   const [currentViewingBooking, setCurrentViewingBooking] = useState(null);
@@ -88,6 +92,41 @@ const Bookings = () => {
     return () => {
       dispatch(clearError());
       dispatch(clearSelectedBooking());
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
+    // Check for new booking flag on component mount and focus
+    const checkForNewBooking = () => {
+      const newBookingFlag = localStorage.getItem("newBookingCreated");
+      const newBookingId = localStorage.getItem("newBookingId");
+
+      if (newBookingFlag === "true") {
+        notifySuccess("🎉 New booking received!");
+        // Clear the flag
+        localStorage.removeItem("newBookingCreated");
+        localStorage.removeItem("newBookingId");
+        // Auto-refresh bookings
+        dispatch(fetchBookings());
+      }
+    };
+
+    // Check immediately
+    checkForNewBooking();
+
+    // Check when window gains focus (user switches back to admin tab)
+    const handleFocus = () => {
+      checkForNewBooking();
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    // Also check periodically while on the page
+    const interval = setInterval(checkForNewBooking, 3000);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      clearInterval(interval);
     };
   }, [dispatch]);
 
@@ -243,6 +282,67 @@ const Bookings = () => {
 
     setInvoiceData(invoice);
     setShowInvoiceModal(true);
+  };
+
+  const handleDeleteBooking = (booking) => {
+    setBookingToDelete(booking);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteBooking = async () => {
+    if (!bookingToDelete) return;
+
+    setDeletingBooking(true);
+    try {
+      const bookingId = bookingToDelete._id || bookingToDelete.bookingId;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_BASEURL}api/bookings/${bookingId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete booking");
+      }
+
+      const result = await response.json();
+
+      // Show success message
+      notifySuccess(`Booking ${result.deletedBookingId} deleted successfully`);
+
+      // Refresh bookings list
+      dispatch(fetchBookings());
+
+      // Close modal and clear state
+      setShowDeleteModal(false);
+      setBookingToDelete(null);
+
+      // Close view modal if the deleted booking was being viewed
+      if (
+        currentViewingBooking &&
+        (currentViewingBooking._id === bookingId ||
+          currentViewingBooking.bookingId === bookingId)
+      ) {
+        setShowViewModal(false);
+        setCurrentViewingBooking(null);
+      }
+    } catch (error) {
+      console.error("Failed to delete booking:", error);
+      alert(`Failed to delete booking: ${error.message}`);
+    } finally {
+      setDeletingBooking(false);
+    }
+  };
+
+  const cancelDeleteBooking = () => {
+    setShowDeleteModal(false);
+    setBookingToDelete(null);
   };
 
   const handleDownloadInvoice = async () => {
@@ -635,13 +735,16 @@ const Bookings = () => {
       console.log("Sending invoice email request:", requestBody);
 
       // Make API call to send invoice
-      const response = await fetch(`${VITE_SERVER_BASEURL}api/bookings/send-invoice`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const response = await fetch(
+        `${VITE_SERVER_BASEURL}api/bookings/send-invoice`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -1062,6 +1165,13 @@ const Bookings = () => {
                               <span className="hidden sm:inline">Invoice</span>
                             </button>
 
+                            <button
+                              onClick={() => handleDeleteBooking(booking)}
+                              className="flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+
                             {(booking.status === "pending_confirmation" ||
                               booking.status === "pending") && (
                               <>
@@ -1196,6 +1306,13 @@ const Bookings = () => {
                             >
                               <FileText size={16} />
                               Invoice
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBooking(booking)}
+                              className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                              title="Delete Booking"
+                            >
+                              <Trash2 size={16} />
                             </button>
 
                             {(booking.status === "pending_confirmation" ||
@@ -1699,6 +1816,15 @@ const Bookings = () => {
                 )}
 
                 <button
+                  onClick={() => handleDeleteBooking(currentViewingBooking)}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  title="Delete Booking Permanently"
+                >
+                  <Trash2 size={18} />
+                  Delete
+                </button>
+
+                <button
                   onClick={() => setShowViewModal(false)}
                   className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
@@ -2154,6 +2280,102 @@ const Bookings = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteModal && bookingToDelete && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 size={24} className="text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Delete Booking
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    This action cannot be undone
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-gray-700 mb-3">
+                  Are you sure you want to permanently delete this booking?
+                </p>
+
+                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-600">Customer:</span>
+                    <span className="text-gray-900">
+                      {bookingToDelete.customer?.personalInfo?.name || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-600">Event:</span>
+                    <span className="text-gray-900">
+                      {bookingToDelete.customer?.eventDetails?.eventType ||
+                        "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-600">Date:</span>
+                    <span className="text-gray-900">
+                      {bookingToDelete.eventSchedule?.startDate
+                        ? formatDate(bookingToDelete.eventSchedule.startDate)
+                        : "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-600">Total:</span>
+                    <span className="font-semibold text-gray-900">
+                      {bookingToDelete.pricing?.formatted?.total || "N/A"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-800 text-sm font-medium">
+                  ⚠️ Warning: This will permanently delete the booking and send
+                  a cancellation email to the customer.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={cancelDeleteBooking}
+                disabled={deletingBooking}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteBooking}
+                disabled={deletingBooking}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deletingBooking ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete Booking
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

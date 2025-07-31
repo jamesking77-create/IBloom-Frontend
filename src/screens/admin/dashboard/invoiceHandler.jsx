@@ -344,7 +344,7 @@ const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
       };
 
       // Make API call to send invoice
-      const response = await fetch('http://localhost:5000/api/bookings/send-invoice', {
+      const response = await fetch(`${import.meta.env.VITE_SERVER_BASEURL}api/bookings/send-invoice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

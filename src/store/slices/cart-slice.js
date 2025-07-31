@@ -555,7 +555,10 @@ const cartSlice = createSlice({
 addToCart: (state, action) => {
   const { item, dates, allowDuplicates = false } = action.payload;
 
+  console.log('🔄 addToCart called with:', { item, dates, allowDuplicates });
+
   if (!item || !item.name || item.price === undefined) {
+    console.error('❌ Invalid item data:', item);
     state.error = "Invalid item data";
     return;
   }
@@ -564,17 +567,26 @@ addToCart: (state, action) => {
   state.error = null;
   state.validationErrors = {};
 
-  // Normalize item
-  const normalizedItem = utils.normalizeItem(item);
+  // Normalize item data
+  const normalizedItem = {
+    id: item.id || item._id || utils.generateCartItemId(),
+    name: item.name || item.itemName || "",
+    itemName: item.name || item.itemName || "", // Keep both for compatibility
+    price: parseFloat(item.price) || 0,
+    description: item.description || "",
+    image: item.image || item.imageUrl || "",
+    category: item.category || "",
+    originalData: item,
+  };
 
-  // Check for existing item
+  // Check for existing item (prevent duplicates unless explicitly allowed)
   if (!allowDuplicates) {
     const existingItemIndex = state.items.findIndex(
-      (i) => i.id === normalizedItem.id
+      (i) => i.id === normalizedItem.id || i.name === normalizedItem.name
     );
 
     if (existingItemIndex !== -1) {
-      // FIXED: Set quantity to 1 instead of incrementing
+      console.log('📝 Item already exists, updating quantity to 1');
       state.items[existingItemIndex].quantity = 1;
       state.subtotal = utils.calculateTotal(state.items);
       state.tax = utils.calculateTax(state.subtotal);
@@ -585,43 +597,57 @@ addToCart: (state, action) => {
     }
   }
 
+  // Calculate duration based on order mode and dates
   let duration = 1;
+  const eventDates = dates || state.selectedDates;
+  
   if (state.orderMode === ORDER_MODES.BOOKING) {
     duration = utils.calculateDurationHours(
-      dates?.startDate || state.selectedDates.startDate,
-      dates?.endDate || state.selectedDates.endDate,
-      dates?.startTime || state.selectedDates.startTime,
-      dates?.endTime || state.selectedDates.endTime
+      eventDates?.startDate,
+      eventDates?.endDate,
+      eventDates?.startTime,
+      eventDates?.endTime
     );
   } else if (state.orderMode === ORDER_MODES.ORDER_BY_DATE) {
     duration = utils.calculateDurationDays(
-      dates?.startDate || state.selectedDates.startDate,
-      dates?.endDate || state.selectedDates.endDate
+      eventDates?.startDate,
+      eventDates?.endDate
     );
   }
 
+  // Create cart item
   const cartItem = {
     cartId: utils.generateCartItemId(),
     id: normalizedItem.id,
     name: normalizedItem.name,
-    itemName: normalizedItem.name,  // ← ADD THIS LINE - Keep both for compatibility
+    itemName: normalizedItem.name, // Ensure both properties exist
     description: normalizedItem.description,
     price: normalizedItem.price,
     image: normalizedItem.image,
     category: normalizedItem.category,
     quantity: 1,
     duration,
-    bookingDates: dates || { ...state.selectedDates },
+    bookingDates: eventDates ? { ...eventDates } : { ...state.selectedDates },
     orderMode: state.orderMode,
     addedAt: new Date().toISOString(),
+    originalData: normalizedItem.originalData,
   };
 
+  console.log('✅ Adding cart item:', cartItem);
+
+  // Add to cart
   state.items.push(cartItem);
+  
+  // Recalculate totals
   state.subtotal = utils.calculateTotal(state.items);
   state.tax = utils.calculateTax(state.subtotal);
   state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
   state.isOpen = true;
+  
+  // Save to storage
   storage.save(state);
+  
+  console.log('✅ Item added to cart successfully');
 },
 
     removeFromCart: (state, action) => {
@@ -710,131 +736,228 @@ addToCart: (state, action) => {
       storage.save(state);
     },
 
-    setSelectedDates: (state, action) => {
-      const newDates = action.payload;
-      const updatedDates = { ...state.selectedDates, ...newDates };
+setSelectedDates: (state, action) => {
+  console.log('🔄 setSelectedDates called with:', action.payload);
+  
+  const newDates = action.payload;
+  const updatedDates = { ...state.selectedDates, ...newDates };
 
-      // Validate dates
-      const dateErrors = utils.validateDates(
+  // Validate dates
+  const dateErrors = utils.validateDates(
+    updatedDates.startDate,
+    updatedDates.endDate,
+    updatedDates.startTime,
+    updatedDates.endTime
+  );
+
+  if (dateErrors.length > 0) {
+    console.log('❌ Date validation errors:', dateErrors);
+    state.validationErrors = { ...state.validationErrors, dates: dateErrors };
+    state.error = 'Please fix date/time selection issues';
+    return;
+  }
+
+  // Update dates
+  state.selectedDates = updatedDates;
+  state.error = null;
+  
+  // Clear date validation errors
+  const { dates, ...otherErrors } = state.validationErrors;
+  state.validationErrors = otherErrors;
+
+  // Update duration for all items
+  state.items.forEach((item) => {
+    let duration = 1;
+    if (state.orderMode === ORDER_MODES.BOOKING) {
+      duration = utils.calculateDurationHours(
         updatedDates.startDate,
         updatedDates.endDate,
         updatedDates.startTime,
         updatedDates.endTime
       );
-
-      if (dateErrors.length > 0) {
-        state.validationErrors = { dates: dateErrors };
-        return;
-      }
-
-      state.selectedDates = updatedDates;
-      state.error = null;
-      state.validationErrors = {};
-
-      // Update duration for all items
-      state.items.forEach((item) => {
-        let duration = 1;
-        if (state.orderMode === ORDER_MODES.BOOKING) {
-          duration = utils.calculateDurationHours(
-            updatedDates.startDate,
-            updatedDates.endDate,
-            updatedDates.startTime,
-            updatedDates.endTime
-          );
-        } else if (state.orderMode === ORDER_MODES.ORDER_BY_DATE) {
-          duration = utils.calculateDurationDays(
-            updatedDates.startDate,
-            updatedDates.endDate
-          );
-        }
-        item.duration = duration;
-        item.bookingDates = { ...updatedDates };
-      });
-
-      state.subtotal = utils.calculateTotal(state.items);
-      state.tax = utils.calculateTax(state.subtotal);
-      state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
-      storage.save(state);
-    },
-
-    setCustomerInfo: (state, action) => {
-      const newInfo = action.payload;
-      state.customerInfo = { ...state.customerInfo, ...newInfo };
-
-      const errors = validateObject(
-        state.customerInfo,
-        validationSchemas.customerInfo
+    } else if (state.orderMode === ORDER_MODES.ORDER_BY_DATE) {
+      duration = utils.calculateDurationDays(
+        updatedDates.startDate,
+        updatedDates.endDate
       );
-      if (errors) {
-        state.validationErrors = {
-          ...state.validationErrors,
-          customerInfo: errors,
-        };
-      } else {
-        const { customerInfo, ...otherErrors } = state.validationErrors;
-        state.validationErrors = otherErrors;
-      }
+    }
+    item.duration = duration;
+    item.bookingDates = { ...updatedDates };
+  });
 
-      storage.save(state);
-    },
+  // Recalculate totals
+  state.subtotal = utils.calculateTotal(state.items);
+  state.tax = utils.calculateTax(state.subtotal);
+  state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
+  
+  // Save to storage
+  storage.save(state);
+  
+  console.log('✅ Dates updated successfully');
+},
 
-    nextStep: (state) => {
-      if (state.step >= 4) return;
+  setCustomerInfo: (state, action) => {
+  console.log('🔄 setCustomerInfo called with:', action.payload);
+  
+  const newInfo = action.payload;
+  const updatedInfo = { ...state.customerInfo, ...newInfo };
+  
+  // Update customer info
+  state.customerInfo = updatedInfo;
+  
+  // Clear any previous errors when user starts updating info
+  state.error = null;
+  
+  // Validate the updated info
+  const validationErrors = {};
+  
+  // Required field validation
+  const requiredFields = ['name', 'email', 'phone', 'location', 'delivery', 'installation'];
+  requiredFields.forEach(field => {
+    if (!updatedInfo[field] || updatedInfo[field].toString().trim() === '') {
+      validationErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+    }
+  });
+  
+  // Email format validation
+  if (updatedInfo.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updatedInfo.email)) {
+    validationErrors.email = 'Please enter a valid email address';
+  }
+  
+  // Phone format validation
+  if (updatedInfo.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(updatedInfo.phone)) {
+    validationErrors.phone = 'Please enter a valid phone number';
+  }
+  
+  // Name length validation
+  if (updatedInfo.name && updatedInfo.name.trim().length < 2) {
+    validationErrors.name = 'Name must be at least 2 characters';
+  }
+  
+  // Location length validation
+  if (updatedInfo.location && updatedInfo.location.trim().length < 5) {
+    validationErrors.location = 'Location must be at least 5 characters';
+  }
+  
+  // Guest validation (if provided)
+  if (updatedInfo.guests && (isNaN(updatedInfo.guests) || parseInt(updatedInfo.guests) < 1)) {
+    validationErrors.guests = 'Number of guests must be a positive number';
+  }
+  
+  // Update validation errors
+  if (Object.keys(validationErrors).length > 0) {
+    state.validationErrors = { ...state.validationErrors, customerInfo: validationErrors };
+  } else {
+    // Clear customer info validation errors if all valid
+    const { customerInfo, ...otherErrors } = state.validationErrors;
+    state.validationErrors = otherErrors;
+  }
+  
+  // Save to storage
+  storage.save(state);
+  
+  console.log('✅ Customer info updated and validated');
+},
 
-      let canProceed = true;
+   nextStep: (state) => {
+  console.log('🔄 nextStep called, current step:', state.step);
+  
+  if (state.step >= 3) {
+    console.log('⚠️ Already at max step, cannot proceed');
+    return;
+  }
 
-      if (state.step === 1 && state.items.length === 0) {
-        state.error = "Please add items to cart before proceeding";
-        canProceed = false;
-      }
+  let canProceed = true;
+  let errorMessage = '';
 
-      if (state.step === 2) {
-        const dateErrors = utils.validateDates(
-          state.selectedDates.startDate,
-          state.selectedDates.endDate,
-          state.selectedDates.startTime,
-          state.selectedDates.endTime
-        );
-        if (dateErrors.length > 0) {
-          state.validationErrors = { dates: dateErrors };
-          canProceed = false;
-        }
-      }
+  // Step 1 validation - Date and Cart
+  if (state.step === 1) {
+    console.log('🔍 Validating step 1...');
+    
+    if (!state.items || state.items.length === 0) {
+      errorMessage = 'Please add items to cart before proceeding';
+      canProceed = false;
+    } else if (!state.selectedDates?.startDate) {
+      errorMessage = 'Please select a start date';
+      canProceed = false;
+    } else if (!state.selectedDates?.startTime || !state.selectedDates?.endTime) {
+      errorMessage = 'Please select start and end times';
+      canProceed = false;
+    } else if (state.selectedDates?.multiDay && !state.selectedDates?.endDate) {
+      errorMessage = 'Please select an end date for multi-day events';
+      canProceed = false;
+    }
+  }
 
-      if (state.step === 3) {
-        const customerErrors = validateObject(
-          state.customerInfo,
-          validationSchemas.customerInfo
-        );
-        if (customerErrors) {
-          state.validationErrors = { customerInfo: customerErrors };
-          canProceed = false;
-        }
-      }
+  // Step 2 validation - Customer Info
+  if (state.step === 2) {
+    console.log('🔍 Validating step 2...');
+    
+    const requiredFields = ['name', 'email', 'phone', 'location', 'delivery', 'installation'];
+    const missingFields = requiredFields.filter(field => 
+      !state.customerInfo?.[field] || state.customerInfo[field].toString().trim() === ''
+    );
+    
+    if (missingFields.length > 0) {
+      errorMessage = `Please provide: ${missingFields.join(', ')}`;
+      canProceed = false;
+    }
+    
+    // Email format validation
+    if (state.customerInfo?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.customerInfo.email)) {
+      errorMessage = 'Please provide a valid email address';
+      canProceed = false;
+    }
+    
+    // Phone format validation
+    if (state.customerInfo?.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(state.customerInfo.phone)) {
+      errorMessage = 'Please provide a valid phone number';
+      canProceed = false;
+    }
+  }
 
-      if (canProceed) {
-        state.step += 1;
-        state.error = null;
-        storage.save(state);
-      }
-    },
+  if (canProceed) {
+    console.log('✅ Validation passed, proceeding to step:', state.step + 1);
+    state.step += 1;
+    state.error = null;
+    state.validationErrors = {};
+    storage.save(state);
+  } else {
+    console.log('❌ Validation failed:', errorMessage);
+    state.error = errorMessage;
+  }
+},
 
-    prevStep: (state) => {
-      if (state.step > 1) {
-        state.step -= 1;
-        state.error = null;
-        storage.save(state);
-      }
-    },
 
-    setStep: (state, action) => {
-      const step = parseInt(action.payload);
-      if (step >= 1 && step <= 4) {
-        state.step = step;
-        state.error = null;
-        storage.save(state);
-      }
-    },
+prevStep: (state) => {
+  console.log('🔄 prevStep called, current step:', state.step);
+  
+  if (state.step > 1) {
+    state.step -= 1;
+    state.error = null;
+    // Don't clear validation errors when going back - user might want to see what needs fixing
+    storage.save(state);
+    console.log('✅ Moved to previous step:', state.step);
+  } else {
+    console.log('⚠️ Already at first step, cannot go back');
+  }
+},
+
+setStep: (state, action) => {
+  const newStep = parseInt(action.payload);
+  console.log('🔄 setStep called with:', newStep);
+  
+  if (newStep >= 1 && newStep <= 3) {
+    // Don't enforce validation when explicitly setting step (for edit functionality)
+    state.step = newStep;
+    state.error = null;
+    storage.save(state);
+    console.log('✅ Step set to:', newStep);
+  } else {
+    console.log('❌ Invalid step:', newStep);
+    state.error = 'Invalid step number';
+  }
+},
 
     toggleCart: (state) => {
       state.isOpen = !state.isOpen;
@@ -854,19 +977,42 @@ addToCart: (state, action) => {
       storage.clear();
     },
 
-    forceResetCart: (state) => {
-      const defaultState = createDefaultState();
-      utils.resetStateToDefault(state, defaultState, []);
-      storage.clear();
-    },
+forceResetCart: (state) => {
+  console.log('🔄 Force resetting cart...');
+  
+  const defaultState = createDefaultState();
+  
+  // Reset all cart state except UI state
+  Object.keys(defaultState).forEach((key) => {
+    if (key !== 'isOpen') {
+      state[key] = defaultState[key];
+    }
+  });
+  
+  // Clear storage
+  storage.clear();
+  
+  console.log('✅ Cart force reset completed');
+},
 
-    clearError: (state) => {
-      state.error = null;
-    },
+// Additional helper functions for better state management
+syncWithLocalStorage: (state) => {
+  const saved = storage.save(state);
+  if (saved) {
+    state.lastSyncedAt = new Date().toISOString();
+    console.log('✅ Cart synced with localStorage');
+  } else {
+    console.warn('⚠️ Failed to sync cart with localStorage');
+  }
+},
 
-    clearValidationErrors: (state) => {
-      state.validationErrors = {};
-    },
+clearError: (state) => {
+  state.error = null;
+},
+
+clearValidationErrors: (state) => {
+  state.validationErrors = {};
+},
 
     resetSubmissionStatus: (state) => {
       state.bookingSubmitted = false;
@@ -893,6 +1039,59 @@ addToCart: (state, action) => {
       }
     },
   },
+
+  validateCurrentStep: (state) => {
+  const errors = {};
+  
+  switch (state.step) {
+    case 1:
+      if (!state.items || state.items.length === 0) {
+        errors.cart = 'Add at least one item to your cart';
+      }
+      if (!state.selectedDates?.startDate) {
+        errors.startDate = 'Select a start date';
+      }
+      if (!state.selectedDates?.startTime || !state.selectedDates?.endTime) {
+        errors.time = 'Select start and end times';
+      }
+      if (state.selectedDates?.multiDay && !state.selectedDates?.endDate) {
+        errors.endDate = 'Select an end date for multi-day events';
+      }
+      break;
+      
+    case 2:
+      const requiredFields = ['name', 'email', 'phone', 'location', 'delivery', 'installation'];
+      requiredFields.forEach(field => {
+        if (!state.customerInfo?.[field] || state.customerInfo[field].toString().trim() === '') {
+          errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+        }
+      });
+      
+      if (state.customerInfo?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.customerInfo.email)) {
+        errors.email = 'Please enter a valid email address';
+      }
+      
+      if (state.customerInfo?.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(state.customerInfo.phone)) {
+        errors.phone = 'Please enter a valid phone number';
+      }
+      break;
+      
+    case 3:
+      // Final validation before submission
+      if (!state.items || state.items.length === 0) {
+        errors.items = 'Cart cannot be empty';
+      }
+      if (!state.customerInfo?.name || !state.customerInfo?.email || !state.customerInfo?.phone) {
+        errors.customer = 'Customer information is incomplete';
+      }
+      if (!state.selectedDates?.startDate || !state.selectedDates?.endDate) {
+        errors.dates = 'Event dates are required';
+      }
+      break;
+  }
+  
+  return errors;
+},
 
   extraReducers: (builder) => {
     builder

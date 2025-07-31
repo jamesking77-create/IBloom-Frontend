@@ -19,6 +19,11 @@ import HomePage from './screens/users/homepage';
 import { QuotesList } from './screens/admin/dashboard/quotesList';
 import CategoriesPage from './screens/users/categoriesPage';
 import EventBookingPage from './screens/users/eventBookingPage';
+import AboutPage from './components/users/aboutUsPage';
+import GalleryPage from './components/users/galleryPage';
+import ContactPage from './components/users/contactPage';
+import FaqPage from './components/users/faqPage';
+
 
 
 const PrivateRoute = ({ children }) => {
@@ -63,9 +68,13 @@ function AppContent() {
           <Route path="quotes" element={<QuotesList />} />
         </Route>
         
-        
+        {/* User/Public Routes */}
         <Route path="/" element={<UserLayout/>}>
           <Route index element={<HomePage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="faq" element={<FaqPage />} />
+          <Route path="gallery" element={<GalleryPage />} />
+          <Route path="contact" element={<ContactPage />} />
           <Route path="category/:categoryId" element={<CategoriesPage />} />
           <Route path="eventbooking" element={<EventBookingPage />} />
         </Route>

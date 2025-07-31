@@ -699,7 +699,7 @@ const UserLayout = () => {
       </nav>
 
       {/* Add top padding to account for fixed navigation */}
-      <div className="pt-16 md:pt-0">
+      <div className=" md:pt-0">
         {/* Page Content */}
         <main>
           <Outlet />

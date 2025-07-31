@@ -264,7 +264,7 @@ const handleConfirmBooking = useCallback(async () => {
       },
     };
 
-    console.log("📦 Sending booking data to backend:", bookingData);
+    // console.log(" Sending booking data to backend:", bookingData);
 
     // Call the Redux action to create booking (which should make the API call)
     const result = await dispatch(createBookingFromCart(bookingData)).unwrap();

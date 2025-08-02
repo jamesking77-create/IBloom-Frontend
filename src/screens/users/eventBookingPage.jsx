@@ -1,10 +1,21 @@
 // screens/user/EventBookingPage.js
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import {
-  ArrowLeft, Calendar, User, Eye, Check, ShoppingCart, Sparkles, Menu, X, Mail, MessageCircle, Heart
-} from 'lucide-react';
+  ArrowLeft,
+  Calendar,
+  User,
+  Eye,
+  Check,
+  ShoppingCart,
+  Sparkles,
+  Menu,
+  X,
+  Mail,
+  MessageCircle,
+  Heart,
+} from "lucide-react";
 
 import {
   selectCartItems,
@@ -30,20 +41,20 @@ import {
   forceResetCart,
   setOrderMode,
   formatPrice,
-  clearCartFromLocalStorage
-} from '../../store/slices/cart-slice';
+  clearCartFromLocalStorage,
+} from "../../store/slices/cart-slice";
 
 import {
   createBookingFromCart,
   selectCreatingBooking,
   selectBookingCreated,
   selectLastCreatedBookingId,
-  resetBookingCreation
-} from '../../store/slices/booking-slice';
+  resetBookingCreation,
+} from "../../store/slices/booking-slice";
 
-import DateSelectionStep from '../../components/users/dateSelectionStep.jsx';
-import CustomerDetailsStep from '../../components/users/customerDetailsStep.jsx';
-import BookingPreviewStep from '../../components/users/bookingPreviewStep.jsx';
+import DateSelectionStep from "../../components/users/dateSelectionStep.jsx";
+import CustomerDetailsStep from "../../components/users/customerDetailsStep.jsx";
+import BookingPreviewStep from "../../components/users/bookingPreviewStep.jsx";
 
 const EventBookingPage = () => {
   const location = useLocation();
@@ -66,7 +77,7 @@ const EventBookingPage = () => {
   const lastCreatedBookingId = useSelector(selectLastCreatedBookingId);
 
   // Local state
-  const [localError, setLocalError] = useState('');
+  const [localError, setLocalError] = useState("");
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [fadingOut, setFadingOut] = useState(false);
@@ -78,16 +89,34 @@ const EventBookingPage = () => {
   const safetyTimeoutRef = useRef(null);
 
   const steps = [
-    { id: 1, title: 'Date & Time', icon: Calendar, description: 'Choose when', shortTitle: 'Date' },
-    { id: 2, title: 'Your Details', icon: User, description: 'Tell us about you', shortTitle: 'Details' },
-    { id: 3, title: 'Review & Book', icon: Eye, description: 'Confirm everything', shortTitle: 'Review' }
+    {
+      id: 1,
+      title: "Date & Time",
+      icon: Calendar,
+      description: "Choose when",
+      shortTitle: "Date",
+    },
+    {
+      id: 2,
+      title: "Your Details",
+      icon: User,
+      description: "Tell us about you",
+      shortTitle: "Details",
+    },
+    {
+      id: 3,
+      title: "Review & Book",
+      icon: Eye,
+      description: "Confirm everything",
+      shortTitle: "Review",
+    },
   ];
 
   // Smooth scroll to top
   const scrollToTop = useCallback(() => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: "smooth",
     });
   }, []);
 
@@ -105,45 +134,44 @@ const EventBookingPage = () => {
 
   // Navigation function with proper cleanup
   const navigateToHome = useCallback(() => {
-    console.log('🏠 Starting navigation to home...');
-      
+    console.log("🏠 Starting navigation to home...");
+
     try {
       // Clear all timeouts first
       clearAllTimeouts();
-      
+
       // Reset booking state
-      console.log('🔄 Resetting booking creation state...');
+      console.log("🔄 Resetting booking creation state...");
       dispatch(resetBookingCreation());
-      
+
       // Clear cart
-      console.log('🗑️ Force resetting cart...');
+      console.log("🗑️ Force resetting cart...");
       dispatch(forceResetCart());
-      
+
       // Store admin notification
       if (lastCreatedBookingId) {
-        localStorage.setItem('newBookingCreated', 'true');
-        localStorage.setItem('newBookingId', lastCreatedBookingId);
+        localStorage.setItem("newBookingCreated", "true");
+        localStorage.setItem("newBookingId", lastCreatedBookingId);
       }
-      
+
       // Reset local state
       setShowSuccessAnimation(false);
-      setLocalError('');
+      setLocalError("");
       setIsNavigating(false);
       setInitialized(false);
-      
+
       // Navigate to home
-      console.log('🚀 Navigating to home page...');
-      navigate('/', { 
+      console.log("🚀 Navigating to home page...");
+      navigate("/", {
         replace: true,
-        state: { fromBookingSuccess: true }
+        state: { fromBookingSuccess: true },
       });
-      
-      console.log('✅ Navigation completed successfully');
-      
+
+      console.log("✅ Navigation completed successfully");
     } catch (error) {
-      console.error('❌ Error during navigation:', error);
+      console.error("❌ Error during navigation:", error);
       // Fallback to force reload
-      window.location.replace('/');
+      window.location.replace("/");
     }
   }, [clearAllTimeouts, dispatch, lastCreatedBookingId, navigate]);
 
@@ -151,42 +179,48 @@ const EventBookingPage = () => {
   useEffect(() => {
     if (initialized) return;
 
-    console.log('🔄 EventBookingPage initializing...');
-    console.log('selectedItem:', selectedItem);
-    console.log('cartItems:', cartItems);
-    console.log('cartItemCount:', cartItemCount);
-    console.log('fromBooking:', fromBooking);
-    
+    console.log("🔄 EventBookingPage initializing...");
+    console.log("selectedItem:", selectedItem);
+    console.log("cartItems:", cartItems);
+    console.log("cartItemCount:", cartItemCount);
+    console.log("fromBooking:", fromBooking);
+
     // Set order mode first
-    dispatch(setOrderMode('booking'));
-    
+    dispatch(setOrderMode("booking"));
+
     // Only add selectedItem if we have one AND we're not returning from booking flow
     if (selectedItem && !fromBooking) {
-      console.log('✅ Adding selectedItem to cart (new booking)');
-      dispatch(addToCart({ 
-        item: selectedItem, 
-        dates: selectedDates,
-        allowDuplicates: false
-      }));
+      console.log("✅ Adding selectedItem to cart (new booking)");
+      dispatch(
+        addToCart({
+          item: selectedItem,
+          dates: selectedDates,
+          allowDuplicates: false,
+        })
+      );
     }
     // If we have selectedItem and we're returning from booking, add it to existing cart
     else if (selectedItem && fromBooking) {
-      console.log('✅ Adding selectedItem to existing cart (returning from booking)');
-      dispatch(addToCart({ 
-        item: selectedItem, 
-        dates: selectedDates,
-        allowDuplicates: false
-      }));
+      console.log(
+        "✅ Adding selectedItem to existing cart (returning from booking)"
+      );
+      dispatch(
+        addToCart({
+          item: selectedItem,
+          dates: selectedDates,
+          allowDuplicates: false,
+        })
+      );
     }
-    
+
     setInitialized(true);
-    console.log('✅ EventBookingPage initialized');
+    console.log("✅ EventBookingPage initialized");
   }, [selectedItem, fromBooking, initialized, dispatch, selectedDates]);
 
   // Better step change handling with debouncing
   useEffect(() => {
     if (!initialized) return;
-    
+
     const scrollTimeout = setTimeout(() => {
       scrollToTop();
     }, 100);
@@ -196,179 +230,199 @@ const EventBookingPage = () => {
 
   // FIXED: Booking success handling with proper timeout management
   useEffect(() => {
-    console.log('🔄 Booking success useEffect triggered');
-    console.log('bookingCreated:', bookingCreated);
-    console.log('lastCreatedBookingId:', lastCreatedBookingId);
-    console.log('showSuccessAnimation:', showSuccessAnimation);
+    console.log("🔄 Booking success useEffect triggered");
+    console.log("bookingCreated:", bookingCreated);
+    console.log("lastCreatedBookingId:", lastCreatedBookingId);
+    console.log("showSuccessAnimation:", showSuccessAnimation);
 
     if (bookingCreated && lastCreatedBookingId && !showSuccessAnimation) {
-      console.log('✅ Booking created successfully:', lastCreatedBookingId);
-      console.log('🎉 Starting success animation sequence...');
-      
+      console.log("✅ Booking created successfully:", lastCreatedBookingId);
+      console.log("🎉 Starting success animation sequence...");
+      dispatch(forceResetCart());
+      localStorage.removeItem("eventPlatform_cart");
       // Clear any existing timeouts
       clearAllTimeouts();
-      
+
       // Scroll to top immediately
       scrollToTop();
-      
+
       // Show success animation
       setShowSuccessAnimation(true);
-      
-      console.log('⏰ Setting up 3-second navigation timeout...');
-      
-      // Create a timeout for navigation
-      redirectTimeoutRef.current = setTimeout(() => {
-        console.log('🚀 3 seconds elapsed, navigating to home...');
-        navigateToHome();
-      }, 3000);
 
-      // Safety timeout - force navigation after 5 seconds
-      safetyTimeoutRef.current = setTimeout(() => {
-        console.log('⚠️ Safety timeout: forcing navigation after 5 seconds');
-        navigateToHome();
-      }, 5000);
+      console.log("⏰ Setting up 3-second navigation timeout...");
+
+      // // Create a timeout for navigation
+      // redirectTimeoutRef.current = setTimeout(() => {
+      //   console.log('🚀 3 seconds elapsed, navigating to home...');
+      //   navigateToHome();
+      // }, 3000);
+
+      // // Safety timeout - force navigation after 5 seconds
+      // safetyTimeoutRef.current = setTimeout(() => {
+      //   console.log('⚠️ Safety timeout: forcing navigation after 5 seconds');
+      //   navigateToHome();
+      // }, 5000);
     }
 
     // Cleanup function
     return () => {
       if (showSuccessAnimation) {
-        console.log('🧹 Cleaning up booking success useEffect');
+        console.log("🧹 Cleaning up booking success useEffect");
         clearAllTimeouts();
       }
     };
-  }, [bookingCreated, lastCreatedBookingId, showSuccessAnimation, clearAllTimeouts, scrollToTop, navigateToHome]);
+  }, [
+    bookingCreated,
+    lastCreatedBookingId,
+    showSuccessAnimation,
+    clearAllTimeouts,
+    scrollToTop,
+    navigateToHome,
+  ]);
 
   // Component unmount cleanup
   useEffect(() => {
     return () => {
-      console.log('🧹 Component unmounting...');
+      console.log("🧹 Component unmounting...");
       clearAllTimeouts();
-      
+
       // Store admin notification if we're in success state
       if (showSuccessAnimation && lastCreatedBookingId) {
-        localStorage.setItem('newBookingCreated', 'true');
-        localStorage.setItem('newBookingId', lastCreatedBookingId);
+        localStorage.setItem("newBookingCreated", "true");
+        localStorage.setItem("newBookingId", lastCreatedBookingId);
       }
     };
   }, [clearAllTimeouts, showSuccessAnimation, lastCreatedBookingId]);
 
   // Optimized handlers with proper validation
-  const handleDateChange = useCallback((dateData) => {
-    console.log('📅 Date changed:', dateData);
-    dispatch(setSelectedDates(dateData));
-    setLocalError('');
-  }, [dispatch]);
+  const handleDateChange = useCallback(
+    (dateData) => {
+      console.log("📅 Date changed:", dateData);
+      dispatch(setSelectedDates(dateData));
+      setLocalError("");
+    },
+    [dispatch]
+  );
 
-  const handleCustomerInfoChange = useCallback((data) => {
-    console.log('👤 Customer info changed:', data);
-    dispatch(setCustomerInfo(data));
-    setLocalError('');
-  }, [dispatch]);
+  const handleCustomerInfoChange = useCallback(
+    (data) => {
+      console.log("👤 Customer info changed:", data);
+      dispatch(setCustomerInfo(data));
+      setLocalError("");
+    },
+    [dispatch]
+  );
 
   // Improved handleNext with better validation and state management
   const handleNext = useCallback(() => {
     if (isNavigating) return;
-    
-    console.log('=== 🚀 EventBookingPage handleNext called ===');
-    console.log('Current step:', currentStep);
-    console.log('Cart items:', cartItems.length);
-    console.log('Selected dates:', selectedDates);
-    console.log('Customer info:', customerInfo);
-    
+
+    console.log("=== 🚀 EventBookingPage handleNext called ===");
+    console.log("Current step:", currentStep);
+    console.log("Cart items:", cartItems.length);
+    console.log("Selected dates:", selectedDates);
+    console.log("Customer info:", customerInfo);
+
     setIsNavigating(true);
-    setLocalError('');
-    
+    setLocalError("");
+
     try {
       // Step 1 validation - Date and Cart
       if (currentStep === 1) {
-        console.log('🔍 Validating step 1...');
-        
+        console.log("🔍 Validating step 1...");
+
         if (!cartItems || cartItems.length === 0) {
-          setLocalError('Add at least one item to your cart');
+          setLocalError("Add at least one item to your cart");
           setIsNavigating(false);
           return;
         }
-        
-        
-        
+
         if (selectedDates?.multiDay && !selectedDates?.endDate) {
-          setLocalError('Please select an end date for your multi-day event');
+          setLocalError("Please select an end date for your multi-day event");
           setIsNavigating(false);
           return;
         }
-        
+
         if (!selectedDates?.startTime || !selectedDates?.endTime) {
-          setLocalError('Please select both start and end times for your event');
+          setLocalError(
+            "Please select both start and end times for your event"
+          );
           setIsNavigating(false);
           return;
         }
-        
-        console.log('✅ Step 1 validation passed');
-      } 
+
+        console.log("✅ Step 1 validation passed");
+      }
       // Step 2 validation - Customer Details
       else if (currentStep === 2) {
-        console.log('🔍 Validating step 2...');
-        
+        console.log("🔍 Validating step 2...");
+
         if (!customerInfo?.name?.trim()) {
-          setLocalError('Please provide your name.');
+          setLocalError("Please provide your name.");
           setIsNavigating(false);
           return;
         }
-        
+
         if (!customerInfo?.email?.trim()) {
-          setLocalError('Please provide your email address.');
+          setLocalError("Please provide your email address.");
           setIsNavigating(false);
           return;
         }
-        
+
         if (!customerInfo?.phone?.trim()) {
-          setLocalError('Please provide your phone number.');
+          setLocalError("Please provide your phone number.");
           setIsNavigating(false);
           return;
         }
-        
+
         if (!customerInfo?.location?.trim()) {
-          setLocalError('Please provide the event location.');
+          setLocalError("Please provide the event location.");
           setIsNavigating(false);
           return;
         }
-        
+
         if (!customerInfo?.delivery) {
-          setLocalError('Please select a delivery option.');
+          setLocalError("Please select a delivery option.");
           setIsNavigating(false);
           return;
         }
-        
+
         if (!customerInfo?.installation) {
-          setLocalError('Please select an installation option.');
+          setLocalError("Please select an installation option.");
           setIsNavigating(false);
           return;
         }
-        
-        console.log('✅ Step 2 validation passed');
+
+        console.log("✅ Step 2 validation passed");
       }
 
-      console.log('✅ All validations passed, moving to next step...');
-      
+      console.log("✅ All validations passed, moving to next step...");
+
       setTimeout(() => {
         dispatch(nextStep());
         setIsNavigating(false);
-        console.log('✅ nextStep() dispatched successfully');
+        console.log("✅ nextStep() dispatched successfully");
       }, 100);
-      
     } catch (error) {
-      console.error('❌ Error in handleNext:', error);
-      setLocalError('An error occurred. Please try again.');
+      console.error("❌ Error in handleNext:", error);
+      setLocalError("An error occurred. Please try again.");
       setIsNavigating(false);
     }
-  }, [currentStep, cartItems, selectedDates, customerInfo, isNavigating, dispatch]);
+  }, [
+    currentStep,
+    cartItems,
+    selectedDates,
+    customerInfo,
+    isNavigating,
+    dispatch,
+  ]);
 
   const handlePrevious = useCallback(() => {
     if (isNavigating) return;
-    
+
     setIsNavigating(true);
-    setLocalError('');
-    
+    setLocalError("");
+
     setTimeout(() => {
       dispatch(prevStep());
       setIsNavigating(false);
@@ -378,60 +432,75 @@ const EventBookingPage = () => {
   const handleAddMoreItems = useCallback(() => {
     setFadingOut(true);
     setTimeout(() => {
-      navigate('/', { state: { scrollToCategories: true } });
+      navigate("/", { state: { scrollToCategories: true } });
     }, 700);
   }, [navigate]);
 
-  const handleRemoveItem = useCallback((itemId) => {
-    dispatch(removeFromCart(itemId));
-  }, [dispatch]);
+  const handleRemoveItem = useCallback(
+    (itemId) => {
+      dispatch(removeFromCart(itemId));
+    },
+    [dispatch]
+  );
 
-  const handleQuantityChange = useCallback((itemId, quantity) => {
-    console.log('Changing quantity for item:', itemId, 'to:', quantity);
-    if (quantity > 0) {
-      dispatch(updateQuantity({ itemId, quantity }));
-    }
-  }, [dispatch]);
+  const handleQuantityChange = useCallback(
+    (itemId, quantity) => {
+      console.log("Changing quantity for item:", itemId, "to:", quantity);
+      if (quantity > 0) {
+        dispatch(updateQuantity({ itemId, quantity }));
+      }
+    },
+    [dispatch]
+  );
 
-  const handleIncrementQuantity = useCallback((itemId) => {
-    console.log('Incrementing quantity for item:', itemId);
-    dispatch(incrementQuantity(itemId));
-  }, [dispatch]);
+  const handleIncrementQuantity = useCallback(
+    (itemId) => {
+      console.log("Incrementing quantity for item:", itemId);
+      dispatch(incrementQuantity(itemId));
+    },
+    [dispatch]
+  );
 
-  const handleDecrementQuantity = useCallback((itemId) => {
-    console.log('Decrementing quantity for item:', itemId);
-    dispatch(decrementQuantity(itemId));
-  }, [dispatch]);
+  const handleDecrementQuantity = useCallback(
+    (itemId) => {
+      console.log("Decrementing quantity for item:", itemId);
+      dispatch(decrementQuantity(itemId));
+    },
+    [dispatch]
+  );
 
   // Improved booking submission
-  const handleSubmitBooking = useCallback(async (bookingData) => {
-    console.log('🚀 handleSubmitBooking called with:', bookingData);
-    
-    try {
-      // Clear any existing timeouts
-      clearAllTimeouts();
-      
-      // Scroll to top when booking is confirmed
-      scrollToTop();
-      
-      // Reset any error states
-      setLocalError('');
-      
-      // Dispatch the Redux action that makes the API call
-      const result = await dispatch(createBookingFromCart(bookingData));
-      
-      console.log('📝 Booking creation result:', result);
-      
-      return result;
-    } catch (error) {
-      console.error('❌ Error in handleSubmitBooking:', error);
-      setLocalError('Failed to create booking. Please try again.');
-      throw error;
-    }
-  }, [dispatch, scrollToTop, clearAllTimeouts]);
+  const handleSubmitBooking = useCallback(
+    async (bookingData) => {
+      console.log("🚀 handleSubmitBooking called with:", bookingData);
+
+      try {
+        // Clear any existing timeouts
+        clearAllTimeouts();
+
+        // Scroll to top when booking is confirmed
+        scrollToTop();
+
+        // Reset any error states
+        setLocalError("");
+
+        // Dispatch the Redux action that makes the API call
+        const result = await dispatch(createBookingFromCart(bookingData));
+
+        console.log("📝 Booking creation result:", result);
+
+        return result;
+      } catch (error) {
+        console.error("❌ Error in handleSubmitBooking:", error);
+        setLocalError("Failed to create booking. Please try again.");
+        throw error;
+      }
+    },
+    [dispatch, scrollToTop, clearAllTimeouts]
+  );
 
   const handleClearCart = useCallback(() => {
-    console.log('🗑️ Clearing cart manually');
+    console.log("🗑️ Clearing cart manually");
     dispatch(forceResetCart());
   }, [dispatch]);
 
@@ -487,10 +556,12 @@ const EventBookingPage = () => {
           return null;
       }
     } catch (error) {
-      console.error('❌ Error rendering step:', error);
+      console.error("❌ Error rendering step:", error);
       return (
         <div className="text-center py-8">
-          <p className="text-red-600">An error occurred. Please refresh the page.</p>
+          <p className="text-red-600">
+            An error occurred. Please refresh the page.
+          </p>
         </div>
       );
     }
@@ -511,7 +582,7 @@ const EventBookingPage = () => {
     handleSubmitBooking,
     creatingBooking,
     cartError,
-    dispatch
+    dispatch,
   ]);
 
   // Show loading while initializing
@@ -520,38 +591,15 @@ const EventBookingPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 px-4">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 rounded-full mx-auto mb-4" />
-          <p className="text-gray-600 text-sm sm:text-base">Initializing booking...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show empty cart state
-  if (!cartItems || cartItems.length === 0 && !selectedItem) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 px-4">
-        <div className="text-center max-w-md mx-auto">
-          <div className="relative mb-6 sm:mb-8">
-            <div className="text-6xl sm:text-8xl mb-4 animate-bounce">🛒</div>
-            <div className="absolute -top-2 -right-2 w-4 h-4 sm:w-6 sm:h-6 bg-red-500 rounded-full animate-pulse"></div>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">Your Cart is Empty</h2>
-          <p className="text-gray-600 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base px-4">
-            Start building your perfect event by adding items to your cart.
+          <p className="text-gray-600 text-sm sm:text-base">
+            Initializing booking...
           </p>
-          <button
-            onClick={() => navigate('/', { state: { scrollToCategories: true } })}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl transition hover:scale-105 shadow-lg font-medium text-sm sm:text-base w-full sm:w-auto"
-          >
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2" />
-            Browse Categories
-          </button>
         </div>
       </div>
     );
   }
 
-  // ENHANCED: Success animation with manual continue button
+  // ENHANCED: Success animation with manual continue button - CHECK THIS FIRST
   if (showSuccessAnimation) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 px-4">
@@ -589,13 +637,14 @@ const EventBookingPage = () => {
             <p className="text-gray-500 text-sm animate-pulse">
               Redirecting you to home page...
             </p>
-            
+
             {/* Manual continue button as fallback */}
             <div className="mt-6">
               <button
                 onClick={() => {
-                  console.log('🖱️ Manual continue button clicked');
-                  dispatch(clearCart());
+                  console.log("🖱️ Manual continue button clicked");
+                  dispatch(forceResetCart());
+                  localStorage.removeItem("eventPlatform_cart");
                   navigateToHome();
                 }}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:scale-105 transition-transform shadow-lg font-medium"
@@ -606,10 +655,47 @@ const EventBookingPage = () => {
           </div>
 
           {/* Decorative elements */}
-          <div className="absolute top-10 left-10 text-2xl animate-bounce animation-delay-300">🎊</div>
-          <div className="absolute top-20 right-10 text-2xl animate-bounce animation-delay-500">✨</div>
-          <div className="absolute bottom-20 left-20 text-2xl animate-bounce animation-delay-700">🎈</div>
-          <div className="absolute bottom-10 right-20 text-2xl animate-bounce animation-delay-900">🎉</div>
+          <div className="absolute top-10 left-10 text-2xl animate-bounce animation-delay-300">
+            🎊
+          </div>
+          <div className="absolute top-20 right-10 text-2xl animate-bounce animation-delay-500">
+            ✨
+          </div>
+          <div className="absolute bottom-20 left-20 text-2xl animate-bounce animation-delay-700">
+            🎈
+          </div>
+          <div className="absolute bottom-10 right-20 text-2xl animate-bounce animation-delay-900">
+            🎉
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty cart state - ONLY SHOW IF NOT IN SUCCESS MODE
+  if (!cartItems || (cartItems.length === 0 && !selectedItem)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 px-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="relative mb-6 sm:mb-8">
+            <div className="text-6xl sm:text-8xl mb-4 animate-bounce">🛒</div>
+            <div className="absolute -top-2 -right-2 w-4 h-4 sm:w-6 sm:h-6 bg-red-500 rounded-full animate-pulse"></div>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
+            Your Cart is Empty
+          </h2>
+          <p className="text-gray-600 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base px-4">
+            Start building your perfect event by adding items to your cart.
+          </p>
+          <button
+            onClick={() =>
+              navigate("/", { state: { scrollToCategories: true } })
+            }
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl transition hover:scale-105 shadow-lg font-medium text-sm sm:text-base w-full sm:w-auto"
+          >
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2" />
+            Browse Categories
+          </button>
         </div>
       </div>
     );
@@ -618,13 +704,19 @@ const EventBookingPage = () => {
   return (
     <div
       className={`min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 transition-opacity duration-500 ${
-        fadingOut ? 'opacity-0' : 'opacity-100'
+        fadingOut ? "opacity-0" : "opacity-100"
       }`}
     >
       {/* Mobile Menu Overlay - ONLY SHOW ON FIRST STEP */}
       {showMobileMenu && currentStep === 1 && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden" onClick={() => setShowMobileMenu(false)}>
-          <div className="bg-white h-full w-80 max-w-[85vw] shadow-xl p-6" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden"
+          onClick={() => setShowMobileMenu(false)}
+        >
+          <div
+            className="bg-white h-full w-80 max-w-[85vw] shadow-xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-800">Menu</h2>
               <button
@@ -642,7 +734,7 @@ const EventBookingPage = () => {
                 </div>
                 <div className="text-sm text-gray-500 flex items-center mt-2">
                   <ShoppingCart className="w-4 h-4 mr-1" />
-                  {cartItemCount} item{cartItemCount !== 1 ? 's' : ''}
+                  {cartItemCount} item{cartItemCount !== 1 ? "s" : ""}
                 </div>
               </div>
             </div>
@@ -666,7 +758,9 @@ const EventBookingPage = () => {
                 <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Event Booking
                 </h1>
-                <p className="text-gray-600 text-sm lg:text-base">Create your perfect event experience</p>
+                <p className="text-gray-600 text-sm lg:text-base">
+                  Create your perfect event experience
+                </p>
               </div>
             </div>
             <div className="text-right">
@@ -676,7 +770,7 @@ const EventBookingPage = () => {
               </div>
               <div className="text-sm text-gray-500 flex items-center justify-end mt-1">
                 <ShoppingCart className="w-4 h-4 mr-1" />
-                {cartItemCount} item{cartItemCount !== 1 ? 's' : ''}
+                {cartItemCount} item{cartItemCount !== 1 ? "s" : ""}
               </div>
             </div>
           </div>
@@ -694,7 +788,9 @@ const EventBookingPage = () => {
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
                   Event Booking
                 </h1>
-                <p className="text-gray-600 text-sm truncate">Create your perfect event</p>
+                <p className="text-gray-600 text-sm truncate">
+                  Create your perfect event
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -724,26 +820,44 @@ const EventBookingPage = () => {
               return (
                 <div key={step.id} className="flex items-center">
                   <div className="flex flex-col items-center">
-                    <div className={`relative w-12 h-12 lg:w-16 lg:h-16 rounded-full border-3 flex justify-center items-center transition-all duration-300 ${
-                      isCompleted
-                        ? 'bg-green-500 border-green-600 text-white'
-                        : isActive
-                        ? 'bg-blue-500 border-blue-600 text-white animate-pulse'
-                        : 'border-gray-300 text-gray-400 bg-white'
-                    }`}>
-                      {isCompleted ? <Check className="w-5 h-5 lg:w-7 lg:h-7" /> : <Icon className="w-5 h-5 lg:w-7 lg:h-7" />}
+                    <div
+                      className={`relative w-12 h-12 lg:w-16 lg:h-16 rounded-full border-3 flex justify-center items-center transition-all duration-300 ${
+                        isCompleted
+                          ? "bg-green-500 border-green-600 text-white"
+                          : isActive
+                          ? "bg-blue-500 border-blue-600 text-white animate-pulse"
+                          : "border-gray-300 text-gray-400 bg-white"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <Check className="w-5 h-5 lg:w-7 lg:h-7" />
+                      ) : (
+                        <Icon className="w-5 h-5 lg:w-7 lg:h-7" />
+                      )}
                     </div>
                     <div className="mt-2 text-sm font-medium text-center">
-                      <div className={`transition-colors ${isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div
+                        className={`transition-colors ${
+                          isActive
+                            ? "text-blue-600"
+                            : isCompleted
+                            ? "text-green-600"
+                            : "text-gray-400"
+                        }`}
+                      >
                         {step.title}
                       </div>
-                      <div className="text-xs text-gray-400 hidden lg:block">{step.description}</div>
+                      <div className="text-xs text-gray-400 hidden lg:block">
+                        {step.description}
+                      </div>
                     </div>
                   </div>
                   {idx < steps.length - 1 && (
-                    <div className={`w-16 lg:w-20 h-1 mx-4 rounded-full transition-colors ${
-                      isCompleted ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
+                    <div
+                      className={`w-16 lg:w-20 h-1 mx-4 rounded-full transition-colors ${
+                        isCompleted ? "bg-green-500" : "bg-gray-300"
+                      }`}
+                    />
                   )}
                 </div>
               );
@@ -759,25 +873,41 @@ const EventBookingPage = () => {
               return (
                 <div key={step.id} className="flex items-center">
                   <div className="flex flex-col items-center">
-                    <div className={`relative w-10 h-10 rounded-full border-2 flex justify-center items-center transition-all duration-300 ${
-                      isCompleted
-                        ? 'bg-green-500 border-green-600 text-white'
-                        : isActive
-                        ? 'bg-blue-500 border-blue-600 text-white animate-pulse'
-                        : 'border-gray-300 text-gray-400 bg-white'
-                    }`}>
-                      {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                    <div
+                      className={`relative w-10 h-10 rounded-full border-2 flex justify-center items-center transition-all duration-300 ${
+                        isCompleted
+                          ? "bg-green-500 border-green-600 text-white"
+                          : isActive
+                          ? "bg-blue-500 border-blue-600 text-white animate-pulse"
+                          : "border-gray-300 text-gray-400 bg-white"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <Icon className="w-4 h-4" />
+                      )}
                     </div>
                     <div className="mt-1 text-xs font-medium text-center">
-                      <div className={`transition-colors ${isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div
+                        className={`transition-colors ${
+                          isActive
+                            ? "text-blue-600"
+                            : isCompleted
+                            ? "text-green-600"
+                            : "text-gray-400"
+                        }`}
+                      >
                         {step.shortTitle}
                       </div>
                     </div>
                   </div>
                   {idx < steps.length - 1 && (
-                    <div className={`w-8 h-1 mx-2 rounded-full transition-colors ${
-                      isCompleted ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
+                    <div
+                      className={`w-8 h-1 mx-2 rounded-full transition-colors ${
+                        isCompleted ? "bg-green-500" : "bg-gray-300"
+                      }`}
+                    />
                   )}
                 </div>
               );
@@ -797,10 +927,12 @@ const EventBookingPage = () => {
           <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center max-w-sm mx-auto w-full">
             <div className="animate-spin h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 rounded-full mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              {creatingBooking ? 'Creating Your Booking...' : 'Loading...'}
+              {creatingBooking ? "Creating Your Booking..." : "Loading..."}
             </h3>
             <p className="text-gray-600 text-sm">
-              {creatingBooking ? 'Please wait while we process your booking' : 'Please wait'}
+              {creatingBooking
+                ? "Please wait while we process your booking"
+                : "Please wait"}
             </p>
           </div>
         </div>
@@ -809,7 +941,9 @@ const EventBookingPage = () => {
       {/* Error Toast */}
       {(cartError || localError) && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto bg-red-500 text-white px-4 sm:px-6 py-3 rounded-lg shadow-lg z-50">
-          <p className="font-medium text-sm sm:text-base">{cartError || localError}</p>
+          <p className="font-medium text-sm sm:text-base">
+            {cartError || localError}
+          </p>
         </div>
       )}
     </div>

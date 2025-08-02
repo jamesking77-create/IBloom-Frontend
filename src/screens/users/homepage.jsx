@@ -81,8 +81,15 @@ class IntersectionManager {
 
 const intersectionManager = new IntersectionManager();
 
-// Memoized hero slide component
-const HeroSlide = memo(({ slide, isActive, isPrevious }) => {
+// Optimized hero slide component with better loading
+const HeroSlide = memo(({ slide, isActive, isPrevious, isLoaded, onLoad }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+    onLoad();
+  }, [onLoad]);
+
   return (
     <div
       className={`absolute inset-0 w-full h-full transition-all duration-700 ${
@@ -93,15 +100,35 @@ const HeroSlide = memo(({ slide, isActive, isPrevious }) => {
         willChange: isActive ? 'transform' : 'auto'
       }}
     >
+      {/* Loading skeleton */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 animate-pulse">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
+        </div>
+      )}
+      
       <img
-        src={slide.image}
+        src={slide.optimizedImage || slide.image}
         alt={slide.title}
-        className="w-full h-full object-cover"
+        className={`w-full h-full object-cover transition-opacity duration-500 ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
         loading={isActive ? "eager" : "lazy"}
+        onLoad={handleImageLoad}
+        onError={(e) => {
+          // Fallback to original image if optimized fails
+          if (e.target.src !== slide.image) {
+            e.target.src = slide.image;
+          }
+        }}
       />
- <div className="absolute inset-0" style={{
-        background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.85) 100%)'
-      }} />
+      
+      {/* Overlay - only show when image is loaded */}
+      {imageLoaded && (
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.85) 100%)'
+        }} />
+      )}
     </div>
   );
 });
@@ -151,6 +178,8 @@ const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [autoSlideIndex, setAutoSlideIndex] = useState(0);
   const [isVisible, setIsVisible] = useState({});
+  const [imagesLoaded, setImagesLoaded] = useState(new Set());
+  const [heroReady, setHeroReady] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -206,30 +235,73 @@ const HomePage = () => {
     dispatch(fetchCategories());
   }, [dispatch]);
 
-  // Memoized data
+  // Optimized hero slides with WebP and multiple sizes
   const heroSlides = useMemo(() => [
     {
       id: 1,
-      image:
-        "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951649/gabriel-domingues-leao-da-costa-cew-O_O5Bdg-unsplash_xbxxfb.jpg",
+      image: "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951649/gabriel-domingues-leao-da-costa-cew-O_O5Bdg-unsplash_xbxxfb.jpg",
+      optimizedImage: "https://res.cloudinary.com/dc7jgb30v/image/upload/w_1920,h_1080,c_fill,f_webp,q_auto:good/v1753951649/gabriel-domingues-leao-da-costa-cew-O_O5Bdg-unsplash_xbxxfb.jpg",
       title: `${userData.name || "Premium Event"} Rentals`,
       subtitle: "Transform your special moments",
     },
     {
       id: 2,
-      image:
-        "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951672/tom-pumford-WnmXzjtjRfw-unsplash_ztkhp8.jpg",
+      image: "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951672/tom-pumford-WnmXzjtjRfw-unsplash_ztkhp8.jpg",
+      optimizedImage: "https://res.cloudinary.com/dc7jgb30v/image/upload/w_1920,h_1080,c_fill,f_webp,q_auto:good/v1753951672/tom-pumford-WnmXzjtjRfw-unsplash_ztkhp8.jpg",
       title: "Wedding Perfection",
       subtitle: "Make your dream wedding reality",
     },
     {
       id: 3,
-      image:
-        "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951643/photos-by-lanty-O38Id_cyV4M-unsplash_rlneke.jpg",
+      image: "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951643/photos-by-lanty-O38Id_cyV4M-unsplash_rlneke.jpg",
+      optimizedImage: "https://res.cloudinary.com/dc7jgb30v/image/upload/w_1920,h_1080,c_fill,f_webp,q_auto:good/v1753951643/photos-by-lanty-O38Id_cyV4M-unsplash_rlneke.jpg",
       title: "Corporate Events",
       subtitle: "Professional solutions for success",
     },
   ], [userData.name]);
+
+  // Preload hero images
+  useEffect(() => {
+    const preloadImages = () => {
+      heroSlides.forEach((slide, index) => {
+        const img = new Image();
+        const imageUrl = slide.optimizedImage || slide.image;
+        
+        img.onload = () => {
+          setImagesLoaded(prev => {
+            const newSet = new Set(prev);
+            newSet.add(slide.id);
+            return newSet;
+          });
+          
+          // Set hero ready when first image loads
+          if (index === 0) {
+            setHeroReady(true);
+          }
+        };
+        
+        img.onerror = () => {
+          // Fallback to original image
+          const fallbackImg = new Image();
+          fallbackImg.onload = () => {
+            setImagesLoaded(prev => {
+              const newSet = new Set(prev);
+              newSet.add(slide.id);
+              return newSet;
+            });
+            if (index === 0) {
+              setHeroReady(true);
+            }
+          };
+          fallbackImg.src = slide.image;
+        };
+        
+        img.src = imageUrl;
+      });
+    };
+
+    preloadImages();
+  }, [heroSlides]);
 
   const rentalCategories = useMemo(() => 
     categories.map((category) => ({
@@ -322,11 +394,13 @@ const HomePage = () => {
   ], []);
 
   useEffect(() => {
+    if (!heroReady) return;
+    
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [heroSlides.length]);
+  }, [heroSlides.length, heroReady]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -335,19 +409,17 @@ const HomePage = () => {
     return () => clearInterval(timer);
   }, [autoSlideCards.length]);
 
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-  }, [heroSlides.length]);
-
-  const prevSlide = useCallback(() => {
-    setCurrentSlide(
-      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length
-    );
-  }, [heroSlides.length]);
-
   const handleCategoryClick = useCallback((category) => {
     navigate(`/category/${category.id}`, { state: { category } });
   }, [navigate]);
+
+  const handleImageLoad = useCallback((slideId) => {
+    setImagesLoaded(prev => {
+      const newSet = new Set(prev);
+      newSet.add(slideId);
+      return newSet;
+    });
+  }, []);
 
   // Optimized parallax with direct DOM manipulation
   useEffect(() => {
@@ -422,6 +494,11 @@ const HomePage = () => {
               transform: translate3d(0, 0, 0); 
             }
           }
+
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
           
           /* Apply GPU acceleration */
           .animate-slide-left { 
@@ -447,6 +524,9 @@ const HomePage = () => {
           }
           .animate-slide-in-right { 
             animation: slideInRight 0.8s ease-out forwards; 
+          }
+          .animate-shimmer {
+            animation: shimmer 1.5s ease-in-out infinite;
           }
           
           .floating-item {
@@ -500,11 +580,15 @@ const HomePage = () => {
             slide={slide}
             isActive={index === currentSlide}
             isPrevious={index === (currentSlide - 1 + heroSlides.length) % heroSlides.length}
+            isLoaded={imagesLoaded.has(slide.id)}
+            onLoad={() => handleImageLoad(slide.id)}
           />
         ))}
 
-        {/* Hero Content with optimized parallax */}
-        <div className="absolute inset-0 flex items-center justify-center text-center text-white z-10">
+        {/* Hero Content with optimized parallax - only show when ready */}
+        <div className={`absolute inset-0 flex items-center justify-center text-center text-white z-10 transition-opacity duration-500 ${
+          heroReady ? 'opacity-100' : 'opacity-0'
+        }`}>
           <div className="max-w-4xl mx-auto px-4">
             <div
               ref={heroContentRef}
@@ -541,22 +625,10 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Navigation Arrows */}
-        <button
-          onClick={prevSlide}
-          className="absolute left-6 top-1/2 transform -translate-y-1/2 glass-effect hover:bg-white/20 rounded-full p-3 transition-all duration-300"
-        >
-          <ChevronLeft className="w-6 h-6 text-white" />
-        </button>
-        <button
-          onClick={nextSlide}
-          className="absolute right-6 top-1/2 transform -translate-y-1/2 glass-effect hover:bg-white/20 rounded-full p-3 transition-all duration-300"
-        >
-          <ChevronRight className="w-6 h-6 text-white" />
-        </button>
-
-        {/* Pagination */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3">
+        {/* Pagination - only show when ready */}
+        <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 transition-opacity duration-500 ${
+          heroReady ? 'opacity-100' : 'opacity-0'
+        }`}>
           {heroSlides.map((_, index) => (
             <button
               key={index}

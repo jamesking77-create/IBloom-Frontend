@@ -83,6 +83,42 @@ const Bookings = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const [sendingInvoice, setSendingInvoice] = useState(false);
 
+  // Load saved bank details from localStorage
+  const loadSavedBankDetails = () => {
+    try {
+      const saved = localStorage.getItem('companyBankDetails');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error('Failed to load saved bank details:', error);
+    }
+    return {
+      bankName: '',
+      accountName: '',
+      accountNumber: '',
+      sortCode: '',
+      swiftCode: '',
+    };
+  };
+
+  // Save bank details to localStorage
+  const saveBankDetails = (bankDetails) => {
+    try {
+      localStorage.setItem('companyBankDetails', JSON.stringify(bankDetails));
+    } catch (error) {
+      console.error('Failed to save bank details:', error);
+    }
+  };
+
+  // Helper function to calculate totals from services only
+  const calculateTotalsFromServices = (services, taxRate = 0.075) => {
+    const subtotal = services.reduce((sum, service) => sum + (service.total || service.subtotal || 0), 0);
+    const tax = subtotal * taxRate;
+    const total = subtotal + tax;
+    return { subtotal, tax, total };
+  };
+
   useEffect(() => {
     dispatch(fetchBookings());
   }, [dispatch]);
@@ -184,6 +220,23 @@ const Bookings = () => {
   };
 
   const handleGenerateInvoice = (booking) => {
+    // Load saved bank details
+    const savedBankDetails = loadSavedBankDetails();
+    
+    // Calculate totals from services only
+    const services = booking.services?.map((service) => ({
+      id: service.serviceId,
+      name: service.name,
+      description: service.description,
+      quantity: service.quantity,
+      unitPrice: service.subtotal / service.quantity,
+      total: service.subtotal,
+      editable: false,
+    })) || [];
+
+    const taxRate = 0.075; // 7.5%
+    const { subtotal, tax, total } = calculateTotalsFromServices(services, taxRate);
+    
     // Initialize invoice data with booking information
     const bookingKey = booking.bookingId || booking._id || "unknown";
     const invoice = {
@@ -203,6 +256,14 @@ const Bookings = () => {
         phone: "+234 123 456 7890",
         email: "billing@youreventcompany.com",
         website: "www.youreventcompany.com",
+        // Bank details with saved values
+        bankDetails: {
+          bankName: savedBankDetails.bankName,
+          accountName: savedBankDetails.accountName,
+          accountNumber: savedBankDetails.accountNumber,
+          sortCode: savedBankDetails.sortCode,
+          swiftCode: savedBankDetails.swiftCode,
+        },
       },
 
       // Customer details (from booking - NOT editable)
@@ -225,48 +286,31 @@ const Bookings = () => {
       },
 
       // Services (NOT editable except descriptions)
-      services:
-        booking.services?.map((service) => ({
-          id: service.serviceId,
-          name: service.name,
-          description: service.description,
-          quantity: service.quantity,
-          unitPrice: service.subtotal / service.quantity,
-          total: service.subtotal,
-          editable: false,
-        })) || [],
+      services,
 
-      // Additional services (delivery/installation) - EDITABLE
+      // Additional services (delivery/installation) - NOW YES/NO ONLY
       additionalServices: [
         {
           id: "delivery",
           name: "Delivery Service",
           description: "Equipment delivery to event location",
-          quantity: 1,
-          unitPrice: 0,
-          total: 0,
           included: booking.customer?.eventDetails?.delivery === "yes",
           required: booking.customer?.eventDetails?.delivery === "yes",
-          editable: true,
         },
         {
           id: "installation",
           name: "Setup & Installation",
           description: "Professional equipment setup and installation",
-          quantity: 1,
-          unitPrice: 0,
-          total: 0,
           included: booking.customer?.eventDetails?.installation === "yes",
           required: booking.customer?.eventDetails?.installation === "yes",
-          editable: true,
         },
       ],
 
-      // Pricing
-      subtotal: booking.pricing?.subtotal || 0,
-      taxRate: booking.pricing?.taxRate || 0.075,
-      tax: booking.pricing?.tax || 0,
-      total: booking.pricing?.total || 0,
+      // Pricing (calculated from services only)
+      subtotal,
+      taxRate,
+      tax,
+      total,
 
       // Additional fields
       notes: booking.customer?.eventDetails?.specialRequests || "",
@@ -275,9 +319,7 @@ const Bookings = () => {
 
       // Deposit info
       requiresDeposit: booking.businessData?.requiresDeposit || false,
-      depositAmount: booking.businessData?.requiresDeposit
-        ? (booking.pricing?.total || 0) * 0.5
-        : 0,
+      depositAmount: booking.businessData?.requiresDeposit ? total * 0.5 : 0,
     };
 
     setInvoiceData(invoice);
@@ -345,379 +387,6 @@ const Bookings = () => {
     setBookingToDelete(null);
   };
 
-  const handleDownloadInvoice = async () => {
-    setIsGenerating(true);
-    try {
-      const htmlContent = generatePrintableInvoice(invoiceData);
-
-      // Create a new window for printing/saving as PDF
-      const printWindow = window.open("", "_blank", "width=800,height=600");
-
-      if (!printWindow) {
-        alert("Pop-up blocked. Please allow pop-ups and try again.");
-        return;
-      }
-
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-
-      // Wait for content to load then trigger print dialog
-      printWindow.onload = () => {
-        setTimeout(() => {
-          printWindow.print();
-          // The user can choose "Save as PDF" in the print dialog
-        }, 500);
-      };
-
-      notifySuccess("Invoice generated! Use the print dialog to save as PDF.");
-    } catch (error) {
-      console.error("Failed to generate invoice:", error);
-      alert("Failed to generate invoice. Please try again.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const generatePrintableInvoice = (invoice) => {
-    const allServices = [
-      ...invoice.services,
-      ...invoice.additionalServices.filter((s) => s.total > 0),
-    ];
-
-    // Ensure we have valid data
-    if (!invoice || !invoice.customer || !invoice.company) {
-      throw new Error("Invalid invoice data");
-    }
-
-    return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Invoice ${invoice.invoiceNumber}</title>
-      <style>
-        @page {
-          margin: 0.5in;
-          size: A4;
-        }
-        body { 
-          font-family: 'Helvetica', 'Arial', sans-serif; 
-          margin: 0; 
-          padding: 20px; 
-          color: #333;
-          line-height: 1.4;
-          font-size: 12px;
-        }
-        .invoice-header { 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: flex-start; 
-          margin-bottom: 30px;
-          border-bottom: 3px solid #4F46E5;
-          padding-bottom: 20px;
-        }
-        .invoice-title { 
-          font-size: 36px; 
-          font-weight: bold; 
-          color: #4F46E5;
-          margin: 0;
-          letter-spacing: 2px;
-        }
-        .invoice-details { 
-          text-align: right;
-          font-size: 11px;
-        }
-        .company-logo {
-          width: 80px;
-          height: 80px;
-          background: linear-gradient(135deg, #4F46E5, #7C3AED);
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          margin-bottom: 10px;
-        }
-        .info-section { 
-          display: inline-block; 
-          width: 48%; 
-          vertical-align: top;
-          margin-bottom: 20px;
-        }
-        .section-title { 
-          font-size: 14px; 
-          font-weight: bold; 
-          margin-bottom: 10px;
-          color: #374151;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-        .company-details {
-          font-weight: bold;
-          font-size: 16px;
-          color: #1F2937;
-          margin-bottom: 5px;
-        }
-        .event-details { 
-          background: linear-gradient(135deg, #F3F4F6, #E5E7EB); 
-          padding: 20px; 
-          border-radius: 8px; 
-          margin: 20px 0;
-          border-left: 4px solid #4F46E5;
-        }
-        .services-table { 
-          width: 100%; 
-          border-collapse: collapse; 
-          margin: 20px 0;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .services-table th, .services-table td { 
-          border: 1px solid #D1D5DB; 
-          padding: 12px 8px; 
-          text-align: left;
-        }
-        .services-table th { 
-          background: linear-gradient(135deg, #F9FAFB, #F3F4F6); 
-          font-weight: bold;
-          color: #374151;
-          font-size: 11px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        .services-table tbody tr:nth-child(even) {
-          background: #F9FAFB;
-        }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .totals-section { 
-          margin-top: 30px;
-          border-top: 2px solid #E5E7EB;
-          padding-top: 20px;
-        }
-        .totals-table { 
-          width: 350px; 
-          margin-left: auto;
-          font-size: 13px;
-        }
-        .totals-table td { 
-          padding: 8px 15px;
-          border: none;
-        }
-        .total-row { 
-          font-weight: bold; 
-          font-size: 18px;
-          border-top: 2px solid #374151;
-          background: linear-gradient(135deg, #F9FAFB, #F3F4F6);
-        }
-        .required-badge {
-          background: linear-gradient(135deg, #FEF3C7, #FDE68A);
-          color: #92400E;
-          padding: 3px 8px;
-          border-radius: 12px;
-          font-size: 9px;
-          font-weight: bold;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        .service-description {
-          font-size: 10px;
-          color: #6B7280;
-          margin-top: 3px;
-          font-style: italic;
-        }
-        .footer {
-          margin-top: 50px;
-          text-align: center;
-          font-size: 10px;
-          color: #6B7280;
-          border-top: 1px solid #E5E7EB;
-          padding-top: 20px;
-        }
-        @media print {
-          body { margin: 0; }
-          .no-print { display: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="invoice-header">
-        <div>
-          <h1 class="invoice-title">INVOICE</h1>
-          <div style="margin-top: 15px; font-size: 12px;">
-            <div><strong>Invoice #:</strong> ${invoice.invoiceNumber}</div>
-            <div><strong>Issue Date:</strong> ${new Date(
-              invoice.issueDate
-            ).toLocaleDateString()}</div>
-            <div><strong>Due Date:</strong> ${new Date(
-              invoice.dueDate
-            ).toLocaleDateString()}</div>
-          </div>
-        </div>
-        <div class="invoice-details">
-          <div class="company-logo">LOGO</div>
-        </div>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
-        <div class="info-section">
-          <div class="section-title">From:</div>
-          <div class="company-details">${invoice.company.name}</div>
-          <div>${invoice.company.address}</div>
-          <div>${invoice.company.city}, ${invoice.company.state}</div>
-          <div>${invoice.company.country}</div>
-          <div style="margin-top: 8px;">
-            <div><strong>Phone:</strong> ${invoice.company.phone}</div>
-            <div><strong>Email:</strong> ${invoice.company.email}</div>
-          </div>
-        </div>
-        
-        <div class="info-section">
-          <div class="section-title">Bill To:</div>
-          <div class="company-details">${invoice.customer.name}</div>
-          <div>${invoice.customer.email}</div>
-          <div>${invoice.customer.phone}</div>
-          <div style="margin-top: 8px;">${invoice.customer.address}</div>
-        </div>
-      </div>
-
-      <div class="event-details">
-        <div class="section-title">Event Details</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 11px;">
-          <div><strong>Type:</strong> ${invoice.event.type}</div>
-          <div><strong>Date:</strong> ${new Date(
-            invoice.event.date
-          ).toLocaleDateString()}</div>
-          <div><strong>Time:</strong> ${invoice.event.time}</div>
-          <div><strong>Guests:</strong> ${invoice.event.guests}</div>
-          <div style="grid-column: 1 / -1;"><strong>Location:</strong> ${
-            invoice.event.location
-          }</div>
-        </div>
-      </div>
-
-      <table class="services-table">
-        <thead>
-          <tr>
-            <th style="width: 50%;">Service Description</th>
-            <th class="text-center" style="width: 10%;">Qty</th>
-            <th class="text-right" style="width: 20%;">Unit Price</th>
-            <th class="text-right" style="width: 20%;">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${allServices
-            .map(
-              (service) => `
-            <tr>
-              <td>
-                <div style="font-weight: bold; font-size: 11px;">${
-                  service.name
-                }</div>
-                ${
-                  service.description
-                    ? `<div class="service-description">${service.description}</div>`
-                    : ""
-                }
-                ${
-                  service.required
-                    ? '<span class="required-badge">Required</span>'
-                    : ""
-                }
-              </td>
-              <td class="text-center">${service.quantity}</td>
-              <td class="text-right">₦${service.unitPrice.toLocaleString(
-                "en-NG",
-                { minimumFractionDigits: 2 }
-              )}</td>
-              <td class="text-right"><strong>₦${service.total.toLocaleString(
-                "en-NG",
-                { minimumFractionDigits: 2 }
-              )}</strong></td>
-            </tr>
-          `
-            )
-            .join("")}
-        </tbody>
-      </table>
-
-      <div class="totals-section">
-        <table class="totals-table">
-          <tr>
-            <td>Subtotal:</td>
-            <td class="text-right">₦${invoice.subtotal.toLocaleString("en-NG", {
-              minimumFractionDigits: 2,
-            })}</td>
-          </tr>
-          <tr>
-            <td>Tax (${(invoice.taxRate * 100).toFixed(1)}%):</td>
-            <td class="text-right">₦${invoice.tax.toLocaleString("en-NG", {
-              minimumFractionDigits: 2,
-            })}</td>
-          </tr>
-          <tr class="total-row">
-            <td><strong>Total Amount:</strong></td>
-            <td class="text-right"><strong>₦${invoice.total.toLocaleString(
-              "en-NG",
-              { minimumFractionDigits: 2 }
-            )}</strong></td>
-          </tr>
-          ${
-            invoice.requiresDeposit
-              ? `
-          <tr style="color: #EA580C; font-weight: bold;">
-            <td>Deposit Required (50%):</td>
-            <td class="text-right">₦${invoice.depositAmount.toLocaleString(
-              "en-NG",
-              { minimumFractionDigits: 2 }
-            )}</td>
-          </tr>
-          `
-              : ""
-          }
-        </table>
-      </div>
-
-      ${
-        invoice.notes || invoice.terms
-          ? `
-      <div style="margin-top: 40px;">
-        ${
-          invoice.notes
-            ? `
-        <div style="margin-bottom: 25px;">
-          <div class="section-title">Notes</div>
-          <div style="background: #F9FAFB; padding: 15px; border-radius: 6px; border-left: 4px solid #4F46E5;">${invoice.notes}</div>
-        </div>
-        `
-            : ""
-        }
-        
-        ${
-          invoice.terms
-            ? `
-        <div>
-          <div class="section-title">Terms & Conditions</div>
-          <div style="font-size: 11px; line-height: 1.5; color: #4B5563;">${invoice.terms}</div>
-        </div>
-        `
-            : ""
-        }
-      </div>
-      `
-          : ""
-      }
-
-      <div class="footer">
-        <div><strong>Thank you for your business!</strong></div>
-        <div style="margin-top: 8px;">Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</div>
-        <div style="margin-top: 5px;">This invoice was automatically generated and is valid without signature.</div>
-      </div>
-    </body>
-    </html>
-  `;
-  };
-
   const handleSendInvoice = async () => {
     setSendingInvoice(true);
     try {
@@ -736,7 +405,7 @@ const Bookings = () => {
 
       // Make API call to send invoice
       const response = await fetch(
-        `${VITE_SERVER_BASEURL}api/bookings/send-invoice`,
+        `${import.meta.env.VITE_SERVER_BASEURL}api/bookings/send-invoice`,
         {
           method: "POST",
           headers: {
@@ -764,6 +433,7 @@ const Bookings = () => {
       setSendingInvoice(false);
     }
   };
+
   const updateInvoiceField = (field, value) => {
     setInvoiceData((prev) => ({
       ...prev,
@@ -781,6 +451,26 @@ const Bookings = () => {
     }));
   };
 
+  const updateBankDetailField = (field, value) => {
+    setInvoiceData((prev) => {
+      const updatedBankDetails = {
+        ...prev.company.bankDetails,
+        [field]: value,
+      };
+      
+      // Save to localStorage
+      saveBankDetails(updatedBankDetails);
+      
+      return {
+        ...prev,
+        company: {
+          ...prev.company,
+          bankDetails: updatedBankDetails,
+        },
+      };
+    });
+  };
+
   const updateServiceField = (serviceIndex, field, value) => {
     setInvoiceData((prev) => {
       const updatedServices = [...prev.services];
@@ -796,15 +486,8 @@ const Bookings = () => {
           updatedServices[serviceIndex].quantity;
       }
 
-      // Recalculate invoice totals
-      const subtotal =
-        updatedServices.reduce((sum, service) => sum + service.total, 0) +
-        prev.additionalServices.reduce(
-          (sum, service) => sum + service.total,
-          0
-        );
-      const tax = subtotal * prev.taxRate;
-      const total = subtotal + tax;
+      // Recalculate invoice totals (only from services, not additional services)
+      const { subtotal, tax, total } = calculateTotalsFromServices(updatedServices, prev.taxRate);
 
       return {
         ...prev,
@@ -825,27 +508,9 @@ const Bookings = () => {
         [field]: value,
       };
 
-      // Recalculate totals if price or quantity changed
-      if (field === "unitPrice" || field === "quantity") {
-        updatedServices[serviceIndex].total =
-          updatedServices[serviceIndex].unitPrice *
-          updatedServices[serviceIndex].quantity;
-      }
-
-      // Recalculate invoice totals
-      const subtotal =
-        prev.services.reduce((sum, service) => sum + service.total, 0) +
-        updatedServices.reduce((sum, service) => sum + service.total, 0);
-      const tax = subtotal * prev.taxRate;
-      const total = subtotal + tax;
-
       return {
         ...prev,
         additionalServices: updatedServices,
-        subtotal,
-        tax,
-        total,
-        depositAmount: prev.requiresDeposit ? total * 0.5 : 0,
       };
     });
   };
@@ -1836,6 +1501,7 @@ const Bookings = () => {
         </div>
       )}
 
+      {/* Updated Invoice Modal with Bank Details and Yes/No Additional Services */}
       {showInvoiceModal && invoiceData && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-4xl w-full h-[95vh] flex flex-col shadow-2xl">
@@ -1911,10 +1577,14 @@ const Bookings = () => {
                     </div>
                   </div>
 
-                  {/* Company Logo/Info */}
+                  {/* Company Logo */}
                   <div className="text-right">
-                    <div className="w-24 h-24 bg-gray-200 rounded-lg mb-4 flex items-center justify-center m-2">
-                      <img src={ibloomlogo} alt="" />
+                    <div className="w-24 h-24 bg-gray-200 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={ibloomlogo} 
+                        alt="Company Logo" 
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1981,6 +1651,60 @@ const Bookings = () => {
                         }
                         className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                       />
+                    </div>
+
+                    {/* Bank Details Section */}
+                    <div className="mt-6 border-t pt-4">
+                      <h4 className="font-semibold text-gray-900 mb-3">Bank Details:</h4>
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Bank Name"
+                          value={invoiceData.company.bankDetails?.bankName}
+                          onChange={(e) =>
+                            updateBankDetailField("bankName", e.target.value)
+                          }
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Account Name"
+                          value={invoiceData.company.bankDetails.accountName}
+                          onChange={(e) =>
+                            updateBankDetailField("accountName", e.target.value)
+                          }
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Account Number"
+                          value={invoiceData.company.bankDetails.accountNumber}
+                          onChange={(e) =>
+                            updateBankDetailField("accountNumber", e.target.value)
+                          }
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                        />
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Sort Code (Optional)"
+                            value={invoiceData.company.bankDetails.sortCode}
+                            onChange={(e) =>
+                              updateBankDetailField("sortCode", e.target.value)
+                            }
+                            className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="SWIFT Code (Optional)"
+                            value={invoiceData.company.bankDetails.swiftCode}
+                            onChange={(e) =>
+                              updateBankDetailField("swiftCode", e.target.value)
+                            }
+                            className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -2099,7 +1823,7 @@ const Bookings = () => {
                   </div>
                 </div>
 
-                {/* Additional Services Table */}
+                {/* Additional Services - Updated to Yes/No format */}
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-900 mb-3">
                     Additional Services
@@ -2111,92 +1835,90 @@ const Bookings = () => {
                           <th className="text-left p-3 font-medium text-gray-700">
                             Service
                           </th>
-                          <th className="text-center p-3 font-medium text-gray-700 w-20">
-                            Qty
+                          <th className="text-center p-3 font-medium text-gray-700 w-32">
+                            Included
                           </th>
-                          <th className="text-right p-3 font-medium text-gray-700 w-24">
-                            Unit Price
-                          </th>
-                          <th className="text-right p-3 font-medium text-gray-700 w-24">
-                            Total
+                          <th className="text-left p-3 font-medium text-gray-700">
+                            Description
                           </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {invoiceData.additionalServices.map(
-                          (service, index) => (
-                            <tr
-                              key={service.id}
-                              className={service.required ? "bg-yellow-50" : ""}
-                            >
-                              <td className="p-3">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-gray-900">
-                                    {service.name}
+                        {invoiceData.additionalServices.map((service, index) => (
+                          <tr
+                            key={service.id}
+                            className={service.required ? "bg-yellow-50" : ""}
+                          >
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900">
+                                  {service.name}
+                                </span>
+                                {service.required && (
+                                  <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">
+                                    Required
                                   </span>
-                                  {service.required && (
-                                    <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">
-                                      Required
-                                    </span>
-                                  )}
-                                </div>
-                                <textarea
-                                  value={service.description}
-                                  onChange={(e) =>
-                                    updateAdditionalServiceField(
-                                      index,
-                                      "description",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 mt-1 resize-none"
-                                  rows="2"
-                                  placeholder="Add service description..."
-                                />
-                              </td>
-                              <td className="p-3 text-center">
-                                <input
-                                  type="number"
-                                  value={service.quantity}
-                                  onChange={(e) =>
-                                    updateAdditionalServiceField(
-                                      index,
-                                      "quantity",
-                                      parseInt(e.target.value) || 0
-                                    )
-                                  }
-                                  className="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center"
-                                  min="0"
-                                />
-                              </td>
-                              <td className="p-3 text-right">
-                                <input
-                                  type="number"
-                                  value={service.unitPrice}
-                                  onChange={(e) =>
-                                    updateAdditionalServiceField(
-                                      index,
-                                      "unitPrice",
-                                      parseFloat(e.target.value) || 0
-                                    )
-                                  }
-                                  className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right"
-                                  step="0.01"
-                                  placeholder="0.00"
-                                />
-                              </td>
-                              <td className="p-3 text-right font-medium">
-                                {formatCurrency(service.total)}
-                              </td>
-                            </tr>
-                          )
-                        )}
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3 text-center">
+                              <div className="flex items-center justify-center gap-4">
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name={`service-${service.id}`}
+                                    checked={service.included === true}
+                                    onChange={() =>
+                                      updateAdditionalServiceField(
+                                        index,
+                                        "included",
+                                        true
+                                      )
+                                    }
+                                    className="text-green-600"
+                                  />
+                                  <span className="text-sm font-medium text-green-600">Yes</span>
+                                </label>
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name={`service-${service.id}`}
+                                    checked={service.included === false}
+                                    onChange={() =>
+                                      updateAdditionalServiceField(
+                                        index,
+                                        "included",
+                                        false
+                                      )
+                                    }
+                                    className="text-red-600"
+                                  />
+                                  <span className="text-sm font-medium text-red-600">No</span>
+                                </label>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <textarea
+                                value={service.description}
+                                onChange={(e) =>
+                                  updateAdditionalServiceField(
+                                    index,
+                                    "description",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 resize-none"
+                                rows="2"
+                                placeholder="Add service description..."
+                              />
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    * Set price to 0 to include service at no charge. Required
-                    services are marked based on customer selection.
+                    * Additional services are included as specified. Required services are marked based on customer selection.
                   </p>
                 </div>
 
@@ -2284,6 +2006,8 @@ const Bookings = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Booking Modal */}
       {showDeleteModal && bookingToDelete && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">

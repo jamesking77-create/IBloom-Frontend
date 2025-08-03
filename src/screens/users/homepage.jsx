@@ -742,10 +742,17 @@ const HomePage = () => {
         </div>
       </div>
 
+
+
       {/* Categories Section */}
       <div
         ref={categoriesRef}
         className="py-20 bg-gradient-to-br from-gray-50 to-white contain-layout"
+           style={{
+      backgroundImage: `
+        radial-gradient(circle at 30% 70%, rgba(173, 216, 230, 0.35), transparent 60%),
+        radial-gradient(circle at 70% 30%, rgba(255, 182, 193, 0.4), transparent 60%)`,
+    }}
       >
         <div className="max-w-7xl mx-auto px-4">
           <div

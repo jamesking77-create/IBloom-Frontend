@@ -1,202 +1,235 @@
-// hooks/useRealTimeBookings.js
-import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+// src/hooks/useRealtimeBookings.js
+import { useEffect, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
-  addBookingRealTime,
-  updateBookingRealTime,
-  updateBookingPaymentRealTime,
-  showNotification,
-  setRealTimeConnection,
-} from '../../store/slices/booking-slice';
+  connectToBookingUpdates,
+  disconnectFromBookingUpdates,
+  selectWsConnected,
+  selectWsConnecting,
+  selectRealtimeUpdatesEnabled,
+  selectNewBookingNotification,
+  selectHasUnreadBookings,
+  selectUnreadBookingsCount,
+  clearNewBookingNotification,
+  markBookingAsRead,
+  markAllBookingsAsRead,
+} from '../store/slices/booking-slice';
 
-export const useRealTimeBookings = () => {
+/**
+ * Custom hook for managing real-time booking updates via WebSocket
+ * Use this in your admin components to automatically connect to booking updates
+ * 
+ * @param {Object} options - Configuration options
+ * @param {boolean} options.autoConnect - Whether to auto-connect on mount (default: true)
+ * @param {boolean} options.autoDisconnect - Whether to auto-disconnect on unmount (default: true)
+ * @param {function} options.onNewBooking - Callback when new booking is received
+ * @param {function} options.onConnect - Callback when WebSocket connects
+ * @param {function} options.onDisconnect - Callback when WebSocket disconnects
+ * @param {function} options.onError - Callback when WebSocket error occurs
+ * 
+ * @returns {Object} Hook return object
+ */
+export const useRealtimeBookings = (options = {}) => {
+  const {
+    autoConnect = true,
+    autoDisconnect = true,
+    onNewBooking,
+    onConnect,
+    onDisconnect,
+    onError,
+  } = options;
+
   const dispatch = useDispatch();
+  
+  // WebSocket connection state
+  const isConnected = useSelector(selectWsConnected);
+  const isConnecting = useSelector(selectWsConnecting);
+  const realtimeEnabled = useSelector(selectRealtimeUpdatesEnabled);
+  
+  // Notification state
+  const newBookingNotification = useSelector(selectNewBookingNotification);
+  const hasUnreadBookings = useSelector(selectHasUnreadBookings);
+  const unreadCount = useSelector(selectUnreadBookingsCount);
+
+  // Connect to WebSocket
+  const connect = useCallback(() => {
+    console.log('🔌 Connecting to real-time booking updates...');
+    dispatch(connectToBookingUpdates());
+  }, [dispatch]);
+
+  // Disconnect from WebSocket
+  const disconnect = useCallback(() => {
+    console.log('🔌 Disconnecting from real-time booking updates...');
+    dispatch(disconnectFromBookingUpdates());
+  }, [dispatch]);
+
+  // Clear new booking notification
+  const clearNotification = useCallback(() => {
+    dispatch(clearNewBookingNotification());
+  }, [dispatch]);
+
+  // Mark specific booking as read
+  const markAsRead = useCallback((bookingId) => {
+    dispatch(markBookingAsRead(bookingId));
+  }, [dispatch]);
+
+  // Mark all bookings as read
+  const markAllAsRead = useCallback(() => {
+    dispatch(markAllBookingsAsRead());
+  }, [dispatch]);
+
+  // Show browser notification for new bookings
+  const showBrowserNotification = useCallback((booking) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const customerName = booking.customer?.personalInfo?.name || 
+                          booking.customerName || 
+                          'Unknown Customer';
+      
+      const eventType = booking.customer?.eventDetails?.eventType || 
+                       booking.eventType || 
+                       'Event';
+
+      new Notification('New Booking Received! 🎉', {
+        body: `${customerName} has booked a ${eventType}`,
+        icon: '/favicon.ico', // Adjust path as needed
+        badge: '/favicon.ico',
+        tag: 'new-booking',
+        requireInteraction: true,
+        actions: [
+          {
+            action: 'view',
+            title: 'View Booking'
+          }
+        ]
+      });
+    }
+  }, []);
+
+  // Request notification permission
+  const requestNotificationPermission = useCallback(async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      console.log('📢 Notification permission:', permission);
+      return permission === 'granted';
+    }
+    return false;
+  }, []);
+
+  // Handle new booking notifications
+  useEffect(() => {
+    if (newBookingNotification && onNewBooking) {
+      console.log('🆕 New booking notification received:', newBookingNotification);
+      onNewBooking(newBookingNotification.booking);
+      
+      // Show browser notification
+      showBrowserNotification(newBookingNotification.booking);
+    }
+  }, [newBookingNotification, onNewBooking, showBrowserNotification]);
+
+  // Handle connection state changes
+  useEffect(() => {
+    if (isConnected && onConnect) {
+      console.log('✅ WebSocket connected');
+      onConnect();
+    }
+  }, [isConnected, onConnect]);
 
   useEffect(() => {
-    let eventSource = null;
-
-    const initializeEventSource = () => {
-      if (typeof window !== 'undefined' && 'EventSource' in window) {
-        eventSource = new EventSource('/api/bookings/events');
-        
-        eventSource.onopen = () => {
-          console.log('✅ Real-time connection established');
-          dispatch(setRealTimeConnection(true));
-        };
-        
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            console.log('📡 Real-time event received:', data.type);
-            
-            switch (data.type) {
-              case 'NEW_BOOKING':
-                dispatch(addBookingRealTime(data.booking));
-                dispatch(showNotification({
-                  type: 'success',
-                  title: 'New Booking Received! 🎉',
-                  message: `${data.booking.customer?.personalInfo?.name || 'Customer'} booked ${data.booking.customer?.eventDetails?.eventType || 'an event'}`,
-                  bookingId: data.booking.bookingId,
-                }));
-                
-                // Play notification sound if available
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('New Booking!', {
-                    body: `New booking from ${data.booking.customer?.personalInfo?.name || 'Customer'}`,
-                    icon: '/favicon.ico',
-                  });
-                }
-                break;
-                
-              case 'BOOKING_UPDATED':
-                dispatch(updateBookingRealTime(data.booking));
-                dispatch(showNotification({
-                  type: 'info',
-                  title: 'Booking Updated',
-                  message: `Booking ${data.booking.bookingId} status changed to ${data.booking.status}`,
-                  bookingId: data.booking.bookingId,
-                }));
-                break;
-                
-              case 'PAYMENT_RECEIVED':
-                dispatch(updateBookingPaymentRealTime({
-                  bookingId: data.bookingId,
-                  paymentStatus: data.paymentStatus,
-                  amountPaid: data.amountPaid,
-                }));
-                dispatch(showNotification({
-                  type: 'success',
-                  title: 'Payment Received! 💰',
-                  message: `Payment of ₦${data.amountPaid.toLocaleString()} received for booking ${data.bookingId}`,
-                  bookingId: data.bookingId,
-                }));
-                break;
-                
-              default:
-                console.log('Unknown event type:', data.type);
-            }
-          } catch (error) {
-            console.error('Error parsing real-time event:', error);
-          }
-        };
-        
-        eventSource.onerror = (error) => {
-          console.error('❌ EventSource error:', error);
-          dispatch(setRealTimeConnection(false));
-          
-          // Attempt to reconnect after 5 seconds
-          setTimeout(() => {
-            if (eventSource.readyState === EventSource.CLOSED) {
-              console.log('🔄 Attempting to reconnect...');
-              initializeEventSource();
-            }
-          }, 5000);
-        };
-      } else {
-        console.warn('EventSource not supported in this browser');
-      }
-    };
-
-    // Request notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+    if (!isConnected && !isConnecting && realtimeEnabled && onDisconnect) {
+      console.log('❌ WebSocket disconnected');
+      onDisconnect();
     }
+  }, [isConnected, isConnecting, realtimeEnabled, onDisconnect]);
 
-    // Initialize connection
-    initializeEventSource();
+  // Auto-connect on mount
+  useEffect(() => {
+    if (autoConnect && !isConnected && !isConnecting) {
+      console.log('🚀 Auto-connecting to real-time booking updates...');
+      connect();
+      
+      // Request notification permission
+      requestNotificationPermission();
+    }
+  }, [autoConnect, isConnected, isConnecting, connect, requestNotificationPermission]);
 
-    // Cleanup function
+  // Auto-disconnect on unmount
+  useEffect(() => {
     return () => {
-      if (eventSource) {
-        console.log('🔌 Closing real-time connection');
-        eventSource.close();
-        dispatch(setRealTimeConnection(false));
+      if (autoDisconnect && isConnected) {
+        console.log('🧹 Auto-disconnecting from real-time booking updates...');
+        disconnect();
       }
     };
-  }, [dispatch]);
+  }, [autoDisconnect, isConnected, disconnect]);
+
+  // Return hook interface
+  return {
+    // Connection state
+    isConnected,
+    isConnecting,
+    realtimeEnabled,
+    
+    // Notification state
+    newBookingNotification,
+    hasUnreadBookings,
+    unreadCount,
+    
+    // Actions
+    connect,
+    disconnect,
+    clearNotification,
+    markAsRead,
+    markAllAsRead,
+    requestNotificationPermission,
+    
+    // Connection status helpers
+    canConnect: !isConnected && !isConnecting,
+    canDisconnect: isConnected,
+    connectionStatus: isConnecting ? 'connecting' : isConnected ? 'connected' : 'disconnected',
+  };
 };
 
-// Backend Server-Sent Events endpoint example (Node.js/Express)
-/*
-// /api/bookings/events - SSE endpoint for real-time updates
-app.get('/api/bookings/events', (req, res) => {
-  // Set headers for SSE
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control'
-  });
+/**
+ * Hook for simple real-time booking notifications
+ * Simplified version that just shows toast notifications for new bookings
+ */
+export const useBookingNotifications = (showToast) => {
+  const { newBookingNotification, clearNotification, markAsRead } = useRealtimeBookings({
+    autoConnect: true,
+    autoDisconnect: true,
+    onNewBooking: (booking) => {
+      if (showToast) {
+        const customerName = booking.customer?.personalInfo?.name || 
+                            booking.customerName || 
+                            'Unknown Customer';
+        
+        const eventType = booking.customer?.eventDetails?.eventType || 
+                         booking.eventType || 
+                         'Event';
 
-  // Send initial connection confirmation
-  res.write('data: {"type": "CONNECTED", "message": "Real-time updates active"}\n\n');
-
-  // Store client connection for broadcasting
-  const clientId = Date.now();
-  clients.set(clientId, res);
-
-  // Handle client disconnect
-  req.on('close', () => {
-    clients.delete(clientId);
-  });
-
-  req.on('aborted', () => {
-    clients.delete(clientId);
-  });
-});
-
-// /api/bookings/notify - Endpoint to trigger notifications
-app.post('/api/bookings/notify', (req, res) => {
-  const { type, booking, bookingId, paymentStatus, amountPaid } = req.body;
-  
-  const eventData = {
-    type,
-    booking,
-    bookingId,
-    paymentStatus,
-    amountPaid,
-    timestamp: new Date().toISOString()
-  };
-
-  // Broadcast to all connected admin clients
-  clients.forEach((client) => {
-    try {
-      client.write(`data: ${JSON.stringify(eventData)}\n\n`);
-    } catch (error) {
-      console.error('Error sending SSE message:', error);
+        showToast({
+          type: 'success',
+          title: 'New Booking Received! 🎉',
+          message: `${customerName} has booked a ${eventType}`,
+          duration: 5000,
+          action: {
+            label: 'View',
+            onClick: () => {
+              // You can add navigation logic here
+              markAsRead(booking._id || booking.id);
+              clearNotification();
+            }
+          }
+        });
+      }
     }
   });
 
-  res.json({ success: true, messagesSent: clients.size });
-});
+  return {
+    newBookingNotification,
+    clearNotification,
+    markAsRead,
+  };
+};
 
-// Example: After saving a new booking
-app.post('/api/bookings', async (req, res) => {
-  try {
-    const bookingData = req.body;
-    
-    // Save booking to database
-    const savedBooking = await saveBookingToDatabase(bookingData);
-    
-    // Broadcast new booking to admin dashboard
-    const eventData = {
-      type: 'NEW_BOOKING',
-      booking: savedBooking,
-      timestamp: new Date().toISOString()
-    };
-    
-    clients.forEach((client) => {
-      try {
-        client.write(`data: ${JSON.stringify(eventData)}\n\n`);
-      } catch (error) {
-        console.error('Error sending SSE message:', error);
-      }
-    });
-    
-    res.status(201).json(savedBooking);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-*/
+export default useRealtimeBookings;

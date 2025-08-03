@@ -87,7 +87,7 @@ const validateObject = (obj, schema) => {
   return Object.keys(errors).length > 0 ? errors : null;
 };
 
-// localStorage utilities with atomic operations
+// ENHANCED: localStorage utilities with comprehensive clearing
 const storage = {
   save: (state) => {
     try {
@@ -101,11 +101,16 @@ const storage = {
         tax: state.tax,
         step: state.step,
         timestamp: new Date().toISOString(),
-        version: "1.0", // For future migrations
+        version: "1.0",
       };
 
       const serialized = JSON.stringify(cartData);
       localStorage.setItem(CART_STORAGE_KEY, serialized);
+      console.log("💾 Cart saved to localStorage:", {
+        items: state.items?.length || 0,
+        total: state.totalAmount,
+        step: state.step
+      });
       return true;
     } catch (error) {
       console.warn("Failed to save cart to localStorage:", error);
@@ -115,13 +120,18 @@ const storage = {
 
   load: () => {
     try {
+      console.log("📖 Loading cart from localStorage...");
       const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-      if (!savedCart) return null;
+      if (!savedCart) {
+        console.log("📦 No saved cart found");
+        return null;
+      }
 
       const parsedCart = JSON.parse(savedCart);
 
       // Validate data structure
       if (!parsedCart || typeof parsedCart !== "object") {
+        console.warn("⚠️ Invalid cart data structure, clearing");
         storage.clear();
         return null;
       }
@@ -133,6 +143,7 @@ const storage = {
         const daysDiff = (now - timestamp) / (1000 * 60 * 60 * 24);
 
         if (daysDiff > CART_EXPIRY_DAYS) {
+          console.log("⏰ Cart expired, clearing");
           storage.clear();
           return null;
         }
@@ -151,9 +162,16 @@ const storage = {
       );
 
       if (!isValid) {
+        console.warn("⚠️ Invalid cart structure, clearing");
         storage.clear();
         return null;
       }
+
+      console.log("✅ Cart loaded successfully:", {
+        items: parsedCart.items?.length || 0,
+        total: parsedCart.totalAmount,
+        timestamp: parsedCart.timestamp
+      });
 
       return parsedCart;
     } catch (error) {
@@ -165,7 +183,35 @@ const storage = {
 
   clear: () => {
     try {
+      console.log("🗑️ Clearing cart from localStorage");
+      
+      // Clear the main cart key
       localStorage.removeItem(CART_STORAGE_KEY);
+      
+      // ENHANCED: Clear any other cart-related keys
+      const cartKeys = [
+        "eventPlatform_cart",
+        "cart",
+        "cartData",
+        "booking_cart",
+        "event_cart"
+      ];
+      
+      cartKeys.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+      
+      // Clear any keys containing 'cart' (case insensitive)
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.toLowerCase().includes('cart')) {
+          console.log("🗑️ Removing cart-related key:", key);
+          localStorage.removeItem(key);
+        }
+      }
+      
+      console.log("✅ Cart storage cleared successfully");
       return true;
     } catch (error) {
       console.warn("Failed to clear cart from localStorage:", error);
@@ -174,13 +220,11 @@ const storage = {
   },
 };
 
-
 const utils = {
   generateCartItemId: () => {
     return `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   },
 
-  
   normalizeItem: (item) => {
     const id = item.id || item._id || utils.generateCartItemId();
     const name = item.name || item.itemName || "";
@@ -193,12 +237,10 @@ const utils = {
       description: item.description || "",
       image: item.image || "",
       category: item.category || "",
-     
       originalData: item,
     };
   },
 
-  
   calculateTotal: (items) => {
     return items.reduce((total, item) => {
       const itemPrice = parseFloat(item.price) || 0;
@@ -306,14 +348,18 @@ const createDefaultState = () => ({
     endDate: null,
     startTime: "09:00",
     endTime: "17:00",
+    multiDay: false,
   },
   customerInfo: {
     name: "",
     email: "",
     phone: "",
     eventType: "",
-    guests: 1,
+    location: "",
+    guests: "",
     specialRequests: "",
+    delivery: "",
+    installation: "",
   },
   totalAmount: 0,
   tax: 0,
@@ -328,12 +374,20 @@ const createDefaultState = () => ({
   lastSyncedAt: null,
 });
 
-// Load initial state
+// ENHANCED: Load initial state with debugging
 const getInitialState = () => {
+  console.log('🔄 Loading initial cart state...');
+  
   const savedCart = storage.load();
   const defaultState = createDefaultState();
 
   if (savedCart) {
+    console.log('📦 Found saved cart in localStorage:', {
+      items: savedCart.items?.length || 0,
+      total: savedCart.totalAmount,
+      timestamp: savedCart.timestamp
+    });
+    
     return {
       ...defaultState,
       items: Array.isArray(savedCart.items) ? savedCart.items : [],
@@ -356,6 +410,7 @@ const getInitialState = () => {
     };
   }
 
+  console.log('🆕 No saved cart found, using default state');
   return defaultState;
 };
 
@@ -550,105 +605,110 @@ const cartSlice = createSlice({
       storage.save(state);
     },
 
-  // FIXED: Update the addToCart action in cart-slice.js
+    // ENHANCED: addToCart with debugging
+    addToCart: (state, action) => {
+      const { item, dates, allowDuplicates = false } = action.payload;
 
-addToCart: (state, action) => {
-  const { item, dates, allowDuplicates = false } = action.payload;
+      console.log('🔄 addToCart called with:', { 
+        item: item?.name, 
+        dates, 
+        allowDuplicates,
+        currentItems: state.items?.length || 0
+      });
 
-  console.log('🔄 addToCart called with:', { item, dates, allowDuplicates });
+      if (!item || !item.name || item.price === undefined) {
+        console.error('❌ Invalid item data:', item);
+        state.error = "Invalid item data";
+        return;
+      }
 
-  if (!item || !item.name || item.price === undefined) {
-    console.error('❌ Invalid item data:', item);
-    state.error = "Invalid item data";
-    return;
-  }
+      // Clear previous errors
+      state.error = null;
+      state.validationErrors = {};
 
-  // Clear previous errors
-  state.error = null;
-  state.validationErrors = {};
+      // Normalize item data
+      const normalizedItem = {
+        id: item.id || item._id || utils.generateCartItemId(),
+        name: item.name || item.itemName || "",
+        itemName: item.name || item.itemName || "",
+        price: parseFloat(item.price) || 0,
+        description: item.description || "",
+        image: item.image || item.imageUrl || "",
+        category: item.category || "",
+        originalData: item,
+      };
 
-  // Normalize item data
-  const normalizedItem = {
-    id: item.id || item._id || utils.generateCartItemId(),
-    name: item.name || item.itemName || "",
-    itemName: item.name || item.itemName || "", // Keep both for compatibility
-    price: parseFloat(item.price) || 0,
-    description: item.description || "",
-    image: item.image || item.imageUrl || "",
-    category: item.category || "",
-    originalData: item,
-  };
+      // Check for existing item (prevent duplicates unless explicitly allowed)
+      if (!allowDuplicates) {
+        const existingItemIndex = state.items.findIndex(
+          (i) => i.id === normalizedItem.id || i.name === normalizedItem.name
+        );
 
-  // Check for existing item (prevent duplicates unless explicitly allowed)
-  if (!allowDuplicates) {
-    const existingItemIndex = state.items.findIndex(
-      (i) => i.id === normalizedItem.id || i.name === normalizedItem.name
-    );
+        if (existingItemIndex !== -1) {
+          console.log('📝 Item already exists, updating quantity to 1');
+          state.items[existingItemIndex].quantity = 1;
+          state.subtotal = utils.calculateTotal(state.items);
+          state.tax = utils.calculateTax(state.subtotal);
+          state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
+          state.isOpen = true;
+          storage.save(state);
+          return;
+        }
+      }
 
-    if (existingItemIndex !== -1) {
-      console.log('📝 Item already exists, updating quantity to 1');
-      state.items[existingItemIndex].quantity = 1;
+      // Calculate duration based on order mode and dates
+      let duration = 1;
+      const eventDates = dates || state.selectedDates;
+      
+      if (state.orderMode === ORDER_MODES.BOOKING) {
+        duration = utils.calculateDurationHours(
+          eventDates?.startDate,
+          eventDates?.endDate,
+          eventDates?.startTime,
+          eventDates?.endTime
+        );
+      } else if (state.orderMode === ORDER_MODES.ORDER_BY_DATE) {
+        duration = utils.calculateDurationDays(
+          eventDates?.startDate,
+          eventDates?.endDate
+        );
+      }
+
+      // Create cart item
+      const cartItem = {
+        cartId: utils.generateCartItemId(),
+        id: normalizedItem.id,
+        name: normalizedItem.name,
+        itemName: normalizedItem.name,
+        description: normalizedItem.description,
+        price: normalizedItem.price,
+        image: normalizedItem.image,
+        category: normalizedItem.category,
+        quantity: 1,
+        duration,
+        bookingDates: eventDates ? { ...eventDates } : { ...state.selectedDates },
+        orderMode: state.orderMode,
+        addedAt: new Date().toISOString(),
+        originalData: normalizedItem.originalData,
+      };
+
+      console.log('✅ Adding cart item:', cartItem);
+
+      // Add to cart
+      state.items.push(cartItem);
+      
+      // Recalculate totals
       state.subtotal = utils.calculateTotal(state.items);
       state.tax = utils.calculateTax(state.subtotal);
       state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
       state.isOpen = true;
+      
+      // Save to storage
       storage.save(state);
-      return;
-    }
-  }
-
-  // Calculate duration based on order mode and dates
-  let duration = 1;
-  const eventDates = dates || state.selectedDates;
-  
-  if (state.orderMode === ORDER_MODES.BOOKING) {
-    duration = utils.calculateDurationHours(
-      eventDates?.startDate,
-      eventDates?.endDate,
-      eventDates?.startTime,
-      eventDates?.endTime
-    );
-  } else if (state.orderMode === ORDER_MODES.ORDER_BY_DATE) {
-    duration = utils.calculateDurationDays(
-      eventDates?.startDate,
-      eventDates?.endDate
-    );
-  }
-
-  // Create cart item
-  const cartItem = {
-    cartId: utils.generateCartItemId(),
-    id: normalizedItem.id,
-    name: normalizedItem.name,
-    itemName: normalizedItem.name, // Ensure both properties exist
-    description: normalizedItem.description,
-    price: normalizedItem.price,
-    image: normalizedItem.image,
-    category: normalizedItem.category,
-    quantity: 1,
-    duration,
-    bookingDates: eventDates ? { ...eventDates } : { ...state.selectedDates },
-    orderMode: state.orderMode,
-    addedAt: new Date().toISOString(),
-    originalData: normalizedItem.originalData,
-  };
-
-  console.log('✅ Adding cart item:', cartItem);
-
-  // Add to cart
-  state.items.push(cartItem);
-  
-  // Recalculate totals
-  state.subtotal = utils.calculateTotal(state.items);
-  state.tax = utils.calculateTax(state.subtotal);
-  state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
-  state.isOpen = true;
-  
-  // Save to storage
-  storage.save(state);
-  
-  console.log('✅ Item added to cart successfully');
-},
+      
+      console.log('✅ Item added to cart successfully, new total items:', state.items.length);
+      console.log('💰 New cart total:', state.totalAmount);
+    },
 
     removeFromCart: (state, action) => {
       const cartId = action.payload;
@@ -736,228 +796,248 @@ addToCart: (state, action) => {
       storage.save(state);
     },
 
-setSelectedDates: (state, action) => {
-  console.log('🔄 setSelectedDates called with:', action.payload);
-  
-  const newDates = action.payload;
-  const updatedDates = { ...state.selectedDates, ...newDates };
+    setSelectedDates: (state, action) => {
+      console.log('🔄 setSelectedDates called with:', action.payload);
+      
+      const newDates = action.payload;
+      
+      // ENHANCED: Ensure multiDay flag is properly handled
+      const updatedDates = { 
+        ...state.selectedDates, 
+        ...newDates,
+        // If multiDay is explicitly set to false, ensure endDate matches startDate
+        ...(newDates.multiDay === false && newDates.startDate ? { endDate: newDates.startDate } : {}),
+      };
 
-  // Validate dates
-  const dateErrors = utils.validateDates(
-    updatedDates.startDate,
-    updatedDates.endDate,
-    updatedDates.startTime,
-    updatedDates.endTime
-  );
+      console.log('📅 Updated dates:', updatedDates);
 
-  if (dateErrors.length > 0) {
-    console.log('❌ Date validation errors:', dateErrors);
-    state.validationErrors = { ...state.validationErrors, dates: dateErrors };
-    state.error = 'Please fix date/time selection issues';
-    return;
-  }
+      // Validate dates only if we have the required fields
+      if (updatedDates.startDate && updatedDates.endDate && updatedDates.startTime && updatedDates.endTime) {
+        const dateErrors = utils.validateDates(
+          updatedDates.startDate,
+          updatedDates.endDate,
+          updatedDates.startTime,
+          updatedDates.endTime
+        );
 
-  // Update dates
-  state.selectedDates = updatedDates;
-  state.error = null;
-  
-  // Clear date validation errors
-  const { dates, ...otherErrors } = state.validationErrors;
-  state.validationErrors = otherErrors;
+        if (dateErrors.length > 0) {
+          console.log('❌ Date validation errors:', dateErrors);
+          state.validationErrors = { ...state.validationErrors, dates: dateErrors };
+          state.error = 'Please fix date/time selection issues';
+          return;
+        }
+      }
 
-  // Update duration for all items
-  state.items.forEach((item) => {
-    let duration = 1;
-    if (state.orderMode === ORDER_MODES.BOOKING) {
-      duration = utils.calculateDurationHours(
-        updatedDates.startDate,
-        updatedDates.endDate,
-        updatedDates.startTime,
-        updatedDates.endTime
-      );
-    } else if (state.orderMode === ORDER_MODES.ORDER_BY_DATE) {
-      duration = utils.calculateDurationDays(
-        updatedDates.startDate,
-        updatedDates.endDate
-      );
-    }
-    item.duration = duration;
-    item.bookingDates = { ...updatedDates };
-  });
+      // Update dates
+      state.selectedDates = updatedDates;
+      state.error = null;
+      
+      // Clear date validation errors
+      const { dates, ...otherErrors } = state.validationErrors;
+      state.validationErrors = otherErrors;
 
-  // Recalculate totals
-  state.subtotal = utils.calculateTotal(state.items);
-  state.tax = utils.calculateTax(state.subtotal);
-  state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
-  
-  // Save to storage
-  storage.save(state);
-  
-  console.log('✅ Dates updated successfully');
-},
+      // Update duration for all items
+      state.items.forEach((item) => {
+        let duration = 1;
+        if (state.orderMode === ORDER_MODES.BOOKING) {
+          duration = utils.calculateDurationHours(
+            updatedDates.startDate,
+            updatedDates.endDate,
+            updatedDates.startTime,
+            updatedDates.endTime
+          );
+        } else if (state.orderMode === ORDER_MODES.ORDER_BY_DATE) {
+          duration = utils.calculateDurationDays(
+            updatedDates.startDate,
+            updatedDates.endDate
+          );
+        }
+        item.duration = duration;
+        item.bookingDates = { ...updatedDates };
+      });
 
-  setCustomerInfo: (state, action) => {
-  console.log('🔄 setCustomerInfo called with:', action.payload);
-  
-  const newInfo = action.payload;
-  const updatedInfo = { ...state.customerInfo, ...newInfo };
-  
-  // Update customer info
-  state.customerInfo = updatedInfo;
-  
-  // Clear any previous errors when user starts updating info
-  state.error = null;
-  
-  // Validate the updated info
-  const validationErrors = {};
-  
-  // Required field validation
-  const requiredFields = ['name', 'email', 'phone', 'location', 'delivery', 'installation'];
-  requiredFields.forEach(field => {
-    if (!updatedInfo[field] || updatedInfo[field].toString().trim() === '') {
-      validationErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
-    }
-  });
-  
-  // Email format validation
-  if (updatedInfo.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updatedInfo.email)) {
-    validationErrors.email = 'Please enter a valid email address';
-  }
-  
-  // Phone format validation
-  if (updatedInfo.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(updatedInfo.phone)) {
-    validationErrors.phone = 'Please enter a valid phone number';
-  }
-  
-  // Name length validation
-  if (updatedInfo.name && updatedInfo.name.trim().length < 2) {
-    validationErrors.name = 'Name must be at least 2 characters';
-  }
-  
-  // Location length validation
-  if (updatedInfo.location && updatedInfo.location.trim().length < 5) {
-    validationErrors.location = 'Location must be at least 5 characters';
-  }
-  
-  // Guest validation (if provided)
-  if (updatedInfo.guests && (isNaN(updatedInfo.guests) || parseInt(updatedInfo.guests) < 1)) {
-    validationErrors.guests = 'Number of guests must be a positive number';
-  }
-  
-  // Update validation errors
-  if (Object.keys(validationErrors).length > 0) {
-    state.validationErrors = { ...state.validationErrors, customerInfo: validationErrors };
-  } else {
-    // Clear customer info validation errors if all valid
-    const { customerInfo, ...otherErrors } = state.validationErrors;
-    state.validationErrors = otherErrors;
-  }
-  
-  // Save to storage
-  storage.save(state);
-  
-  console.log('✅ Customer info updated and validated');
-},
+      // Recalculate totals
+      state.subtotal = utils.calculateTotal(state.items);
+      state.tax = utils.calculateTax(state.subtotal);
+      state.totalAmount = utils.calculateTotalWithTax(state.subtotal);
+      
+      // Save to storage
+      storage.save(state);
+      
+      console.log('✅ Dates updated successfully');
+    },
 
-   nextStep: (state) => {
-  console.log('🔄 nextStep called, current step:', state.step);
-  
-  if (state.step >= 3) {
-    console.log('⚠️ Already at max step, cannot proceed');
-    return;
-  }
+    setCustomerInfo: (state, action) => {
+      console.log('🔄 setCustomerInfo called with:', action.payload);
+      
+      const newInfo = action.payload;
+      const updatedInfo = { ...state.customerInfo, ...newInfo };
+      
+      // Update customer info
+      state.customerInfo = updatedInfo;
+      
+      // Clear any previous errors when user starts updating info
+      state.error = null;
+      
+      // Validate the updated info
+      const validationErrors = {};
+      
+      // Required field validation
+      const requiredFields = ['name', 'email', 'phone', 'location', 'delivery', 'installation'];
+      requiredFields.forEach(field => {
+        if (!updatedInfo[field] || updatedInfo[field].toString().trim() === '') {
+          validationErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+        }
+      });
+      
+      // Email format validation
+      if (updatedInfo.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updatedInfo.email)) {
+        validationErrors.email = 'Please enter a valid email address';
+      }
+      
+      // Phone format validation
+      if (updatedInfo.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(updatedInfo.phone)) {
+        validationErrors.phone = 'Please enter a valid phone number';
+      }
+      
+      // Name length validation
+      if (updatedInfo.name && updatedInfo.name.trim().length < 2) {
+        validationErrors.name = 'Name must be at least 2 characters';
+      }
+      
+      // Location length validation
+      if (updatedInfo.location && updatedInfo.location.trim().length < 5) {
+        validationErrors.location = 'Location must be at least 5 characters';
+      }
+      
+      // Guest validation (if provided)
+      if (updatedInfo.guests && (isNaN(updatedInfo.guests) || parseInt(updatedInfo.guests) < 1)) {
+        validationErrors.guests = 'Number of guests must be a positive number';
+      }
+      
+      // Update validation errors
+      if (Object.keys(validationErrors).length > 0) {
+        state.validationErrors = { ...state.validationErrors, customerInfo: validationErrors };
+      } else {
+        // Clear customer info validation errors if all valid
+        const { customerInfo, ...otherErrors } = state.validationErrors;
+        state.validationErrors = otherErrors;
+      }
+      
+      // Save to storage
+      storage.save(state);
+      
+      console.log('✅ Customer info updated and validated');
+    },
 
-  let canProceed = true;
-  let errorMessage = '';
+    nextStep: (state) => {
+      console.log('🔄 nextStep called, current step:', state.step);
+      
+      if (state.step >= 3) {
+        console.log('⚠️ Already at max step, cannot proceed');
+        return;
+      }
 
-  // Step 1 validation - Date and Cart
-  if (state.step === 1) {
-    console.log('🔍 Validating step 1...');
-    
-    if (!state.items || state.items.length === 0) {
-      errorMessage = 'Please add items to cart before proceeding';
-      canProceed = false;
-    } else if (!state.selectedDates?.startDate) {
-      errorMessage = 'Please select a start date';
-      canProceed = false;
-    } else if (!state.selectedDates?.startTime || !state.selectedDates?.endTime) {
-      errorMessage = 'Please select start and end times';
-      canProceed = false;
-    } else if (state.selectedDates?.multiDay && !state.selectedDates?.endDate) {
-      errorMessage = 'Please select an end date for multi-day events';
-      canProceed = false;
-    }
-  }
+      let canProceed = true;
+      let errorMessage = '';
 
-  // Step 2 validation - Customer Info
-  if (state.step === 2) {
-    console.log('🔍 Validating step 2...');
-    
-    const requiredFields = ['name', 'email', 'phone', 'location', 'delivery', 'installation'];
-    const missingFields = requiredFields.filter(field => 
-      !state.customerInfo?.[field] || state.customerInfo[field].toString().trim() === ''
-    );
-    
-    if (missingFields.length > 0) {
-      errorMessage = `Please provide: ${missingFields.join(', ')}`;
-      canProceed = false;
-    }
-    
-    // Email format validation
-    if (state.customerInfo?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.customerInfo.email)) {
-      errorMessage = 'Please provide a valid email address';
-      canProceed = false;
-    }
-    
-    // Phone format validation
-    if (state.customerInfo?.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(state.customerInfo.phone)) {
-      errorMessage = 'Please provide a valid phone number';
-      canProceed = false;
-    }
-  }
+      // Step 1 validation - Date and Cart
+      if (state.step === 1) {
+        console.log('🔍 Validating step 1...');
+        console.log('Items:', state.items?.length || 0);
+        console.log('Selected dates:', state.selectedDates);
+        
+        if (!state.items || state.items.length === 0) {
+          errorMessage = 'Please add items to cart before proceeding';
+          canProceed = false;
+        } 
+        // Enhanced date validation
+        else if (!state.selectedDates?.startDate || state.selectedDates.startDate.trim() === '') {
+          errorMessage = 'Please select a start date';
+          canProceed = false;
+        } 
+        else if (!state.selectedDates?.startTime || !state.selectedDates?.endTime) {
+          errorMessage = 'Please select start and end times';
+          canProceed = false;
+        } 
+        // Enhanced multi-day validation
+        else if (state.selectedDates?.multiDay === true && (!state.selectedDates?.endDate || state.selectedDates.endDate.trim() === '')) {
+          errorMessage = 'Please select an end date for multi-day events';
+          canProceed = false;
+        }
+        // For single day events, ensure endDate is set to startDate
+        else if (state.selectedDates?.multiDay === false && state.selectedDates?.startDate) {
+          state.selectedDates.endDate = state.selectedDates.startDate;
+        }
+      }
 
-  if (canProceed) {
-    console.log('✅ Validation passed, proceeding to step:', state.step + 1);
-    state.step += 1;
-    state.error = null;
-    state.validationErrors = {};
-    storage.save(state);
-  } else {
-    console.log('❌ Validation failed:', errorMessage);
-    state.error = errorMessage;
-  }
-},
+      // Step 2 validation - Customer Info
+      if (state.step === 2) {
+        console.log('🔍 Validating step 2...');
+        console.log('Customer info:', state.customerInfo);
+        
+        const requiredFields = ['name', 'email', 'phone', 'location', 'delivery', 'installation'];
+        const missingFields = requiredFields.filter(field => 
+          !state.customerInfo?.[field] || state.customerInfo[field].toString().trim() === ''
+        );
+        
+        if (missingFields.length > 0) {
+          errorMessage = `Please provide: ${missingFields.join(', ')}`;
+          canProceed = false;
+        }
+        
+        // Email format validation
+        else if (state.customerInfo?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.customerInfo.email)) {
+          errorMessage = 'Please provide a valid email address';
+          canProceed = false;
+        }
+        
+        // Phone format validation
+        else if (state.customerInfo?.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(state.customerInfo.phone)) {
+          errorMessage = 'Please provide a valid phone number';
+          canProceed = false;
+        }
+      }
 
+      if (canProceed) {
+        console.log('✅ Validation passed, proceeding to step:', state.step + 1);
+        state.step += 1;
+        state.error = null;
+        state.validationErrors = {};
+        storage.save(state);
+      } else {
+        console.log('❌ Validation failed:', errorMessage);
+        state.error = errorMessage;
+      }
+    },
 
-prevStep: (state) => {
-  console.log('🔄 prevStep called, current step:', state.step);
-  
-  if (state.step > 1) {
-    state.step -= 1;
-    state.error = null;
-    // Don't clear validation errors when going back - user might want to see what needs fixing
-    storage.save(state);
-    console.log('✅ Moved to previous step:', state.step);
-  } else {
-    console.log('⚠️ Already at first step, cannot go back');
-  }
-},
+    prevStep: (state) => {
+      console.log('🔄 prevStep called, current step:', state.step);
+      
+      if (state.step > 1) {
+        state.step -= 1;
+        state.error = null;
+        storage.save(state);
+        console.log('✅ Moved to previous step:', state.step);
+      } else {
+        console.log('⚠️ Already at first step, cannot go back');
+      }
+    },
 
-setStep: (state, action) => {
-  const newStep = parseInt(action.payload);
-  console.log('🔄 setStep called with:', newStep);
-  
-  if (newStep >= 1 && newStep <= 3) {
-    // Don't enforce validation when explicitly setting step (for edit functionality)
-    state.step = newStep;
-    state.error = null;
-    storage.save(state);
-    console.log('✅ Step set to:', newStep);
-  } else {
-    console.log('❌ Invalid step:', newStep);
-    state.error = 'Invalid step number';
-  }
-},
+    setStep: (state, action) => {
+      const newStep = parseInt(action.payload);
+      console.log('🔄 setStep called with:', newStep);
+      
+      if (newStep >= 1 && newStep <= 3) {
+        state.step = newStep;
+        state.error = null;
+        storage.save(state);
+        console.log('✅ Step set to:', newStep);
+      } else {
+        console.log('❌ Invalid step:', newStep);
+        state.error = 'Invalid step number';
+      }
+    },
 
     toggleCart: (state) => {
       state.isOpen = !state.isOpen;
@@ -977,42 +1057,94 @@ setStep: (state, action) => {
       storage.clear();
     },
 
-forceResetCart: (state) => {
-  console.log('🔄 Force resetting cart...');
-  
-  const defaultState = createDefaultState();
-  
-  // Reset all cart state except UI state
-  Object.keys(defaultState).forEach((key) => {
-    if (key !== 'isOpen') {
-      state[key] = defaultState[key];
-    }
-  });
-  
-  // Clear storage
-  storage.clear();
-  
-  console.log('✅ Cart force reset completed');
-},
+    // ENHANCED: forceResetCart with comprehensive clearing
+    forceResetCart: (state) => {
+      console.log('🔄 Force resetting cart...');
+      console.log('📊 Cart state before reset:', {
+        items: state.items?.length || 0,
+        total: state.totalAmount,
+        step: state.step
+      });
+      
+      const defaultState = createDefaultState();
+      
+      // Completely reset all state properties
+      state.items = [];
+      state.orderMode = ORDER_MODES.BOOKING;
+      state.selectedDates = {
+        startDate: null,
+        endDate: null,
+        startTime: "09:00",
+        endTime: "17:00",
+        multiDay: false,
+      };
+      state.customerInfo = {
+        name: "",
+        email: "",
+        phone: "",
+        eventType: "",
+        location: "",
+        guests: "",
+        specialRequests: "",
+        delivery: "",
+        installation: "",
+      };
+      state.totalAmount = 0;
+      state.tax = 0;
+      state.subtotal = 0;
+      state.loading = false;
+      state.error = null;
+      state.validationErrors = {};
+      state.step = 1;
+      state.bookingSubmitted = false;
+      state.orderSubmitted = false;
+      state.lastSyncedAt = null;
+      
+      // ENHANCED: Comprehensive storage clearing
+      try {
+        const cartKeys = [
+          CART_STORAGE_KEY,
+          "eventPlatform_cart",
+          "cart",
+          "cartData",
+          "booking_cart",
+          "event_cart"
+        ];
+        
+        cartKeys.forEach(key => {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        });
+        
+        // Clear any keys containing 'cart'
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && key.toLowerCase().includes('cart')) {
+            console.log('🗑️ Removing cart-related key:', key);
+            localStorage.removeItem(key);
+          }
+        }
+        
+        console.log('✅ localStorage and sessionStorage cleared');
+      } catch (error) {
+        console.warn('⚠️ Failed to clear storage:', error);
+      }
+      
+      console.log('✅ Cart force reset completed');
+      console.log('📊 Cart state after reset:', {
+        items: state.items.length,
+        total: state.totalAmount,
+        step: state.step
+      });
+    },
 
-// Additional helper functions for better state management
-syncWithLocalStorage: (state) => {
-  const saved = storage.save(state);
-  if (saved) {
-    state.lastSyncedAt = new Date().toISOString();
-    console.log('✅ Cart synced with localStorage');
-  } else {
-    console.warn('⚠️ Failed to sync cart with localStorage');
-  }
-},
+    clearError: (state) => {
+      state.error = null;
+    },
 
-clearError: (state) => {
-  state.error = null;
-},
-
-clearValidationErrors: (state) => {
-  state.validationErrors = {};
-},
+    clearValidationErrors: (state) => {
+      state.validationErrors = {};
+    },
 
     resetSubmissionStatus: (state) => {
       state.bookingSubmitted = false;
@@ -1023,10 +1155,14 @@ clearValidationErrors: (state) => {
       const saved = storage.save(state);
       if (saved) {
         state.lastSyncedAt = new Date().toISOString();
+        console.log('✅ Cart synced with localStorage');
+      } else {
+        console.warn('⚠️ Failed to sync cart with localStorage');
       }
     },
 
     loadFromLocalStorage: (state) => {
+      console.log('🔄 Loading from localStorage...');
       const savedData = storage.load();
       if (savedData) {
         const defaultState = createDefaultState();
@@ -1036,62 +1172,65 @@ clearValidationErrors: (state) => {
           }
         });
         state.lastSyncedAt = savedData.timestamp || null;
+        console.log('✅ Cart loaded from localStorage');
+      } else {
+        console.log('📦 No saved cart data found');
       }
     },
-  },
 
-  validateCurrentStep: (state) => {
-  const errors = {};
-  
-  switch (state.step) {
-    case 1:
-      if (!state.items || state.items.length === 0) {
-        errors.cart = 'Add at least one item to your cart';
-      }
-      if (!state.selectedDates?.startDate) {
-        errors.startDate = 'Select a start date';
-      }
-      if (!state.selectedDates?.startTime || !state.selectedDates?.endTime) {
-        errors.time = 'Select start and end times';
-      }
-      if (state.selectedDates?.multiDay && !state.selectedDates?.endDate) {
-        errors.endDate = 'Select an end date for multi-day events';
-      }
-      break;
+    validateCurrentStep: (state) => {
+      const errors = {};
       
-    case 2:
-      const requiredFields = ['name', 'email', 'phone', 'location', 'delivery', 'installation'];
-      requiredFields.forEach(field => {
-        if (!state.customerInfo?.[field] || state.customerInfo[field].toString().trim() === '') {
-          errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
-        }
-      });
-      
-      if (state.customerInfo?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.customerInfo.email)) {
-        errors.email = 'Please enter a valid email address';
+      switch (state.step) {
+        case 1:
+          if (!state.items || state.items.length === 0) {
+            errors.cart = 'Add at least one item to your cart';
+          }
+          if (!state.selectedDates?.startDate) {
+            errors.startDate = 'Select a start date';
+          }
+          if (!state.selectedDates?.startTime || !state.selectedDates?.endTime) {
+            errors.time = 'Select start and end times';
+          }
+          if (state.selectedDates?.multiDay && !state.selectedDates?.endDate) {
+            errors.endDate = 'Select an end date for multi-day events';
+          }
+          break;
+          
+        case 2:
+          const requiredFields = ['name', 'email', 'phone', 'location', 'delivery', 'installation'];
+          requiredFields.forEach(field => {
+            if (!state.customerInfo?.[field] || state.customerInfo[field].toString().trim() === '') {
+              errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+            }
+          });
+          
+          if (state.customerInfo?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.customerInfo.email)) {
+            errors.email = 'Please enter a valid email address';
+          }
+          
+          if (state.customerInfo?.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(state.customerInfo.phone)) {
+            errors.phone = 'Please enter a valid phone number';
+          }
+          break;
+          
+        case 3:
+          // Final validation before submission
+          if (!state.items || state.items.length === 0) {
+            errors.items = 'Cart cannot be empty';
+          }
+          if (!state.customerInfo?.name || !state.customerInfo?.email || !state.customerInfo?.phone) {
+            errors.customer = 'Customer information is incomplete';
+          }
+          if (!state.selectedDates?.startDate || !state.selectedDates?.endDate) {
+            errors.dates = 'Event dates are required';
+          }
+          break;
       }
       
-      if (state.customerInfo?.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(state.customerInfo.phone)) {
-        errors.phone = 'Please enter a valid phone number';
-      }
-      break;
-      
-    case 3:
-      // Final validation before submission
-      if (!state.items || state.items.length === 0) {
-        errors.items = 'Cart cannot be empty';
-      }
-      if (!state.customerInfo?.name || !state.customerInfo?.email || !state.customerInfo?.phone) {
-        errors.customer = 'Customer information is incomplete';
-      }
-      if (!state.selectedDates?.startDate || !state.selectedDates?.endDate) {
-        errors.dates = 'Event dates are required';
-      }
-      break;
-  }
-  
-  return errors;
-},
+      return errors;
+    },
+  },
 
   extraReducers: (builder) => {
     builder
@@ -1170,6 +1309,7 @@ export const {
   resetSubmissionStatus,
   syncWithLocalStorage,
   loadFromLocalStorage,
+  validateCurrentStep,
 } = cartSlice.actions;
 
 export const selectCartItems = (state) => state.cart?.items || [];
@@ -1191,7 +1331,7 @@ export const selectBookingSubmitted = (state) =>
 export const selectOrderSubmitted = (state) =>
   state.cart?.orderSubmitted || false;
 export const selectOrderMode = (state) => state.cart?.orderMode || "booking";
-export const selectCartTax = (state) => state.cart?.tax || 0
+export const selectCartTax = (state) => state.cart?.tax || 0;
 
 export const selectCartSummary = (state) => {
   const cart = state.cart || {};
@@ -1211,12 +1351,10 @@ export const selectCartSummary = (state) => {
   };
 };
 
-
 export const selectCartHasPersistedData = (state) => {
   const cart = state.cart || {};
   return cart.items && cart.items.length > 0;
 };
-
 
 export const formatPrice = (amount) => {
   return new Intl.NumberFormat("en-NG", {
@@ -1245,7 +1383,6 @@ export const formatTime = (time24) => {
   return `${displayHour}:${minutes} ${ampm}`;
 };
 
-
 export const formatDateRange = (startDate, endDate) => {
   if (!startDate || !endDate) return "";
 
@@ -1259,7 +1396,6 @@ export const formatDateRange = (startDate, endDate) => {
   return `${start} - ${end}`;
 };
 
-
 export const formatTimeRange = (startTime, endTime) => {
   if (!startTime || !endTime) return "";
 
@@ -1269,9 +1405,8 @@ export const formatTimeRange = (startTime, endTime) => {
   return `${start} - ${end}`;
 };
 
-
 export const getCartFromLocalStorage = () => {
-  return loadFromLocalStorage();
+  return storage.load();
 };
 
 export const saveCartToLocalStorage = (cartData) => {
@@ -1285,7 +1420,7 @@ export const saveCartToLocalStorage = (cartData) => {
 };
 
 export const clearCartFromLocalStorage = () => {
-  clearLocalStorage();
+  storage.clear();
 };
 
 export default cartSlice.reducer;

@@ -112,114 +112,131 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
   };
 
   // Generate calendar days with enhanced logic
-  const generateCalendarDays = () => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
+const generateCalendarDays = () => {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay();
 
-    const days = [];
+  const days = [];
 
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
+  // Add empty cells for days before the first day of the month
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    days.push(null);
+  }
 
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const isToday = date.toDateString() === today.toDateString();
-      const isPast = date < today;
-      const isSelected = selectedDate === date.toISOString().split("T")[0];
-      const isEndDateSelected = endDate === date.toISOString().split("T")[0];
-      const isInRange =
-        selectedDate &&
-        endDate &&
-        date >= new Date(selectedDate) &&
-        date <= new Date(endDate);
+  // Add days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    // FIX: Use local date without timezone conversion
+    const date = new Date(year, month, day);
+    const isToday = date.toDateString() === today.toDateString();
+    const isPast = date < today;
+    
+    // FIX: Use proper local date string format
+    const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    const isSelected = selectedDate === dateString;
+    const isEndDateSelected = endDate === dateString;
+    const isInRange =
+      selectedDate &&
+      endDate &&
+      date >= new Date(selectedDate) &&
+      date <= new Date(endDate);
 
-      days.push({
-        day,
-        date,
-        isToday,
-        isPast,
-        isSelected,
-        isEndDateSelected,
-        isInRange,
-        dateString: date.toISOString().split("T")[0],
-      });
-    }
+    days.push({
+      day,
+      date,
+      isToday,
+      isPast,
+      isSelected,
+      isEndDateSelected,
+      isInRange,
+      dateString, // Use the properly formatted local date string
+    });
+  }
 
-    return days;
-  };
-
-  const handleDateClick = (dateString) => {
-    if (isMultiDay) {
-      if (!selectedDate || (selectedDate && endDate)) {
+  return days;
+};
+const handleDateClick = (dateString) => {
+  console.log('📅 Date clicked:', dateString, 'Multi-day:', isMultiDay);
+  
+  if (isMultiDay) {
+    if (!selectedDate || (selectedDate && endDate)) {
+      // Starting fresh selection
+      setSelectedDate(dateString);
+      setEndDate("");
+      console.log('📅 Set start date:', dateString);
+    } else if (selectedDate && !endDate) {
+      // Selecting end date
+      if (new Date(dateString) >= new Date(selectedDate)) {
+        setEndDate(dateString);
+        console.log('📅 Set end date:', dateString);
+      } else {
+        // Selected date is before start date, so make it the new start date
         setSelectedDate(dateString);
         setEndDate("");
-      } else if (selectedDate && !endDate) {
-        if (new Date(dateString) >= new Date(selectedDate)) {
-          setEndDate(dateString);
-        } else {
-          setSelectedDate(dateString);
-          setEndDate("");
-        }
+        console.log('📅 Reset to new start date:', dateString);
       }
-    } else {
-      setSelectedDate(dateString);
-      setEndDate(dateString);
     }
-  };
+  } else {
+    // Single day event
+    setSelectedDate(dateString);
+    setEndDate(dateString); // For single day, end date = start date
+    console.log('📅 Set single day date:', dateString);
+  }
+};
 
-  const validateForm = () => {
-    const newErrors = {};
+const validateForm = () => {
+  const newErrors = {};
 
-    if (!selectedDate) {
-      newErrors.date = "Please select a start date";
-    }
+  if (!selectedDate) {
+    newErrors.date = "Please select a start date";
+  }
 
-    if (isMultiDay && !endDate) {
-      newErrors.endDate = "Please select an end date";
-    }
+  if (isMultiDay && !endDate) {
+    newErrors.endDate = "Please select an end date";
+  }
 
-    if (!startTime) {
-      newErrors.startTime = "Please select a start time";
-    }
+  if (!startTime) {
+    newErrors.startTime = "Please select a start time";
+  }
 
-    if (!endTime) {
-      newErrors.endTime = "Please select an end time";
-    }
+  if (!endTime) {
+    newErrors.endTime = "Please select an end time";
+  }
 
-    if (startTime && endTime && startTime >= endTime) {
-      newErrors.timeRange = "End time must be after start time";
-    }
+  if (startTime && endTime && startTime >= endTime) {
+    newErrors.timeRange = "End time must be after start time";
+  }
 
-    if (cartItems.length === 0) {
-      newErrors.cart = "Please add at least one item to your cart";
-    }
+  if (cartItems.length === 0) {
+    newErrors.cart = "Please add at least one item to your cart";
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
-  const handleNext = () => {
-    if (validateForm()) {
-      // Update Redux store with selected dates
-      dispatch(
-        setSelectedDates({
-          startDate: selectedDate,
-          endDate: isMultiDay ? endDate : selectedDate,
-          startTime,
-          endTime,
-          multiDay: isMultiDay,
-        })
-      );
-      onNext();
-    }
-  };
+const handleNext = () => {
+  if (validateForm()) {
+    // FIX: Properly format the dates before dispatching
+    const dateData = {
+      startDate: selectedDate,
+      endDate: isMultiDay ? endDate : selectedDate, // Ensure endDate is set for single day
+      startTime,
+      endTime,
+      multiDay: isMultiDay,
+    };
+    
+    console.log('📅 Dispatching date data:', dateData);
+    
+    // Update Redux store with selected dates
+    dispatch(setSelectedDates(dateData));
+    onNext();
+  }
+};
 
   const monthNames = [
     "January", "February", "March", "April", "May", "June",

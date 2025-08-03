@@ -50,7 +50,7 @@ const useRealtimeBooking = (options = {}) => {
     }
     
     // Remove trailing slash and add WebSocket path
-    wsUrl = wsUrl.replace(/\/$/, '') + '/ws/bookings';
+    wsUrl = wsUrl.replace(/\/$/, '') + '/websocket';
     
     console.log('🔗 Constructed WebSocket URL:', wsUrl);
     return wsUrl;

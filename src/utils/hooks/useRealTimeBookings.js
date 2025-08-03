@@ -1,4 +1,4 @@
-// useRealtimeBooking.js - FIXED VERSION with proper URL handling
+// useRealtimeBooking.js - FIXED VERSION
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 
@@ -38,15 +38,17 @@ const useRealtimeBooking = (options = {}) => {
       throw new Error('WebSocket URL not configured');
     }
 
-    // Clean the base URL and construct WebSocket URL
+    console.log('🔗 Base URL from env:', baseUrl);
+
     let wsUrl;
     
-    if (baseUrl.includes('localhost')) {
-      // Local development
-      wsUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+    // FIXED: Better URL construction logic
+    if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
+      // Local development - use ws://
+      wsUrl = baseUrl.replace(/^https?:\/\//, 'ws://');
     } else {
-      // Production - always use secure WebSocket
-      wsUrl = baseUrl.replace('http://', 'wss://').replace('https://', 'wss://');
+      // Production - use wss:// (secure WebSocket)
+      wsUrl = baseUrl.replace(/^https?:\/\//, 'wss://');
     }
     
     // Remove trailing slash and add WebSocket path

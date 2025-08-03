@@ -1,3 +1,4 @@
+// Bookings.js - FIXED VERSION with WebSocket Integration
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -24,6 +25,9 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
+  Wifi,
+  WifiOff,
+  RefreshCw,
 } from "lucide-react";
 import ibloomlogo from "../../../assets/ibloomcut.png";
 import {
@@ -45,10 +49,16 @@ import {
   selectBookingStats,
   updateBookingStatusOptimistic,
   getStatusInfo,
+  // FIXED: Add WebSocket action imports
+  handleRealtimeNewBooking,
+  handleRealtimeStatusUpdate,
+  handleRealtimeBookingDeleted,
 } from "../../../store/slices/booking-slice";
 import { formatCurrency } from "../../../utils/formatCcy";
 import { notifySuccess } from "../../../utils/toastify";
 import InvoiceHandler from "./invoiceHandler";
+// FIXED: Add WebSocket hook import
+import useRealtimeBooking from "../../../utils/hooks/useRealTimeBookings";
 
 // Helper function to get status styles (simplified - using getStatusInfo from slice)
 const getStatusStyles = (status) => {
@@ -71,6 +81,55 @@ const Bookings = () => {
   const selectedBooking = useSelector(selectSelectedBooking);
   const bookingStats = useSelector(selectBookingStats);
 
+  // FIXED: Add WebSocket connection for real-time updates
+  const {
+    isConnected: wsConnected,
+    connectionState: wsState,
+    connectionError: wsError,
+    reconnect: wsReconnect,
+    clientId: wsClientId,
+  } = useRealtimeBooking({
+    enabled: true,
+    clientType: "admin",
+    onNewBooking: (data) => {
+      console.log("🔔 Admin received new booking:", data);
+      dispatch(handleRealtimeNewBooking(data));
+      // Auto-refresh bookings list to get the complete data
+      setTimeout(() => {
+        dispatch(fetchBookings());
+      }, 500);
+      // Show notification
+      notifySuccess(`🎉 New booking from ${data.customerName}!`);
+    },
+    onBookingStatusUpdate: (data) => {
+      console.log("🔄 Admin received status update:", data);
+      dispatch(handleRealtimeStatusUpdate(data));
+      // Optionally refresh bookings to ensure data consistency
+      setTimeout(() => {
+        dispatch(fetchBookings());
+      }, 500);
+    },
+    onBookingDeleted: (data) => {
+      console.log("🗑️ Admin received deletion notification:", data);
+      dispatch(handleRealtimeBookingDeleted(data));
+      // Auto-refresh bookings list
+      setTimeout(() => {
+        dispatch(fetchBookings());
+      }, 500);
+    },
+    onConnected: () => {
+      console.log("✅ Admin WebSocket connected");
+      // Refresh bookings when WebSocket connects
+      dispatch(fetchBookings());
+    },
+    onDisconnected: () => {
+      console.log("📵 Admin WebSocket disconnected");
+    },
+    onError: (error) => {
+      console.error("❌ Admin WebSocket error:", error);
+    },
+  });
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const [deletingBooking, setDeletingBooking] = useState(false);
@@ -82,38 +141,43 @@ const Bookings = () => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
   const [sendingInvoice, setSendingInvoice] = useState(false);
- console.log("on");
+
+  console.log("Bookings component loaded");
+
   // Load saved bank details from localStorage
   const loadSavedBankDetails = () => {
     try {
-      const saved = localStorage.getItem('companyBankDetails');
+      const saved = localStorage.getItem("companyBankDetails");
       if (saved) {
         return JSON.parse(saved);
       }
     } catch (error) {
-      console.error('Failed to load saved bank details:', error);
+      console.error("Failed to load saved bank details:", error);
     }
     return {
-      bankName: '',
-      accountName: '',
-      accountNumber: '',
-      sortCode: '',
-      swiftCode: '',
+      bankName: "",
+      accountName: "",
+      accountNumber: "",
+      sortCode: "",
+      swiftCode: "",
     };
   };
 
   // Save bank details to localStorage
   const saveBankDetails = (bankDetails) => {
     try {
-      localStorage.setItem('companyBankDetails', JSON.stringify(bankDetails));
+      localStorage.setItem("companyBankDetails", JSON.stringify(bankDetails));
     } catch (error) {
-      console.error('Failed to save bank details:', error);
+      console.error("Failed to save bank details:", error);
     }
   };
 
   // Helper function to calculate totals from services only
   const calculateTotalsFromServices = (services, taxRate = 0.075) => {
-    const subtotal = services.reduce((sum, service) => sum + (service.total || service.subtotal || 0), 0);
+    const subtotal = services.reduce(
+      (sum, service) => sum + (service.total || service.subtotal || 0),
+      0
+    );
     const tax = subtotal * taxRate;
     const total = subtotal + tax;
     return { subtotal, tax, total };
@@ -157,8 +221,8 @@ const Bookings = () => {
 
     window.addEventListener("focus", handleFocus);
 
-    // Also check periodically while on the page
-    const interval = setInterval(checkForNewBooking, 3000);
+    // Also check periodically while on the page (fallback for when WebSocket fails)
+    const interval = setInterval(checkForNewBooking, 5000);
 
     return () => {
       window.removeEventListener("focus", handleFocus);
@@ -222,21 +286,25 @@ const Bookings = () => {
   const handleGenerateInvoice = (booking) => {
     // Load saved bank details
     const savedBankDetails = loadSavedBankDetails();
-    
+
     // Calculate totals from services only
-    const services = booking.services?.map((service) => ({
-      id: service.serviceId,
-      name: service.name,
-      description: service.description,
-      quantity: service.quantity,
-      unitPrice: service.subtotal / service.quantity,
-      total: service.subtotal,
-      editable: false,
-    })) || [];
+    const services =
+      booking.services?.map((service) => ({
+        id: service.serviceId,
+        name: service.name,
+        description: service.description,
+        quantity: service.quantity,
+        unitPrice: service.subtotal / service.quantity,
+        total: service.subtotal,
+        editable: false,
+      })) || [];
 
     const taxRate = 0.075; // 7.5%
-    const { subtotal, tax, total } = calculateTotalsFromServices(services, taxRate);
-    
+    const { subtotal, tax, total } = calculateTotalsFromServices(
+      services,
+      taxRate
+    );
+
     // Initialize invoice data with booking information
     const bookingKey = booking.bookingId || booking._id || "unknown";
     const invoice = {
@@ -457,10 +525,10 @@ const Bookings = () => {
         ...prev.company.bankDetails,
         [field]: value,
       };
-      
+
       // Save to localStorage
       saveBankDetails(updatedBankDetails);
-      
+
       return {
         ...prev,
         company: {
@@ -487,7 +555,10 @@ const Bookings = () => {
       }
 
       // Recalculate invoice totals (only from services, not additional services)
-      const { subtotal, tax, total } = calculateTotalsFromServices(updatedServices, prev.taxRate);
+      const { subtotal, tax, total } = calculateTotalsFromServices(
+        updatedServices,
+        prev.taxRate
+      );
 
       return {
         ...prev,
@@ -565,12 +636,64 @@ const Bookings = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Bookings Management
-          </h1>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Manage and track all event bookings
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                Bookings Management
+              </h1>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Manage and track all event bookings
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border">
+              <div className="flex items-center gap-2">
+                {wsConnected ? (
+                  <Wifi className="w-4 h-4 text-green-600" />
+                ) : (
+                  <WifiOff className="w-4 h-4 text-red-600" />
+                )}
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    wsConnected
+                      ? "bg-green-500 animate-pulse"
+                      : wsState === "connecting"
+                      ? "bg-yellow-500 animate-pulse"
+                      : "bg-red-500"
+                  }`}
+                ></div>
+                <span
+                  className={`text-sm font-medium ${
+                    wsConnected
+                      ? "text-green-600"
+                      : wsState === "connecting"
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {wsConnected
+                    ? "Live Updates Active"
+                    : wsState === "connecting"
+                    ? "Connecting..."
+                    : "Offline Mode"}
+                </span>
+              </div>
+              {wsError && (
+                <button
+                  onClick={wsReconnect}
+                  className="flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Reconnect
+                </button>
+              )}
+              {wsClientId && (
+                <div className="text-xs text-gray-500 hidden sm:block">
+                  ID: {wsClientId.slice(-6)}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -1580,9 +1703,9 @@ const Bookings = () => {
                   {/* Company Logo */}
                   <div className="text-right">
                     <div className="w-24 h-24 bg-gray-200 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src={ibloomlogo} 
-                        alt="Company Logo" 
+                      <img
+                        src={ibloomlogo}
+                        alt="Company Logo"
                         className="w-full h-full object-contain"
                       />
                     </div>
@@ -1655,7 +1778,9 @@ const Bookings = () => {
 
                     {/* Bank Details Section */}
                     <div className="mt-6 border-t pt-4">
-                      <h4 className="font-semibold text-gray-900 mb-3">Bank Details:</h4>
+                      <h4 className="font-semibold text-gray-900 mb-3">
+                        Bank Details:
+                      </h4>
                       <div className="space-y-2">
                         <input
                           type="text"
@@ -1680,7 +1805,10 @@ const Bookings = () => {
                           placeholder="Account Number"
                           value={invoiceData.company.bankDetails.accountNumber}
                           onChange={(e) =>
-                            updateBankDetailField("accountNumber", e.target.value)
+                            updateBankDetailField(
+                              "accountNumber",
+                              e.target.value
+                            )
                           }
                           className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
                         />
@@ -1844,81 +1972,88 @@ const Bookings = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {invoiceData.additionalServices.map((service, index) => (
-                          <tr
-                            key={service.id}
-                            className={service.required ? "bg-yellow-50" : ""}
-                          >
-                            <td className="p-3">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-gray-900">
-                                  {service.name}
-                                </span>
-                                {service.required && (
-                                  <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">
-                                    Required
+                        {invoiceData.additionalServices.map(
+                          (service, index) => (
+                            <tr
+                              key={service.id}
+                              className={service.required ? "bg-yellow-50" : ""}
+                            >
+                              <td className="p-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-900">
+                                    {service.name}
                                   </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="p-3 text-center">
-                              <div className="flex items-center justify-center gap-4">
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="radio"
-                                    name={`service-${service.id}`}
-                                    checked={service.included === true}
-                                    onChange={() =>
-                                      updateAdditionalServiceField(
-                                        index,
-                                        "included",
-                                        true
-                                      )
-                                    }
-                                    className="text-green-600"
-                                  />
-                                  <span className="text-sm font-medium text-green-600">Yes</span>
-                                </label>
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="radio"
-                                    name={`service-${service.id}`}
-                                    checked={service.included === false}
-                                    onChange={() =>
-                                      updateAdditionalServiceField(
-                                        index,
-                                        "included",
-                                        false
-                                      )
-                                    }
-                                    className="text-red-600"
-                                  />
-                                  <span className="text-sm font-medium text-red-600">No</span>
-                                </label>
-                              </div>
-                            </td>
-                            <td className="p-3">
-                              <textarea
-                                value={service.description}
-                                onChange={(e) =>
-                                  updateAdditionalServiceField(
-                                    index,
-                                    "description",
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 resize-none"
-                                rows="2"
-                                placeholder="Add service description..."
-                              />
-                            </td>
-                          </tr>
-                        ))}
+                                  {service.required && (
+                                    <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">
+                                      Required
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-3 text-center">
+                                <div className="flex items-center justify-center gap-4">
+                                  <label className="flex items-center gap-2">
+                                    <input
+                                      type="radio"
+                                      name={`service-${service.id}`}
+                                      checked={service.included === true}
+                                      onChange={() =>
+                                        updateAdditionalServiceField(
+                                          index,
+                                          "included",
+                                          true
+                                        )
+                                      }
+                                      className="text-green-600"
+                                    />
+                                    <span className="text-sm font-medium text-green-600">
+                                      Yes
+                                    </span>
+                                  </label>
+                                  <label className="flex items-center gap-2">
+                                    <input
+                                      type="radio"
+                                      name={`service-${service.id}`}
+                                      checked={service.included === false}
+                                      onChange={() =>
+                                        updateAdditionalServiceField(
+                                          index,
+                                          "included",
+                                          false
+                                        )
+                                      }
+                                      className="text-red-600"
+                                    />
+                                    <span className="text-sm font-medium text-red-600">
+                                      No
+                                    </span>
+                                  </label>
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                <textarea
+                                  value={service.description}
+                                  onChange={(e) =>
+                                    updateAdditionalServiceField(
+                                      index,
+                                      "description",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 resize-none"
+                                  rows="2"
+                                  placeholder="Add service description..."
+                                />
+                              </td>
+                            </tr>
+                          )
+                        )}
                       </tbody>
                     </table>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    * Additional services are included as specified. Required services are marked based on customer selection.
+                    * Additional services are included as specified. Required
+                    services are marked based on customer selection.
                   </p>
                 </div>
 

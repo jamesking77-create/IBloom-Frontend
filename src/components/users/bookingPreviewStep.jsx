@@ -873,7 +873,7 @@ const handleConfirmBooking = useCallback(async () => {
         >
           {isSubmitting || loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 h-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
               <span className="hidden sm:inline">Processing...</span>
               <span className="sm:hidden">Processing...</span>
             </>

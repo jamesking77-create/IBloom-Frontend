@@ -1,235 +1,341 @@
-// src/hooks/useRealtimeBookings.js
-import { useEffect, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  connectToBookingUpdates,
-  disconnectFromBookingUpdates,
-  selectWsConnected,
-  selectWsConnecting,
-  selectRealtimeUpdatesEnabled,
-  selectNewBookingNotification,
-  selectHasUnreadBookings,
-  selectUnreadBookingsCount,
-  clearNewBookingNotification,
-  markBookingAsRead,
-  markAllBookingsAsRead,
-} from '../store/slices/booking-slice';
+// userealtimebooking.js - React hook for WebSocket real-time booking notifications
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 
-/**
- * Custom hook for managing real-time booking updates via WebSocket
- * Use this in your admin components to automatically connect to booking updates
- * 
- * @param {Object} options - Configuration options
- * @param {boolean} options.autoConnect - Whether to auto-connect on mount (default: true)
- * @param {boolean} options.autoDisconnect - Whether to auto-disconnect on unmount (default: true)
- * @param {function} options.onNewBooking - Callback when new booking is received
- * @param {function} options.onConnect - Callback when WebSocket connects
- * @param {function} options.onDisconnect - Callback when WebSocket disconnects
- * @param {function} options.onError - Callback when WebSocket error occurs
- * 
- * @returns {Object} Hook return object
- */
-export const useRealtimeBookings = (options = {}) => {
+const useRealtimeBooking = (options = {}) => {
   const {
-    autoConnect = true,
-    autoDisconnect = true,
-    onNewBooking,
-    onConnect,
-    onDisconnect,
-    onError,
+    enabled = true,
+    clientType = 'user', // 'admin' or 'user'
+    userId = null,
+    autoReconnect = true,
+    reconnectDelay = 3000,
+    maxReconnectAttempts = 5,
+    onNewBooking = null,
+    onBookingStatusUpdate = null,
+    onBookingDeleted = null,
+    onConnected = null,
+    onDisconnected = null,
+    onError = null,
   } = options;
 
   const dispatch = useDispatch();
-  
-  // WebSocket connection state
-  const isConnected = useSelector(selectWsConnected);
-  const isConnecting = useSelector(selectWsConnecting);
-  const realtimeEnabled = useSelector(selectRealtimeUpdatesEnabled);
-  
-  // Notification state
-  const newBookingNotification = useSelector(selectNewBookingNotification);
-  const hasUnreadBookings = useSelector(selectHasUnreadBookings);
-  const unreadCount = useSelector(selectUnreadBookingsCount);
+  const wsRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
+  const heartbeatIntervalRef = useRef(null);
+  const [connectionState, setConnectionState] = useState('disconnected'); // 'connecting', 'connected', 'disconnected', 'error'
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [lastMessage, setLastMessage] = useState(null);
+  const [clientId, setClientId] = useState(null);
+
+  // Get WebSocket URL from environment or construct it
+  const getWebSocketUrl = useCallback(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = import.meta.env.VITE_WS_HOST || 
+                 import.meta.env.VITE_SERVER_BASEURL?.replace(/^https?:\/\//, '').replace(/\/$/, '') ||
+                 window.location.host;
+    
+    // Remove http/https prefix if present
+    const cleanHost = host.replace(/^https?:\/\//, '');
+    
+    return `${protocol}//${cleanHost}/ws/bookings`;
+  }, []);
+
+  // Clean up function
+  const cleanup = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+    if (wsRef.current) {
+      // Remove event listeners to prevent memory leaks
+      wsRef.current.onopen = null;
+      wsRef.current.onmessage = null;
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      
+      if (wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close(1000, 'Component cleanup');
+      }
+      wsRef.current = null;
+    }
+  }, []);
+
+  // Send message to WebSocket
+  const sendMessage = useCallback((message) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      try {
+        wsRef.current.send(JSON.stringify(message));
+        console.log('📤 WebSocket message sent:', message.type);
+        return true;
+      } catch (error) {
+        console.error('❌ Failed to send WebSocket message:', error);
+        return false;
+      }
+    } else {
+      console.warn('⚠️ WebSocket not connected, cannot send message:', message.type);
+      return false;
+    }
+  }, []);
+
+  // Handle incoming WebSocket messages
+  const handleMessage = useCallback((event) => {
+    try {
+      const message = JSON.parse(event.data);
+      console.log('📥 WebSocket message received:', message.type, message);
+      
+      setLastMessage(message);
+
+      switch (message.type) {
+        case 'connection_established':
+          setClientId(message.clientId);
+          setConnectionState('connected');
+          setReconnectAttempts(0);
+          console.log('✅ WebSocket connected with client ID:', message.clientId);
+          
+          // Identify client and subscribe to booking updates
+          sendMessage({
+            type: 'identify',
+            clientType: clientType,
+            userId: userId
+          });
+          
+          sendMessage({
+            type: 'subscribe_booking_updates'
+          });
+          
+          if (onConnected) onConnected(message);
+          break;
+
+        case 'identification_confirmed':
+          console.log('👤 Client identified as:', message.clientType);
+          break;
+
+        case 'subscription_confirmed':
+          console.log('📻 Subscribed to:', message.subscription);
+          break;
+
+        case 'new_booking':
+          console.log('🔔 New booking notification:', message.data);
+          if (onNewBooking) {
+            onNewBooking(message.data);
+          }
+          break;
+
+        case 'booking_status_update':
+          console.log('🔄 Booking status update:', message.data);
+          if (onBookingStatusUpdate) {
+            onBookingStatusUpdate(message.data);
+          }
+          break;
+
+        case 'booking_deleted':
+          console.log('🗑️ Booking deleted:', message.data);
+          if (onBookingDeleted) {
+            onBookingDeleted(message.data);
+          }
+          break;
+
+        case 'pong':
+          console.log('🏓 Received pong from server');
+          break;
+
+        case 'server_shutdown':
+          console.log('🛑 Server shutting down:', message.message);
+          setConnectionState('disconnected');
+          break;
+
+        case 'error':
+          console.error('❌ Server error:', message.message);
+          if (onError) onError(new Error(message.message));
+          break;
+
+        default:
+          console.log('❓ Unknown message type:', message.type);
+      }
+    } catch (error) {
+      console.error('❌ Failed to parse WebSocket message:', error);
+      if (onError) onError(error);
+    }
+  }, [clientType, userId, onNewBooking, onBookingStatusUpdate, onBookingDeleted, onConnected, onError, sendMessage]);
+
+  // Setup heartbeat (ping/pong)
+  const setupHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+    }
+    
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        sendMessage({ type: 'ping' });
+      }
+    }, 30000); // Ping every 30 seconds
+  }, [sendMessage]);
 
   // Connect to WebSocket
   const connect = useCallback(() => {
-    console.log('🔌 Connecting to real-time booking updates...');
-    dispatch(connectToBookingUpdates());
-  }, [dispatch]);
+    if (!enabled) {
+      console.log('🔇 WebSocket disabled');
+      return;
+    }
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('✅ WebSocket already connected');
+      return;
+    }
+
+    console.log('🔌 Connecting to WebSocket...');
+    setConnectionState('connecting');
+
+    try {
+      const wsUrl = getWebSocketUrl();
+      console.log('🔗 WebSocket URL:', wsUrl);
+      
+      wsRef.current = new WebSocket(wsUrl);
+
+      wsRef.current.onopen = (event) => {
+        console.log('✅ WebSocket connection opened');
+        setupHeartbeat();
+      };
+
+      wsRef.current.onmessage = handleMessage;
+
+      wsRef.current.onclose = (event) => {
+        console.log('📵 WebSocket connection closed:', event.code, event.reason);
+        setConnectionState('disconnected');
+        setClientId(null);
+        
+        if (heartbeatIntervalRef.current) {
+          clearInterval(heartbeatIntervalRef.current);
+          heartbeatIntervalRef.current = null;
+        }
+
+        if (onDisconnected) onDisconnected(event);
+
+        // Auto-reconnect if enabled and not a clean close
+        if (autoReconnect && event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
+          console.log(`🔄 Attempting to reconnect... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            setReconnectAttempts(prev => prev + 1);
+            connect();
+          }, reconnectDelay);
+        } else if (reconnectAttempts >= maxReconnectAttempts) {
+          console.error('❌ Max reconnection attempts reached');
+          setConnectionState('error');
+        }
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error('❌ WebSocket error:', error);
+        setConnectionState('error');
+        if (onError) onError(error);
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to create WebSocket connection:', error);
+      setConnectionState('error');
+      if (onError) onError(error);
+    }
+  }, [
+    enabled, 
+    getWebSocketUrl, 
+    handleMessage, 
+    setupHeartbeat, 
+    autoReconnect, 
+    reconnectAttempts, 
+    maxReconnectAttempts, 
+    reconnectDelay, 
+    onDisconnected, 
+    onError
+  ]);
 
   // Disconnect from WebSocket
   const disconnect = useCallback(() => {
-    console.log('🔌 Disconnecting from real-time booking updates...');
-    dispatch(disconnectFromBookingUpdates());
-  }, [dispatch]);
+    console.log('📵 Manually disconnecting WebSocket...');
+    cleanup();
+    setConnectionState('disconnected');
+    setClientId(null);
+    setReconnectAttempts(0);
+  }, [cleanup]);
 
-  // Clear new booking notification
-  const clearNotification = useCallback(() => {
-    dispatch(clearNewBookingNotification());
-  }, [dispatch]);
-
-  // Mark specific booking as read
-  const markAsRead = useCallback((bookingId) => {
-    dispatch(markBookingAsRead(bookingId));
-  }, [dispatch]);
-
-  // Mark all bookings as read
-  const markAllAsRead = useCallback(() => {
-    dispatch(markAllBookingsAsRead());
-  }, [dispatch]);
-
-  // Show browser notification for new bookings
-  const showBrowserNotification = useCallback((booking) => {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      const customerName = booking.customer?.personalInfo?.name || 
-                          booking.customerName || 
-                          'Unknown Customer';
-      
-      const eventType = booking.customer?.eventDetails?.eventType || 
-                       booking.eventType || 
-                       'Event';
-
-      new Notification('New Booking Received! 🎉', {
-        body: `${customerName} has booked a ${eventType}`,
-        icon: '/favicon.ico', // Adjust path as needed
-        badge: '/favicon.ico',
-        tag: 'new-booking',
-        requireInteraction: true,
-        actions: [
-          {
-            action: 'view',
-            title: 'View Booking'
-          }
-        ]
-      });
-    }
-  }, []);
-
-  // Request notification permission
-  const requestNotificationPermission = useCallback(async () => {
-    if ('Notification' in window) {
-      const permission = await Notification.requestPermission();
-      console.log('📢 Notification permission:', permission);
-      return permission === 'granted';
-    }
-    return false;
-  }, []);
-
-  // Handle new booking notifications
-  useEffect(() => {
-    if (newBookingNotification && onNewBooking) {
-      console.log('🆕 New booking notification received:', newBookingNotification);
-      onNewBooking(newBookingNotification.booking);
-      
-      // Show browser notification
-      showBrowserNotification(newBookingNotification.booking);
-    }
-  }, [newBookingNotification, onNewBooking, showBrowserNotification]);
-
-  // Handle connection state changes
-  useEffect(() => {
-    if (isConnected && onConnect) {
-      console.log('✅ WebSocket connected');
-      onConnect();
-    }
-  }, [isConnected, onConnect]);
-
-  useEffect(() => {
-    if (!isConnected && !isConnecting && realtimeEnabled && onDisconnect) {
-      console.log('❌ WebSocket disconnected');
-      onDisconnect();
-    }
-  }, [isConnected, isConnecting, realtimeEnabled, onDisconnect]);
-
-  // Auto-connect on mount
-  useEffect(() => {
-    if (autoConnect && !isConnected && !isConnecting) {
-      console.log('🚀 Auto-connecting to real-time booking updates...');
+  // Manually trigger reconnection
+  const reconnect = useCallback(() => {
+    console.log('🔄 Manually reconnecting WebSocket...');
+    disconnect();
+    setTimeout(() => {
+      setReconnectAttempts(0);
       connect();
-      
-      // Request notification permission
-      requestNotificationPermission();
-    }
-  }, [autoConnect, isConnected, isConnecting, connect, requestNotificationPermission]);
+    }, 1000);
+  }, [disconnect, connect]);
 
-  // Auto-disconnect on unmount
-  useEffect(() => {
-    return () => {
-      if (autoDisconnect && isConnected) {
-        console.log('🧹 Auto-disconnecting from real-time booking updates...');
-        disconnect();
+  // Emit booking success (for user side)
+  const emitBookingSuccess = useCallback((bookingData) => {
+    console.log('🎉 Emitting booking success:', bookingData);
+    return sendMessage({
+      type: 'booking_completed',
+      data: {
+        bookingId: bookingData.bookingId || bookingData._id,
+        clientType: 'user',
+        timestamp: new Date().toISOString()
       }
+    });
+  }, [sendMessage]);
+
+  // Effect to handle connection
+  useEffect(() => {
+    if (enabled) {
+      connect();
+    }
+
+    return () => {
+      cleanup();
     };
-  }, [autoDisconnect, isConnected, disconnect]);
+  }, [enabled]); // Only reconnect if enabled changes
+
+  // Reset reconnect attempts when connection is successful
+  useEffect(() => {
+    if (connectionState === 'connected') {
+      setReconnectAttempts(0);
+    }
+  }, [connectionState]);
 
   // Return hook interface
   return {
     // Connection state
-    isConnected,
-    isConnecting,
-    realtimeEnabled,
+    connectionState,
+    isConnected: connectionState === 'connected',
+    isConnecting: connectionState === 'connecting',
+    isDisconnected: connectionState === 'disconnected',
+    hasError: connectionState === 'error',
     
-    // Notification state
-    newBookingNotification,
-    hasUnreadBookings,
-    unreadCount,
+    // Connection info
+    clientId,
+    reconnectAttempts,
+    lastMessage,
     
-    // Actions
+    // Connection control
     connect,
     disconnect,
-    clearNotification,
-    markAsRead,
-    markAllAsRead,
-    requestNotificationPermission,
+    reconnect,
     
-    // Connection status helpers
-    canConnect: !isConnected && !isConnecting,
-    canDisconnect: isConnected,
-    connectionStatus: isConnecting ? 'connecting' : isConnected ? 'connected' : 'disconnected',
-  };
-};
-
-/**
- * Hook for simple real-time booking notifications
- * Simplified version that just shows toast notifications for new bookings
- */
-export const useBookingNotifications = (showToast) => {
-  const { newBookingNotification, clearNotification, markAsRead } = useRealtimeBookings({
-    autoConnect: true,
-    autoDisconnect: true,
-    onNewBooking: (booking) => {
-      if (showToast) {
-        const customerName = booking.customer?.personalInfo?.name || 
-                            booking.customerName || 
-                            'Unknown Customer';
-        
-        const eventType = booking.customer?.eventDetails?.eventType || 
-                         booking.eventType || 
-                         'Event';
-
-        showToast({
-          type: 'success',
-          title: 'New Booking Received! 🎉',
-          message: `${customerName} has booked a ${eventType}`,
-          duration: 5000,
-          action: {
-            label: 'View',
-            onClick: () => {
-              // You can add navigation logic here
-              markAsRead(booking._id || booking.id);
-              clearNotification();
-            }
-          }
-        });
-      }
+    // Message functions
+    sendMessage,
+    emitBookingSuccess,
+    
+    // Connection stats
+    stats: {
+      connectionState,
+      clientId,
+      reconnectAttempts,
+      maxReconnectAttempts,
+      autoReconnect,
+      enabled
     }
-  });
-
-  return {
-    newBookingNotification,
-    clearNotification,
-    markAsRead,
   };
 };
 
-export default useRealtimeBookings;
+export default useRealtimeBooking;

@@ -69,10 +69,10 @@ const transformBookingData = (apiBooking) => {
   };
 };
 
-// Async thunk for creating booking from cart - FIXED
+// Async thunk for creating booking from cart - ENHANCED with WebSocket notification
 export const createBookingFromCart = createAsyncThunk(
   "booking/createFromCart",
-  async (bookingData, { rejectWithValue }) => {
+  async (bookingData, { rejectWithValue, getState }) => {
     try {
       console.log("🚀 Making API call to create booking...");
       console.log(
@@ -103,6 +103,10 @@ export const createBookingFromCart = createAsyncThunk(
 
       const result = await response.json();
       console.log("✅ API Success response:", result);
+
+      // 🔔 NOTE: WebSocket notification is now handled by the backend
+      // The backend will emit the WebSocket notification when the booking is created
+      // This ensures admin gets notified immediately without relying on frontend WebSocket connection
 
       return result;
     } catch (error) {
@@ -240,6 +244,10 @@ const initialState = {
   generatingInvoice: false,
   invoiceGenerated: false,
   lastInvoiceGenerated: null,
+  // WebSocket states
+  realtimeEnabled: true,
+  newBookingNotifications: [], // Store recent notifications
+  pendingUpdates: [], // Store updates that came via WebSocket before UI is ready
 };
 
 const bookingsSlice = createSlice({
@@ -287,10 +295,149 @@ const bookingsSlice = createSlice({
       state.lastInvoiceGenerated = null;
       state.generatingInvoice = false;
     },
+    // 🔔 WebSocket-related reducers
+    addNewBookingNotification: (state, action) => {
+      const notification = {
+        ...action.payload,
+        id: `notif_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        read: false
+      };
+      state.newBookingNotifications.unshift(notification);
+      
+      // Keep only last 10 notifications
+      if (state.newBookingNotifications.length > 10) {
+        state.newBookingNotifications = state.newBookingNotifications.slice(0, 10);
+      }
+    },
+    
+    markNotificationAsRead: (state, action) => {
+      const notificationId = action.payload;
+      const notification = state.newBookingNotifications.find(n => n.id === notificationId);
+      if (notification) {
+        notification.read = true;
+      }
+    },
+    
+    clearNotifications: (state) => {
+      state.newBookingNotifications = [];
+    },
+    
+    // Handle real-time booking updates from WebSocket
+    handleRealtimeNewBooking: (state, action) => {
+      const bookingData = action.payload;
+      console.log("🔔 Handling real-time new booking:", bookingData);
+      
+      // Add to notifications
+      const notification = {
+        type: 'new_booking',
+        bookingId: bookingData.bookingId,
+        customerName: bookingData.customerName,
+        eventType: bookingData.eventType,
+        total: bookingData.total,
+        message: `New booking from ${bookingData.customerName}`,
+        timestamp: bookingData.timestamp || new Date().toISOString(),
+        id: `notif_${Date.now()}`,
+        read: false
+      };
+      
+      state.newBookingNotifications.unshift(notification);
+      
+      // Keep only last 10 notifications
+      if (state.newBookingNotifications.length > 10) {
+        state.newBookingNotifications = state.newBookingNotifications.slice(0, 10);
+      }
+      
+      // Store update for potential UI refresh
+      state.pendingUpdates.push({
+        type: 'new_booking',
+        timestamp: new Date().toISOString(),
+        data: bookingData
+      });
+    },
+    
+    handleRealtimeStatusUpdate: (state, action) => {
+      const updateData = action.payload;
+      console.log("🔄 Handling real-time status update:", updateData);
+      
+      // Update booking in list if it exists
+      const booking = state.bookings.find(
+        (b) => b._id === updateData.bookingId || 
+               b.bookingId === updateData.bookingId || 
+               b.id === updateData.bookingId
+      );
+      
+      if (booking) {
+        booking.status = updateData.newStatus;
+      }
+      
+      // Add to notifications
+      const notification = {
+        type: 'status_update',
+        bookingId: updateData.bookingId,
+        customerName: updateData.customerName,
+        oldStatus: updateData.oldStatus,
+        newStatus: updateData.newStatus,
+        message: `Booking status changed from ${updateData.oldStatus} to ${updateData.newStatus}`,
+        timestamp: updateData.timestamp || new Date().toISOString(),
+        id: `notif_${Date.now()}`,
+        read: false
+      };
+      
+      state.newBookingNotifications.unshift(notification);
+      
+      if (state.newBookingNotifications.length > 10) {
+        state.newBookingNotifications = state.newBookingNotifications.slice(0, 10);
+      }
+    },
+    
+    handleRealtimeBookingDeleted: (state, action) => {
+      const deleteData = action.payload;
+      console.log("🗑️ Handling real-time booking deletion:", deleteData);
+      
+      // Remove booking from list
+      state.bookings = state.bookings.filter(
+        (b) => b._id !== deleteData.bookingId && 
+               b.bookingId !== deleteData.bookingId && 
+               b.id !== deleteData.bookingId
+      );
+      
+      // Add to notifications
+      const notification = {
+        type: 'booking_deleted',
+        bookingId: deleteData.bookingId,
+        customerName: deleteData.customerName,
+        message: `Booking ${deleteData.bookingId} was deleted`,
+        timestamp: deleteData.timestamp || new Date().toISOString(),
+        id: `notif_${Date.now()}`,
+        read: false
+      };
+      
+      state.newBookingNotifications.unshift(notification);
+      
+      if (state.newBookingNotifications.length > 10) {
+        state.newBookingNotifications = state.newBookingNotifications.slice(0, 10);
+      }
+    },
+    
+    clearPendingUpdates: (state) => {
+      state.pendingUpdates = [];
+    },
+    
+    setRealtimeEnabled: (state, action) => {
+      state.realtimeEnabled = action.payload;
+    },
+    
+    // Auto-refresh trigger (for use with WebSocket notifications)
+    triggerAutoRefresh: (state) => {
+      // This will trigger a re-fetch of bookings
+      // The UI can listen to this action to refresh data
+      state.lastAutoRefresh = new Date().toISOString();
+    }
   },
   extraReducers: (builder) => {
     builder
-      // Create booking from cart - FIXED
+      // Create booking from cart - ENHANCED
       .addCase(createBookingFromCart.pending, (state) => {
         state.creatingBooking = true;
         state.error = null;
@@ -306,6 +453,8 @@ const bookingsSlice = createSlice({
         const transformedBooking = transformBookingData(action.payload);
         state.bookings.unshift(transformedBooking);
         state.pagination.totalItems = state.bookings.length;
+        
+        // Store in localStorage for admin notification (fallback)
         if (typeof window !== "undefined") {
           localStorage.setItem("newBookingCreated", "true");
           localStorage.setItem(
@@ -336,6 +485,9 @@ const bookingsSlice = createSlice({
         state.bookings = transformedBookings;
         state.pagination = action.payload.pagination || state.pagination;
         state.stats = action.payload.stats || state.stats;
+        
+        // Clear pending updates after successful fetch
+        state.pendingUpdates = [];
       })
       .addCase(fetchBookings.rejected, (state, action) => {
         state.loading = false;
@@ -472,6 +624,16 @@ export const {
   updateBookingStatusOptimistic,
   resetBookingCreation,
   resetInvoiceGeneration,
+  // WebSocket actions
+  addNewBookingNotification,
+  markNotificationAsRead,
+  clearNotifications,
+  handleRealtimeNewBooking,
+  handleRealtimeStatusUpdate,
+  handleRealtimeBookingDeleted,
+  clearPendingUpdates,
+  setRealtimeEnabled,
+  triggerAutoRefresh
 } = bookingsSlice.actions;
 
 // Basic selectors with safe defaults
@@ -513,6 +675,18 @@ export const selectInvoiceGenerated = (state) =>
   state.bookings?.invoiceGenerated || false;
 export const selectLastInvoiceGenerated = (state) =>
   state.bookings?.lastInvoiceGenerated || null;
+
+// 🔔 WebSocket selectors
+export const selectRealtimeEnabled = (state) =>
+  state.bookings?.realtimeEnabled ?? true;
+export const selectNewBookingNotifications = (state) =>
+  state.bookings?.newBookingNotifications || [];
+export const selectUnreadNotificationCount = (state) =>
+  state.bookings?.newBookingNotifications?.filter(n => !n.read).length || 0;
+export const selectPendingUpdates = (state) =>
+  state.bookings?.pendingUpdates || [];
+export const selectLastAutoRefresh = (state) =>
+  state.bookings?.lastAutoRefresh || null;
 
 // Memoized filtered bookings selector to prevent unnecessary rerenders
 export const selectFilteredBookings = createSelector(

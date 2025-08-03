@@ -1,4 +1,4 @@
-// userealtimebooking.js - React hook for WebSocket real-time booking notifications
+// useRealtimeBooking.js - FIXED VERSION with proper URL handling
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 
@@ -22,23 +22,38 @@ const useRealtimeBooking = (options = {}) => {
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
-  const [connectionState, setConnectionState] = useState('disconnected'); // 'connecting', 'connected', 'disconnected', 'error'
+  const [connectionState, setConnectionState] = useState('disconnected');
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [lastMessage, setLastMessage] = useState(null);
   const [clientId, setClientId] = useState(null);
- 
-  
-  // Get WebSocket URL from environment or construct it
+  const [connectionError, setConnectionError] = useState(null);
+
+  // FIXED: Proper WebSocket URL construction
   const getWebSocketUrl = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = import.meta.env.VITE_WS_HOST || 
-                 import.meta.env.VITE_SERVER_BASEURL?.replace(/^https?:\/\//, '').replace(/\/$/, '') ||
-                 window.location.host;
+    // Get base URL from environment
+    const baseUrl = import.meta.env.VITE_SERVER_BASEURL;
     
-    // Remove http/https prefix if present
-    const cleanHost = host.replace(/^https?:\/\//, '');
+    if (!baseUrl) {
+      console.error('❌ VITE_SERVER_BASEURL not configured');
+      throw new Error('WebSocket URL not configured');
+    }
+
+    // Clean the base URL and construct WebSocket URL
+    let wsUrl;
     
-    return `${protocol}//${cleanHost}/ws/bookings`;
+    if (baseUrl.includes('localhost')) {
+      // Local development
+      wsUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+    } else {
+      // Production - always use secure WebSocket
+      wsUrl = baseUrl.replace('http://', 'wss://').replace('https://', 'wss://');
+    }
+    
+    // Remove trailing slash and add WebSocket path
+    wsUrl = wsUrl.replace(/\/$/, '') + '/ws/bookings';
+    
+    console.log('🔗 Constructed WebSocket URL:', wsUrl);
+    return wsUrl;
   }, []);
 
   // Clean up function
@@ -58,8 +73,12 @@ const useRealtimeBooking = (options = {}) => {
       wsRef.current.onclose = null;
       wsRef.current.onerror = null;
       
-      if (wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close(1000, 'Component cleanup');
+      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+        try {
+          wsRef.current.close(1000, 'Component cleanup');
+        } catch (error) {
+          console.warn('⚠️ Error during cleanup:', error);
+        }
       }
       wsRef.current = null;
     }
@@ -69,15 +88,21 @@ const useRealtimeBooking = (options = {}) => {
   const sendMessage = useCallback((message) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       try {
-        wsRef.current.send(JSON.stringify(message));
+        const messageWithTimestamp = {
+          ...message,
+          clientTimestamp: new Date().toISOString()
+        };
+        wsRef.current.send(JSON.stringify(messageWithTimestamp));
         console.log('📤 WebSocket message sent:', message.type);
         return true;
       } catch (error) {
         console.error('❌ Failed to send WebSocket message:', error);
+        setConnectionError(error.message);
         return false;
       }
     } else {
-      console.warn('⚠️ WebSocket not connected, cannot send message:', message.type);
+      const state = wsRef.current ? wsRef.current.readyState : 'null';
+      console.warn(`⚠️ WebSocket not connected (state: ${state}), cannot send message:`, message.type);
       return false;
     }
   }, []);
@@ -89,6 +114,7 @@ const useRealtimeBooking = (options = {}) => {
       console.log('📥 WebSocket message received:', message.type, message);
       
       setLastMessage(message);
+      setConnectionError(null); // Clear any previous errors
 
       switch (message.type) {
         case 'connection_established':
@@ -97,16 +123,22 @@ const useRealtimeBooking = (options = {}) => {
           setReconnectAttempts(0);
           console.log('✅ WebSocket connected with client ID:', message.clientId);
           
-          // Identify client and subscribe to booking updates
-          sendMessage({
-            type: 'identify',
-            clientType: clientType,
-            userId: userId
-          });
-          
-          sendMessage({
-            type: 'subscribe_booking_updates'
-          });
+          // IMPORTANT: Wait a bit before sending identify message
+          setTimeout(() => {
+            // Identify client
+            sendMessage({
+              type: 'identify',
+              clientType: clientType,
+              userId: userId
+            });
+            
+            // Subscribe to booking updates
+            setTimeout(() => {
+              sendMessage({
+                type: 'subscribe_booking_updates'
+              });
+            }, 100);
+          }, 100);
           
           if (onConnected) onConnected(message);
           break;
@@ -151,6 +183,7 @@ const useRealtimeBooking = (options = {}) => {
 
         case 'error':
           console.error('❌ Server error:', message.message);
+          setConnectionError(message.message);
           if (onError) onError(new Error(message.message));
           break;
 
@@ -159,6 +192,7 @@ const useRealtimeBooking = (options = {}) => {
       }
     } catch (error) {
       console.error('❌ Failed to parse WebSocket message:', error);
+      setConnectionError('Failed to parse server message');
       if (onError) onError(error);
     }
   }, [clientType, userId, onNewBooking, onBookingStatusUpdate, onBookingDeleted, onConnected, onError, sendMessage]);
@@ -172,6 +206,12 @@ const useRealtimeBooking = (options = {}) => {
     heartbeatIntervalRef.current = setInterval(() => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         sendMessage({ type: 'ping' });
+      } else {
+        console.warn('⚠️ Heartbeat: WebSocket not open, clearing interval');
+        if (heartbeatIntervalRef.current) {
+          clearInterval(heartbeatIntervalRef.current);
+          heartbeatIntervalRef.current = null;
+        }
       }
     }, 30000); // Ping every 30 seconds
   }, [sendMessage]);
@@ -183,29 +223,48 @@ const useRealtimeBooking = (options = {}) => {
       return;
     }
 
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      console.log('✅ WebSocket already connected');
+    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+      console.log('✅ WebSocket already connected/connecting');
       return;
     }
 
     console.log('🔌 Connecting to WebSocket...');
     setConnectionState('connecting');
+    setConnectionError(null);
 
     try {
       const wsUrl = getWebSocketUrl();
-      console.log('🔗 WebSocket URL:', wsUrl);
+      console.log('🔗 Attempting WebSocket connection to:', wsUrl);
       
       wsRef.current = new WebSocket(wsUrl);
 
+      // Set connection timeout
+      const connectionTimeout = setTimeout(() => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
+          console.error('❌ WebSocket connection timeout');
+          wsRef.current.close();
+          setConnectionState('error');
+          setConnectionError('Connection timeout');
+        }
+      }, 10000); // 10 second timeout
+
       wsRef.current.onopen = (event) => {
+        clearTimeout(connectionTimeout);
         console.log('✅ WebSocket connection opened');
         setupHeartbeat();
+        // Don't set connected state here - wait for connection_established message
       };
 
       wsRef.current.onmessage = handleMessage;
 
       wsRef.current.onclose = (event) => {
-        console.log('📵 WebSocket connection closed:', event.code, event.reason);
+        clearTimeout(connectionTimeout);
+        console.log('📵 WebSocket connection closed:', {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean
+        });
+        
         setConnectionState('disconnected');
         setClientId(null);
         
@@ -216,29 +275,34 @@ const useRealtimeBooking = (options = {}) => {
 
         if (onDisconnected) onDisconnected(event);
 
-        // Auto-reconnect if enabled and not a clean close
+        // Auto-reconnect logic
         if (autoReconnect && event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
-          console.log(`🔄 Attempting to reconnect... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+          const delay = Math.min(reconnectDelay * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff, max 30s
+          console.log(`🔄 Attempting to reconnect in ${delay}ms... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             setReconnectAttempts(prev => prev + 1);
             connect();
-          }, reconnectDelay);
+          }, delay);
         } else if (reconnectAttempts >= maxReconnectAttempts) {
           console.error('❌ Max reconnection attempts reached');
           setConnectionState('error');
+          setConnectionError('Max reconnection attempts reached');
         }
       };
 
       wsRef.current.onerror = (error) => {
+        clearTimeout(connectionTimeout);
         console.error('❌ WebSocket error:', error);
         setConnectionState('error');
+        setConnectionError('WebSocket connection error');
         if (onError) onError(error);
       };
 
     } catch (error) {
       console.error('❌ Failed to create WebSocket connection:', error);
       setConnectionState('error');
+      setConnectionError(error.message);
       if (onError) onError(error);
     }
   }, [
@@ -261,6 +325,7 @@ const useRealtimeBooking = (options = {}) => {
     setConnectionState('disconnected');
     setClientId(null);
     setReconnectAttempts(0);
+    setConnectionError(null);
   }, [cleanup]);
 
   // Manually trigger reconnection
@@ -289,20 +354,38 @@ const useRealtimeBooking = (options = {}) => {
   // Effect to handle connection
   useEffect(() => {
     if (enabled) {
-      connect();
+      // Small delay to ensure component is mounted
+      const timer = setTimeout(() => {
+        connect();
+      }, 100);
+      
+      return () => {
+        clearTimeout(timer);
+        cleanup();
+      };
     }
 
-    return () => {
-      cleanup();
-    };
+    return cleanup;
   }, [enabled]); // Only reconnect if enabled changes
 
   // Reset reconnect attempts when connection is successful
   useEffect(() => {
     if (connectionState === 'connected') {
       setReconnectAttempts(0);
+      setConnectionError(null);
     }
   }, [connectionState]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 WebSocket Hook State:', {
+      connectionState,
+      clientId,
+      reconnectAttempts,
+      enabled,
+      error: connectionError
+    });
+  }, [connectionState, clientId, reconnectAttempts, enabled, connectionError]);
 
   // Return hook interface
   return {
@@ -317,6 +400,7 @@ const useRealtimeBooking = (options = {}) => {
     clientId,
     reconnectAttempts,
     lastMessage,
+    connectionError,
     
     // Connection control
     connect,
@@ -334,7 +418,15 @@ const useRealtimeBooking = (options = {}) => {
       reconnectAttempts,
       maxReconnectAttempts,
       autoReconnect,
-      enabled
+      enabled,
+      error: connectionError,
+      wsUrl: (() => {
+        try {
+          return getWebSocketUrl();
+        } catch (e) {
+          return 'Error constructing URL';
+        }
+      })()
     }
   };
 };

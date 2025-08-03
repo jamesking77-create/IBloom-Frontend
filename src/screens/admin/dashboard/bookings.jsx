@@ -82,7 +82,7 @@ const Bookings = () => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
   const [sendingInvoice, setSendingInvoice] = useState(false);
-
+ console.log("on");
   // Load saved bank details from localStorage
   const loadSavedBankDetails = () => {
     try {

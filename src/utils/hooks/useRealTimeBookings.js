@@ -26,7 +26,8 @@ const useRealtimeBooking = (options = {}) => {
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [lastMessage, setLastMessage] = useState(null);
   const [clientId, setClientId] = useState(null);
-
+ 
+  
   // Get WebSocket URL from environment or construct it
   const getWebSocketUrl = useCallback(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

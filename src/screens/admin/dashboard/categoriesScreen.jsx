@@ -44,13 +44,15 @@ const CategoriesScreen = () => {
     editingItem,
   } = useSelector((state) => state.categories);
 
-  // Form states
+  // Form states - Updated to handle files properly
   const [categoryForm, setCategoryForm] = useState({
     id: "",
     name: "",
     description: "",
     itemCount: "",
     image: "",
+    imageFile: null, // Store the actual file
+    imagePreview: "", // Store the preview URL
     hasQuotes: false,
   });
   const [itemForm, setItemForm] = useState({
@@ -58,10 +60,12 @@ const CategoriesScreen = () => {
     description: "",
     price: "",
     image: "",
+    imageFile: null, // Store the actual file
+    imagePreview: "", // Store the preview URL
   });
 
   const categoryFileRef = useRef(null);
-  const itemFileRef = useRef(null); // Fixed: Added separate ref for item file input
+  const itemFileRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -77,18 +81,46 @@ const CategoriesScreen = () => {
     }
   }, [filteredCategories, selectedCategory, dispatch]);
 
-  // Handle category form
+  // Handle category form - Updated to handle file uploads properly
   const handleCategorySubmit = async (e) => {
     e.preventDefault();
     try {
+      // Prepare data for submission
+      const submitData = {
+        id: categoryForm.id,
+        name: categoryForm.name,
+        description: categoryForm.description,
+        itemCount: categoryForm.itemCount,
+        hasQuotes: categoryForm.hasQuotes,
+      };
+
+      // If there's a new file, include it
+      if (categoryForm.imageFile) {
+        submitData.image = categoryForm.imageFile;
+      } else if (categoryForm.image && !categoryForm.image.startsWith('blob:')) {
+        // If there's an existing image URL (not a blob), keep it
+        submitData.image = categoryForm.image;
+      }
+
       if (editingCategory) {
         await dispatch(
-          updateCategory({ id: editingCategory.id, categoryData: categoryForm })
+          updateCategory({ id: editingCategory.id, categoryData: submitData })
         );
       } else {
-        await dispatch(createCategory(categoryForm));
+        await dispatch(createCategory(submitData));
       }
-      setCategoryForm({ id: "", name: "", description: "", itemCount: "", image: "", hasQuotes: false });
+      
+      // Reset form
+      setCategoryForm({ 
+        id: "", 
+        name: "", 
+        description: "", 
+        itemCount: "", 
+        image: "", 
+        imageFile: null,
+        imagePreview: "",
+        hasQuotes: false 
+      });
       dispatch(closeModal("categoryModal"));
       dispatch(setEditingCategory(null));
     } catch (error) {
@@ -96,24 +128,39 @@ const CategoriesScreen = () => {
     }
   };
 
-  // Handle item form - Fixed: Added proper state updates and modal management
+  // Handle item form - Updated to handle file uploads properly
   const handleItemSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Prepare data for submission
+      const submitData = {
+        name: itemForm.name,
+        description: itemForm.description,
+        price: itemForm.price,
+      };
+
+      // If there's a new file, include it
+      if (itemForm.imageFile) {
+        submitData.image = itemForm.imageFile;
+      } else if (itemForm.image && !itemForm.image.startsWith('blob:')) {
+        // If there's an existing image URL (not a blob), keep it
+        submitData.image = itemForm.image;
+      }
+
       let result;
       if (editingItem) {
         result = await dispatch(
           updateItem({
             categoryId: selectedCategory.id,
             itemId: editingItem.id,
-            itemData: itemForm,
+            itemData: submitData,
           })
         );
       } else {
         result = await dispatch(
           createItem({
             categoryId: selectedCategory.id,
-            itemData: itemForm,
+            itemData: submitData,
           })
         );
       }
@@ -121,12 +168,16 @@ const CategoriesScreen = () => {
       // Check if the operation was successful
       if (result.type.endsWith('/fulfilled')) {
         // Reset form and close modal
-        setItemForm({ name: "", description: "", price: "", image: "" });
+        setItemForm({ 
+          name: "", 
+          description: "", 
+          price: "", 
+          image: "",
+          imageFile: null,
+          imagePreview: ""
+        });
         dispatch(closeModal("itemModal"));
         dispatch(setEditingItem(null));
-        
-        // The selectedCategory will be automatically updated by the useEffect
-        // that watches for changes in filteredCategories
       }
     } catch (error) {
       console.error("Error saving item:", error);
@@ -137,13 +188,12 @@ const CategoriesScreen = () => {
   const handleDeleteCategory = async (categoryId, categoryName) => {
     try {
       await dispatch(deleteCategory(categoryId));
-      // Profile sync happens automatically through extraReducers in profile slice
     } catch (error) {
       console.error("Error deleting category:", error);
     }
   };
 
-  // Handle item deletion - Fixed: Added proper state updates
+  // Handle item deletion
   const handleDeleteItem = async (itemId) => {
     try {
       const result = await dispatch(
@@ -152,28 +202,33 @@ const CategoriesScreen = () => {
           itemId: itemId,
         })
       );
-      
-      // The selectedCategory will be automatically updated by the useEffect
-      // that watches for changes in filteredCategories
     } catch (error) {
       console.error("Error deleting item:", error);
     }
   };
 
-  // Handle file change simulation
+  // Handle file change - Updated to store both file and preview
   const handleFileChange = (e, type) => {
     const file = e.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
+      const imagePreview = URL.createObjectURL(file);
       if (type === 'category') {
-        setCategoryForm(prev => ({ ...prev, image: imageUrl }));
-      } else if (type === 'item') { // Fixed: Added proper condition for item
-        setItemForm(prev => ({ ...prev, image: imageUrl }));
+        setCategoryForm(prev => ({ 
+          ...prev, 
+          imageFile: file,
+          imagePreview: imagePreview
+        }));
+      } else if (type === 'item') {
+        setItemForm(prev => ({ 
+          ...prev, 
+          imageFile: file,
+          imagePreview: imagePreview
+        }));
       }
     }
   };
 
-  // Open edit modals
+  // Open edit modals - Updated to handle image preview properly
   const openEditCategory = (category) => {
     dispatch(setEditingCategory(category));
     setCategoryForm({
@@ -182,6 +237,8 @@ const CategoriesScreen = () => {
       itemCount: category.itemCount,
       description: category.description,
       image: category.image,
+      imageFile: null,
+      imagePreview: category.image, // Use existing image for preview
       hasQuotes: category.hasQuotes || false,
     });
     dispatch(openModal("categoryModal"));
@@ -194,6 +251,8 @@ const CategoriesScreen = () => {
       description: item.description,
       price: item.price || "",
       image: item.image,
+      imageFile: null,
+      imagePreview: item.image, // Use existing image for preview
     });
     dispatch(openModal("itemModal"));
   };
@@ -203,17 +262,41 @@ const CategoriesScreen = () => {
     dispatch(openModal("itemsViewModal"));
   };
 
-  // Fixed: Added proper modal close handlers that reset editing state
+  // Modal close handlers - Updated to clean up blob URLs
   const handleCloseCategoryModal = () => {
+    // Clean up blob URL if it exists
+    if (categoryForm.imagePreview && categoryForm.imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(categoryForm.imagePreview);
+    }
     dispatch(closeModal("categoryModal"));
     dispatch(setEditingCategory(null));
-    setCategoryForm({ id: "", name: "", description: "", itemCount: "", image: "" });
+    setCategoryForm({ 
+      id: "", 
+      name: "", 
+      description: "", 
+      itemCount: "", 
+      image: "",
+      imageFile: null,
+      imagePreview: "",
+      hasQuotes: false
+    });
   };
 
   const handleCloseItemModal = () => {
+    // Clean up blob URL if it exists
+    if (itemForm.imagePreview && itemForm.imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(itemForm.imagePreview);
+    }
     dispatch(closeModal("itemModal"));
     dispatch(setEditingItem(null));
-    setItemForm({ name: "", description: "", price: "", image: "" });
+    setItemForm({ 
+      name: "", 
+      description: "", 
+      price: "", 
+      image: "",
+      imageFile: null,
+      imagePreview: ""
+    });
   };
 
   const handleCloseItemsViewModal = () => {
@@ -486,9 +569,9 @@ const CategoriesScreen = () => {
                     Category Image
                   </label>
                   <div className="flex items-center gap-3">
-                    {categoryForm.image && (
+                    {(categoryForm.imagePreview || categoryForm.image) && (
                       <img
-                        src={categoryForm.image}
+                        src={categoryForm.imagePreview || categoryForm.image}
                         alt="Preview"
                         className="w-16 h-16 object-cover rounded-lg"
                       />
@@ -696,9 +779,9 @@ const CategoriesScreen = () => {
                     Item Image
                   </label>
                   <div className="flex items-center gap-3">
-                    {itemForm.image && (
+                    {(itemForm.imagePreview || itemForm.image) && (
                       <img
-                        src={itemForm.image}
+                        src={itemForm.imagePreview || itemForm.image}
                         alt="Preview"
                         className="w-16 h-16 object-cover rounded-lg"
                       />

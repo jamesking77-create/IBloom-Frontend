@@ -12,9 +12,11 @@ const createFormData = (data) => {
   Object.keys(data).forEach((key) => {
     if (key === "items" && Array.isArray(data[key])) {
       formData.append(key, JSON.stringify(data[key]));
-    } else if (key === "imageFile" && data[key] instanceof File) {
-      formData.append("image", data[key]); // send as 'image'
-    } else if (key !== "imagePreview") {
+    } else if (key === "image" && data[key] instanceof File) {
+      // Handle file upload for image field
+      formData.append("image", data[key]);
+    } else if (key !== "imagePreview" && key !== "imageFile") {
+      // Skip preview and file fields, include everything else
       formData.append(key, data[key]);
     }
   });
@@ -48,8 +50,10 @@ const createCategoryAPI = async (categoryData) => {
   const config = {};
   let data;
 
-  // Check if we have file upload
-  if (categoryData.image instanceof File) {
+  // Check if we have file upload (any File object in the data)
+  const hasFile = Object.values(categoryData).some(value => value instanceof File);
+
+  if (hasFile) {
     data = createFormData(categoryData);
     config.headers = {
       "Content-Type": "multipart/form-data",
@@ -58,6 +62,7 @@ const createCategoryAPI = async (categoryData) => {
   } else {
     data = categoryData;
     config.headers = {
+      "Content-Type": "application/json",
       ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` }),
     };
   }
@@ -70,8 +75,10 @@ const updateCategoryAPI = async (categoryId, categoryData) => {
   const config = {};
   let data;
 
-  // Check if we have file upload
-  if (categoryData.image instanceof File) {
+  // Check if we have file upload (any File object in the data)
+  const hasFile = Object.values(categoryData).some(value => value instanceof File);
+
+  if (hasFile) {
     data = createFormData(categoryData);
     config.headers = {
       "Content-Type": "multipart/form-data",
@@ -80,6 +87,7 @@ const updateCategoryAPI = async (categoryId, categoryData) => {
   } else {
     data = categoryData;
     config.headers = {
+      "Content-Type": "application/json",
       ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` }),
     };
   }
@@ -103,43 +111,119 @@ const deleteCategoryAPI = async (categoryId) => {
   return response?.data?.data?.deletedCategory;
 };
 
-// Mock item API functions (since your backend handles items within categories)
+// Item API functions - Fixed to handle file uploads properly
 const createItemAPI = async (categoryId, itemData) => {
   // Get current category
   const currentCategory = await fetchCategoryByIdAPI(categoryId);
+  
+  // Create new item with proper ID generation
   const newItem = {
     id: Date.now(),
-    ...itemData,
+    name: itemData.name,
+    description: itemData.description,
+    price: itemData.price,
   };
+
+  // Mark this item as needing the uploaded image if it's a file
+  if (itemData.image instanceof File) {
+    newItem._needsUploadedImage = true;
+  } else if (itemData.image && typeof itemData.image === 'string') {
+    newItem.image = itemData.image;
+  }
 
   // Add item to category's items array
   const updatedItems = [...(currentCategory.items || []), newItem];
 
-  // Update category with new items
-  const updatedCategory = await updateCategoryAPI(categoryId, {
-    items: updatedItems,
-  });
+  // Check if we have a file to upload
+  const hasFile = itemData.image instanceof File;
+  
+  let updatedCategory;
+  if (hasFile) {
+    // Use FormData for file upload - backend will handle the image and update items
+    const formData = new FormData();
+    formData.append('items', JSON.stringify(updatedItems));
+    formData.append('image', itemData.image); // Backend will upload this to Cloudinary
+    
+    const config = {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` }),
+      },
+    };
+    
+    const response = await put(`/api/services/categories/${categoryId}`, formData, config);
+    updatedCategory = response?.data?.data?.category;
+  } else {
+    // Regular JSON update
+    updatedCategory = await updateCategoryAPI(categoryId, { items: updatedItems });
+  }
 
-  return { categoryId, item: newItem, category: updatedCategory };
+  // Find the newly created item from the response
+  const createdItem = updatedCategory.items[updatedCategory.items.length - 1];
+
+  return { categoryId, item: createdItem, category: updatedCategory };
 };
 
 const updateItemAPI = async (categoryId, itemId, itemData) => {
   // Get current category
   const currentCategory = await fetchCategoryByIdAPI(categoryId);
 
-  // Update the specific item
+  // Find the item to update and prepare updated data
+  const itemToUpdate = currentCategory.items.find(item => item.id === itemId);
+  if (!itemToUpdate) {
+    throw new Error('Item not found');
+  }
+
+  const updatedItemData = {
+    ...itemToUpdate,
+    name: itemData.name,
+    description: itemData.description,
+    price: itemData.price,
+  };
+
+  // Only include existing image URL if no new file is being uploaded
+  if (itemData.image instanceof File) {
+    // Mark this item as needing the uploaded image
+    updatedItemData._needsUploadedImage = true;
+  } else if (itemData.image && typeof itemData.image === 'string') {
+    updatedItemData.image = itemData.image;
+  }
+
+  // Update the specific item in the array
   const updatedItems = currentCategory.items.map((item) =>
-    item.id === itemId ? { ...item, ...itemData } : item
+    item.id === itemId ? updatedItemData : item
   );
 
-  // Update category with modified items
-  const updatedCategory = await updateCategoryAPI(categoryId, {
-    items: updatedItems,
-  });
+  // Check if we have a file to upload
+  const hasFile = itemData.image instanceof File;
+  
+  let updatedCategory;
+  if (hasFile) {
+    // Use FormData for file upload
+    const formData = new FormData();
+    formData.append('items', JSON.stringify(updatedItems));
+    formData.append('image', itemData.image); // Backend will upload this to Cloudinary
+    
+    const config = {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...(getAuthToken() && { Authorization: `Bearer ${getAuthToken()}` }),
+      },
+    };
+    
+    const response = await put(`/api/services/categories/${categoryId}`, formData, config);
+    updatedCategory = response?.data?.data?.category;
+  } else {
+    // Regular JSON update
+    updatedCategory = await updateCategoryAPI(categoryId, { items: updatedItems });
+  }
+
+  // Find the updated item from the response
+  const updatedItem = updatedCategory.items.find(item => item.id === itemId);
 
   return {
     categoryId,
-    item: { id: itemId, ...itemData },
+    item: updatedItem,
     category: updatedCategory,
   };
 };

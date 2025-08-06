@@ -197,6 +197,27 @@ const HomePage = () => {
     (state) => state.categories
   );
 
+  // Helper function to generate map URL based on location
+  const getMapUrl = (location) => {
+    if (!location) {
+      // Fallback to default location
+      return "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.789!2d3.4347!3d6.4548!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103bf50c5b1f5b5b%3A0x2d4e8f6a7c9b1234!2s178B%20Corporation%20Drive%2C%20Dolphin%20Estate%2C%20Ikoyi%2C%20Lagos%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1735649200";
+    }
+    
+    // Create a search-based embed URL that doesn't require API key
+    const encodedLocation = encodeURIComponent(location);
+    return `https://maps.google.com/maps?width=100%25&height=600&hl=en&q=${encodedLocation}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+  };
+
+  // Helper function to get Google Maps directions URL
+  const getDirectionsUrl = (location) => {
+    if (!location) {
+      return "https://maps.google.com/dir/?api=1&destination=178B+Corporation+Drive+Dolphin+Estate+Ikoyi+Lagos+Nigeria";
+    }
+    const encodedLocation = encodeURIComponent(location);
+    return `https://maps.google.com/dir/?api=1&destination=${encodedLocation}`;
+  };
+
   // Optimized Intersection Observer
   useEffect(() => {
     if (categoriesLoading) return;
@@ -742,8 +763,6 @@ const HomePage = () => {
         </div>
       </div>
 
-
-
       {/* Categories Section */}
       <div
         ref={categoriesRef}
@@ -898,7 +917,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Company Location Map Section */}
+      {/* Company Location Map Section - Now uses profile data */}
       <div
         data-animate="location-map"
         className={`py-16 bg-gradient-to-br from-gray-100 to-gray-50 relative overflow-hidden contain-layout ${
@@ -916,10 +935,10 @@ const HomePage = () => {
             <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto mt-4 rounded-full"></div>
           </div>
           
-          {/* Full Width Map */}
+          {/* Full Width Map - Now Dynamic */}
           <div className="w-full h-96 rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 relative mb-12">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.789!2d3.4347!3d6.4548!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103bf50c5b1f5b5b%3A0x2d4e8f6a7c9b1234!2s178B%20Corporation%20Drive%2C%20Dolphin%20Estate%2C%20Ikoyi%2C%20Lagos%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1735649200"
+              src={getMapUrl(userData?.location)}
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -927,16 +946,22 @@ const HomePage = () => {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               className="w-full h-full"
-              title="Company Location - 178B Corporation Drive, Dolphin Estate, Ikoyi, Lagos"
+              title={`Company Location - ${userData?.location || "Default Location"}`}
             ></iframe>
+            
+            {/* Dynamic Location Overlay */}
             <div className="absolute top-4 left-4 glass-effect px-4 py-2 rounded-full text-sm font-medium text-gray-700">
-              📍 {userData.location || "178B Corporation Drive, Dolphin Estate, Ikoyi"}
+              📍 {userData?.location || "178B Corporation Drive, Dolphin Estate, Ikoyi"}
             </div>
+            
+            {/* Dynamic Directions Link */}
             <div className="absolute bottom-4 right-4 glass-effect px-3 py-1 rounded-full text-xs text-gray-600">
-              <a href="https://maps.google.com/dir/?api=1&destination=178B+Corporation+Drive+Dolphin+Estate+Ikoyi+Lagos+Nigeria" 
-                 target="_blank" 
-                 rel="noopener noreferrer"
-                 className="hover:text-blue-600 transition-colors">
+              <a 
+                href={getDirectionsUrl(userData?.location)} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-blue-600 transition-colors"
+              >
                 Get Directions →
               </a>
             </div>
@@ -970,7 +995,6 @@ const HomePage = () => {
           </div>
         </div>
       </div>
-
 
       {/* Company Info Section */}
       {userData.joinDate && (

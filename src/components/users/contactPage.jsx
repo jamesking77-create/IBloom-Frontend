@@ -66,34 +66,68 @@ const ContactPage = () => {
     }
   };
 
+  // Helper function to generate map URL based on location
+  const getMapUrl = (location) => {
+    if (!location) {
+      // Fallback to default location
+      return "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.789!2d3.4347!3d6.4548!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103bf50c5b1f5b5b%3A0x2d4e8f6a7c9b1234!2s178B%20Corporation%20Drive%2C%20Dolphin%20Estate%2C%20Ikoyi%2C%20Lagos%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1735649200";
+    }
+    
+    // Create a search-based embed URL that doesn't require API key
+    const encodedLocation = encodeURIComponent(location);
+    return `https://maps.google.com/maps?width=100%25&height=600&hl=en&q=${encodedLocation}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+  };
+
+  // Helper function to get Google Maps directions URL
+  const getDirectionsUrl = (location) => {
+    if (!location) {
+      return "https://maps.google.com/dir/?api=1&destination=178B+Corporation+Drive+Dolphin+Estate+Ikoyi+Lagos+Nigeria";
+    }
+    const encodedLocation = encodeURIComponent(location);
+    return `https://maps.google.com/dir/?api=1&destination=${encodedLocation}`;
+  };
+
+  // Helper function to get Google Maps search URL
+  const getLocationSearchUrl = (location) => {
+    if (!location) {
+      return 'https://maps.google.com/?q=Corporation+Drive+Dolphin+Estate+Ikoyi+Lagos';
+    }
+    const encodedLocation = encodeURIComponent(location);
+    return `https://maps.google.com/?q=${encodedLocation}`;
+  };
+
   const contactInfo = [
     {
       icon: Phone,
       title: 'Phone',
-      details: userData?.phone || '0817-225-8085',
-      href: `tel:${userData?.phone || '0817-225-8085'}`,
-      color: 'text-green-600'
+      details: userData?.phone || 'No phone number available',
+      href: userData?.phone ? `tel:${userData.phone}` : '#',
+      color: 'text-green-600',
+      available: !!userData?.phone
     },
     {
       icon: Mail,
       title: 'Email',
-      details: userData?.email || 'ibloomrentals@gmail.com',
-      href: `mailto:${userData?.email || 'ibloomrentals@gmail.com'}`,
-      color: 'text-blue-600'
+      details: userData?.email || 'No email available',
+      href: userData?.email ? `mailto:${userData.email}` : '#',
+      color: 'text-blue-600',
+      available: !!userData?.email
     },
     {
       icon: MapPin,
       title: 'Location',
-      details: userData?.location || 'No 178B Corporation Drive, Dolphin Estate, Ikoyi, Lagos',
-      href: 'https://maps.google.com/?q=Corporation+Drive+Dolphin+Estate+Ikoyi+Lagos',
-      color: 'text-red-600'
+      details: userData?.location || 'No location available',
+      href: getLocationSearchUrl(userData?.location),
+      color: 'text-red-600',
+      available: !!userData?.location
     },
     {
       icon: Clock,
       title: 'Business Hours',
       details: 'Mon - Sat: 8AM - 8PM',
       href: '#',
-      color: 'text-purple-600'
+      color: 'text-purple-600',
+      available: true
     }
   ];
 
@@ -137,19 +171,27 @@ const ContactPage = () => {
             {contactInfo.map((info, index) => (
               <div
                 key={index}
-                className={`bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl border border-gray-100 text-center group transform transition-all duration-500 hover:-translate-y-2 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
+                className={`bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl border border-gray-100 text-center group transform transition-all duration-500 hover:-translate-y-2 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'} ${!info.available ? 'opacity-60' : ''}`}
                 style={{ transitionDelay: `${index * 150}ms` }}
               >
                 <div className={`w-12 h-12 ${info.color} bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
                   <info.icon className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">{info.title}</h3>
-                <a
-                  href={info.href}
-                  className="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm"
-                >
-                  {info.details}
-                </a>
+                {info.available && info.href !== '#' ? (
+                  <a
+                    href={info.href}
+                    target={info.title === 'Location' ? '_blank' : '_self'}
+                    rel={info.title === 'Location' ? 'noopener noreferrer' : ''}
+                    className="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm break-words"
+                  >
+                    {info.details}
+                  </a>
+                ) : (
+                  <span className="text-gray-600 text-sm break-words">
+                    {info.details}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -303,31 +345,49 @@ const ContactPage = () => {
               <div className="h-full flex flex-col">
                 {/* Interactive Map */}
                 <div className="rounded-2xl h-64 mb-6 overflow-hidden shadow-lg border border-gray-200 relative group">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.789!2d3.4347!3d6.4548!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103bf50c5b1f5b5b%3A0x2d4e8f6a7c9b1234!2s178B%20Corporation%20Drive%2C%20Dolphin%20Estate%2C%20Ikoyi%2C%20Lagos%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1735649200"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="IBLOOM Location - 178B Corporation Drive, Dolphin Estate, Ikoyi, Lagos"
-                  ></iframe>
+                  {userData?.location ? (
+                    <iframe
+                      src={getMapUrl(userData.location)}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen=""
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title={`IBLOOM Location - ${userData.location}`}
+                    ></iframe>
+                  ) : (
+                    // Fallback map when no location data is available
+                    <iframe
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.789!2d3.4347!3d6.4548!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103bf50c5b1f5b5b%3A0x2d4e8f6a7c9b1234!2s178B%20Corporation%20Drive%2C%20Dolphin%20Estate%2C%20Ikoyi%2C%20Lagos%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1735649200"
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen=""
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="IBLOOM Location - Default Location"
+                    ></iframe>
+                  )}
                   
                   {/* Map overlay with company info */}
                   <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg">
-                    <p className="text-sm font-semibold text-gray-800">IBLOOM Rentals</p>
-                    <p className="text-xs text-gray-600">No 178B Corporation Drive</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {userData?.name || 'IBLOOM Rentals'}
+                    </p>
+                    <p className="text-xs text-gray-600 max-w-xs truncate">
+                      {userData?.location ? userData.location.split(',')[0] : 'No 178B Corporation Drive'}
+                    </p>
                   </div>
                 </div>
                 
                 {/* Get Directions Button */}
                 <div className="mb-8">
                   <a
-                    href="https://maps.google.com/dir/?api=1&destination=178B+Corporation+Drive+Dolphin+Estate+Ikoyi+Lagos+Nigeria"
+                    href={getDirectionsUrl(userData?.location)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center transform hover:scale-105 transition-all duration-300 shadow-lg"
+                    className={`w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center transform hover:scale-105 transition-all duration-300 shadow-lg ${!userData?.location ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     <MapPin className="w-5 h-5 mr-3" />
                     Get Directions
@@ -342,7 +402,7 @@ const ContactPage = () => {
                     </h3>
                     <p className="text-gray-600">
                       We respond to all inquiries within 24 hours. For urgent requests, 
-                      please call us directly at {userData?.phone || '0817-225-8085'}.
+                      please call us directly {userData?.phone ? `at ${userData.phone}` : 'via the contact form'}.
                     </p>
                   </div>
 

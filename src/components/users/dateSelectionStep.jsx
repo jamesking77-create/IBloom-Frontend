@@ -1,4 +1,5 @@
-// screens/user/components/DateSelectionStep.js
+// screens/user/components/DateSelectionStep.js - FIXED VERSION WITH CORRECT PRICE DISPLAY + EDITABLE QUANTITIES
+// NEW FEATURE: Users can now directly edit quantities by clicking on the quantity input field
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -25,6 +26,7 @@ import {
   removeFromCart,
   incrementQuantity,
   decrementQuantity,
+  updateQuantity,
   setSelectedDates,
   clearCart,
   formatPrice,
@@ -52,6 +54,7 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
   const [errors, setErrors] = useState({});
   const [isAnimating, setIsAnimating] = useState(false);
   const [confirmModal, setConfirmModal] = useState(null);
+  const [quantityInputs, setQuantityInputs] = useState({}); // Track individual quantity inputs
 
   // Initialize form with Redux state
   useEffect(() => {
@@ -76,6 +79,14 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
   const currentYear = today.getFullYear();
   const currentMonthIndex = today.getMonth();
 
+  // FIXED: Helper function to safely get numeric price
+  const getNumericPrice = (price) => {
+    if (typeof price === 'string') {
+      return parseFloat(price.replace(/[₦\s,]/g, '')) || 0;
+    }
+    return parseFloat(price) || 0;
+  };
+
   // Handle cart operations using Redux actions
   const handleRemoveItem = (cartId) => {
     setConfirmModal({ type: "remove", id: cartId });
@@ -83,12 +94,74 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
 
   const handleIncrementQuantity = (cartId) => {
     console.log("Incrementing quantity for cartId:", cartId);
+    // Clear local input state when using buttons
+    setQuantityInputs(prev => {
+      const newState = { ...prev };
+      delete newState[cartId];
+      return newState;
+    });
     dispatch(incrementQuantity(cartId));
   };
 
   const handleDecrementQuantity = (cartId) => {
     console.log("Decrementing quantity for cartId:", cartId);
+    // Clear local input state when using buttons
+    setQuantityInputs(prev => {
+      const newState = { ...prev };
+      delete newState[cartId];
+      return newState;
+    });
     dispatch(decrementQuantity(cartId));
+  };
+
+  // NEW: Handle direct quantity input with improved validation
+  const handleQuantityInputChange = (cartId, newQuantity) => {
+    const rawValue = newQuantity.toString().trim();
+    
+    // Allow empty input temporarily (user is typing)
+    if (rawValue === '') {
+      setQuantityInputs(prev => ({ ...prev, [cartId]: '' }));
+      return;
+    }
+    
+    const quantity = parseInt(rawValue);
+    console.log("Direct quantity change for cartId:", cartId, "new quantity:", quantity);
+    
+    // Validate quantity
+    if (isNaN(quantity)) {
+      return; // Don't update if not a number
+    }
+    
+    if (quantity < 1) {
+      setQuantityInputs(prev => ({ ...prev, [cartId]: '1' }));
+      dispatch(updateQuantity({ itemId: cartId, quantity: 1 }));
+      return;
+    }
+    
+    if (quantity > 999) {
+      setQuantityInputs(prev => ({ ...prev, [cartId]: '999' }));
+      dispatch(updateQuantity({ itemId: cartId, quantity: 999 }));
+      return;
+    }
+    
+    // Update local input state and Redux
+    setQuantityInputs(prev => ({ ...prev, [cartId]: quantity.toString() }));
+    dispatch(updateQuantity({ itemId: cartId, quantity }));
+  };
+
+  // Handle quantity input focus
+  const handleQuantityInputFocus = (cartId, currentQuantity) => {
+    setQuantityInputs(prev => ({ ...prev, [cartId]: currentQuantity.toString() }));
+  };
+
+  // Handle quantity input blur
+  const handleQuantityInputBlur = (cartId, currentQuantity) => {
+    const inputValue = quantityInputs[cartId];
+    
+    if (!inputValue || inputValue === '' || isNaN(parseInt(inputValue))) {
+      // Reset to current quantity if invalid
+      setQuantityInputs(prev => ({ ...prev, [cartId]: currentQuantity.toString() }));
+    }
   };
 
   const handleClearCart = () => {
@@ -159,6 +232,7 @@ const generateCalendarDays = () => {
 
   return days;
 };
+
 const handleDateClick = (dateString) => {
   console.log('📅 Date clicked:', dateString, 'Multi-day:', isMultiDay);
   
@@ -248,6 +322,17 @@ const handleNext = () => {
 
   return (
     <div className="space-y-4 sm:space-y-8 animate-fadeIn px-2 sm:px-0">
+      {/* Hide number input spinners */}
+      <style jsx>{`
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
+      `}</style>
       {/* Enhanced Cart Summary - Mobile Optimized */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-8 border border-white/20 transform transition-all duration-500 hover:shadow-2xl">
         {/* Mobile Cart Header */}
@@ -308,7 +393,9 @@ const handleNext = () => {
             {cartItems.map((item, index) => {
               const cartId = item.cartId || item.id || `cart-${index}`;
               const itemName = item.itemName || item.name || "Unknown Item";
-              const itemPrice = item.price || 0;
+              
+              // FIXED: Ensure proper price handling
+              const itemPrice = getNumericPrice(item.price);
               const itemQuantity = item.quantity || 1;
               const itemImage =
                 item.image ||
@@ -316,6 +403,13 @@ const handleNext = () => {
                 "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
               const itemDuration = item.duration || 1;
               const orderMode = item.orderMode || "booking";
+
+              console.log('🛒 Rendering cart item:', {
+                name: itemName,
+                originalPrice: item.price,
+                processedPrice: itemPrice,
+                quantity: itemQuantity
+              });
 
               return (
                 <div
@@ -345,6 +439,7 @@ const handleNext = () => {
                         <h3 className="font-semibold text-gray-800 text-sm sm:text-lg mb-1 truncate">
                           {itemName}
                         </h3>
+                        {/* FIXED: Use formatPrice with clean number */}
                         <p className="text-green-600 font-bold text-base sm:text-xl">
                           {formatPrice(itemPrice)}
                         </p>
@@ -352,18 +447,51 @@ const handleNext = () => {
                           Duration: {itemDuration} {orderMode === "booking" ? "hour(s)" : "day(s)"}
                         </p>
                         
-                        {/* Mobile Quantity Controls */}
+                        {/* Mobile Quantity Controls - ENHANCED WITH INPUT */}
                         <div className="flex items-center justify-between mt-2 sm:mt-2">
-                          <div className="flex items-center">
+                          <div className="flex items-center group">
                             <button
                               onClick={() => handleDecrementQuantity(cartId)}
-                              className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors duration-200"
+                              disabled={itemQuantity <= 1}
+                              className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors duration-200"
                             >
-                              <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                             </button>
-                            <span className="mx-2 sm:mx-4 font-semibold text-gray-700 min-w-[1.5rem] sm:min-w-[2rem] text-center text-sm sm:text-base">
-                              {itemQuantity}
-                            </span>
+                            
+                            {/* ENHANCED: Editable quantity input with improved UX */}
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="1"
+                                max="999"
+                                value={quantityInputs[cartId] !== undefined ? quantityInputs[cartId] : itemQuantity}
+                                onChange={(e) => handleQuantityInputChange(cartId, e.target.value)}
+                                onFocus={(e) => {
+                                  handleQuantityInputFocus(cartId, itemQuantity);
+                                  e.target.select(); // Select all text when focused
+                                }}
+                                onBlur={() => handleQuantityInputBlur(cartId, itemQuantity)}
+                                onKeyPress={(e) => {
+                                  // Allow Enter to blur the input
+                                  if (e.key === 'Enter') {
+                                    e.target.blur();
+                                  }
+                                  // Only allow numbers
+                                  if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+                                    e.preventDefault();
+                                  }
+                                }}
+                                className="mx-2 sm:mx-4 w-12 sm:w-14 text-center font-semibold text-gray-700 text-sm sm:text-base bg-white border border-gray-200 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 hover:border-gray-300"
+                                title="Click to edit quantity directly"
+                              />
+                              {/* Subtle hint for desktop users */}
+                              <div className="hidden sm:block absolute -bottom-5 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                                  Click to edit
+                                </div>
+                              </div>
+                            </div>
+                            
                             <button
                               onClick={() => handleIncrementQuantity(cartId)}
                               className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200"
@@ -372,6 +500,7 @@ const handleNext = () => {
                             </button>
                           </div>
                           <div className="flex items-center space-x-2">
+                            {/* FIXED: Calculate total properly */}
                             <span className="text-gray-600 text-xs sm:text-sm">
                               = {formatPrice(itemPrice * itemQuantity)}
                             </span>

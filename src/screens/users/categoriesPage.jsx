@@ -1,4 +1,4 @@
-// screens/user/CategoriesPage.js
+// screens/user/CategoriesPage.js - COMPLETE FIXED VERSION WITH ITEM DETAILS MODAL
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -6,7 +6,8 @@ import { ArrowLeft, Package, Search, Filter } from 'lucide-react';
 import { fetchCategories } from '../../store/slices/categoriesSlice';
 import { addToCart, selectCartItems, openCart } from '../../store/slices/cart-slice';
 import FloatingChatBox from '../../UI/floatingChatBox';
-import ItemAddedPopup from '../../UI/itemAddedPopup';   
+import ItemAddedPopup from '../../UI/itemAddedPopup';
+import ItemDetailsModal from '../../UI/itemDetailsModal';
 
 const CategoriesPage = () => {
   const { categoryId } = useParams();
@@ -19,6 +20,8 @@ const CategoriesPage = () => {
   const [filteredItems, setFilteredItems] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [modalItem, setModalItem] = useState(null);
 
   // Get categories data from Redux store
   const { categories, isLoading } = useSelector((state) => state.categories);
@@ -57,10 +60,18 @@ const CategoriesPage = () => {
         items.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'price-low':
-        items.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+        items.sort((a, b) => {
+          const priceA = parseFloat(a.price.toString().replace(/[₦\s,]/g, ''));
+          const priceB = parseFloat(b.price.toString().replace(/[₦\s,]/g, ''));
+          return priceA - priceB;
+        });
         break;
       case 'price-high':
-        items.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+        items.sort((a, b) => {
+          const priceA = parseFloat(a.price.toString().replace(/[₦\s,]/g, ''));
+          const priceB = parseFloat(b.price.toString().replace(/[₦\s,]/g, ''));
+          return priceB - priceA;
+        });
         break;
       default:
         break;
@@ -69,28 +80,104 @@ const CategoriesPage = () => {
     setFilteredItems(items);
   }, [category, searchQuery, sortBy]);
 
+  // UPDATED: Handle item click to open modal
   const handleItemClick = (item) => {
-    console.log('Item clicked:', item);
-    // You can navigate to an item detail page or open a modal here
+    console.log('Opening details modal for item:', item);
+    setModalItem(item);
+    setShowDetailsModal(true);
   };
 
+  // NEW: Handle modal close
+  const handleCloseModal = () => {
+    setShowDetailsModal(false);
+    setModalItem(null);
+  };
+
+  // FIXED: Proper price formatting function
+  const formatPrice = (price) => {
+    if (!price) return '₦0';
+    
+    let numericPrice;
+    if (typeof price === 'string') {
+      const cleanPrice = price.replace(/[₦\s]/g, '');
+      numericPrice = parseFloat(cleanPrice.replace(/,/g, ''));
+    } else {
+      numericPrice = parseFloat(price);
+    }
+    
+    if (isNaN(numericPrice)) return '₦0';
+    return `₦${numericPrice.toLocaleString('en-NG')}`;
+  };
+
+  // FIXED: Proper price processing before adding to cart
   const addToCartProcess = (item) => {
-    // Check if cart is empty
+    console.log('🛒 Original item:', item);
+    console.log('🛒 Original price:', item.price, typeof item.price);
+    
+    let processedPrice;
+    if (typeof item.price === 'string') {
+      processedPrice = parseFloat(item.price.replace(/[₦\s,]/g, ''));
+    } else {
+      processedPrice = parseFloat(item.price);
+    }
+    
+    if (isNaN(processedPrice) || processedPrice <= 0) {
+      console.error('❌ Invalid price detected:', item.price);
+      alert('Error: Invalid item price. Please contact support.');
+      return;
+    }
+    
+    const processedItem = {
+      ...item,
+      price: processedPrice
+    };
+    
+    console.log('✅ Processed item price:', processedPrice);
+    
     const isCartEmpty = cartItems.length === 0;
     
     if (isCartEmpty) {
-      // If cart is empty, navigate to booking page
-      navigate('/eventbooking', { state: { selectedItem: item, category: category } });
+      navigate('/eventbooking', { 
+        state: { 
+          selectedItem: processedItem, 
+          category: category 
+        } 
+      });
     } else {
-      // If cart has items, add to cart and show popup
+      dispatch(addToCart({ 
+        item: processedItem,
+        dates: null,
+        allowDuplicates: false 
+      }));
+      
+      setSelectedItem(processedItem);
+      setShowPopup(true);
+    }
+  };
+
+  // NEW: Handle add to cart from modal
+  const handleModalAddToCart = (item) => {
+    console.log('🛒 Adding to cart from modal:', item);
+    
+    const isCartEmpty = cartItems.length === 0;
+    
+    if (isCartEmpty) {
+      navigate('/eventbooking', { 
+        state: { 
+          selectedItem: item, 
+          category: category 
+        } 
+      });
+    } else {
       dispatch(addToCart({ 
         item: item,
-        dates: null, // Will use default dates from cart state
+        dates: null,
         allowDuplicates: false 
       }));
       
       setSelectedItem(item);
       setShowPopup(true);
+      handleCloseModal(); // Close modal after adding to cart
     }
   };
 
@@ -103,12 +190,6 @@ const CategoriesPage = () => {
     setShowPopup(false);
     setSelectedItem(null);
     dispatch(openCart());
-  };
-
-  const formatPrice = (price) => {
-    if (!price) return '₦0';
-    const numericPrice = parseFloat(price.toString().replace(/[^\d.]/g, ''));
-    return `₦${numericPrice.toLocaleString('en-NG')}`;
   };
 
   if (isLoading && !category) {
@@ -258,7 +339,7 @@ const CategoriesPage = () => {
                       <img
                         src={item.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop'}
                         alt={item.name}
-                        className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer"
                         onError={(e) => {
                           e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop';
                         }}
@@ -275,7 +356,8 @@ const CategoriesPage = () => {
                     </div>
                     
                     <div className="p-6">
-                      <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300 cursor-pointer"
+                          onClick={() => handleItemClick(item)}>
                         {item.name}
                       </h3>
                       <p className="text-gray-600 mb-4 line-clamp-2">
@@ -306,12 +388,22 @@ const CategoriesPage = () => {
       </div>
 
       {/* Item Added Popup */}
-    <ItemAddedPopup 
-  isOpen={showPopup}
-  onClose={handleClosePopup}
-  item={selectedItem}
-  category={category}
-/>
+      <ItemAddedPopup 
+        isOpen={showPopup}
+        onClose={handleClosePopup}
+        item={selectedItem}
+        category={category}
+        onViewCart={handleViewCart}
+      />
+
+      {/* Item Details Modal */}
+      <ItemDetailsModal
+        isOpen={showDetailsModal}
+        onClose={handleCloseModal}
+        item={modalItem}
+        category={category}
+        onAddToCart={handleModalAddToCart}
+      />
 
       {/* Floating Chat Box Component */}
       <FloatingChatBox whatsappNumber="+2348142186524" />

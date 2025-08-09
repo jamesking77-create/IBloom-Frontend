@@ -774,9 +774,7 @@ const EventBookingPage = () => {
               Your event booking has been sent successfully!
             </p>
             
-            <p className="text-gray-500 text-sm animate-pulse">
-              Redirecting you to home page in a few seconds...
-            </p>
+           
 
             {/* Enhanced manual continue button with comprehensive clearing */}
             <div className="mt-6 space-y-3">

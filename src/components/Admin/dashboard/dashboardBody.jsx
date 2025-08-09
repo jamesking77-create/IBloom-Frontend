@@ -2,11 +2,13 @@ import React from 'react';
 
 const DashboardBody = ({ children, isSidebarOpen }) => {
   return (
-    <div className="h-[92%] flex flex-col">
-      <div className="bg-gray-50 shadow-sm rounded-lg border border-gray-200 p-6  h-[80%]  overflow-auto mx-2 my-2 flex-1">
-        {children}
+    <main className="h-full overflow-hidden">
+      <div className="h-full bg-white/70 backdrop-blur-sm  border-t border-gray-200/50 shadow-lg overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 lg:p-8">
+          {children}
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 

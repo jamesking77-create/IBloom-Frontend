@@ -3,10 +3,38 @@ import {
   createAsyncThunk,
   createSelector,
 } from "@reduxjs/toolkit";
-import { get,post } from "../../utils/api";
+import { get, post } from "../../utils/api";
 
 const getAuthToken = () => {
   return localStorage.getItem("token") || sessionStorage.getItem("token");
+};
+
+// Helper function to create form data for file uploads (copied from categories)
+const createFormData = (data) => {
+  const formData = new FormData();
+  
+  Object.keys(data).forEach((key) => {
+    if (key === "attachments" && Array.isArray(data[key])) {
+      // CRITICAL FIX: Handle attachments array - add each file individually
+      data[key].forEach((attachment) => {
+        if (attachment.file instanceof File) {
+          // Append the actual File object, not the attachment wrapper
+          formData.append("attachments", attachment.file);
+        }
+      });
+    } else if (key === "recipients" && Array.isArray(data[key])) {
+      // For broadcast recipients, stringify the array
+      formData.append(key, JSON.stringify(data[key]));
+    } else if (data[key] instanceof File) {
+      // Handle direct file upload
+      formData.append(key, data[key]);
+    } else if (key !== "imagePreview" && key !== "imageFile") {
+      // Include all other fields as strings
+      formData.append(key, String(data[key]));
+    }
+  });
+  
+  return formData;
 };
 
 // Async thunk for fetching mails from bookings - FIXED to use new endpoint
@@ -17,8 +45,6 @@ export const fetchBookingMails = createAsyncThunk(
       console.log("Fetching booking emails from API...");
       const response = await get("/api/bookings/emails");
       console.log("API response received:", response?.data);
-
-      // Return the full data object containing { email: [...], stats: {...} }
       return response?.data?.data;
     } catch (error) {
       console.error("Failed to fetch booking emails:", error);
@@ -28,18 +54,48 @@ export const fetchBookingMails = createAsyncThunk(
 );
 
 // Add file to attachments (no upload, just store file)
+// In your Redux slice - update addFileAttachment
 export const addFileAttachment = createAsyncThunk(
   "mailer/addFileAttachment",
   async (file, { rejectWithValue }) => {
     try {
-      console.log("Adding file attachment:", file.name);
+      console.log("Adding file attachment:", file.name, file.type, file.size);
 
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error(`File ${file.name} is too large. Maximum size is 10MB.`);
+      }
+
+      // Validate file type
+      const allowedTypes = [
+        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/plain", "text/csv"
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(`File type ${file.type} is not supported for ${file.name}`);
+      }
+
+      // Create preview URL for images
+      let preview = null;
+      if (file.type.startsWith('image/')) {
+        preview = URL.createObjectURL(file);
+      }
+
+      // Return attachment object with the actual File object
       return {
         id: Date.now() + Math.random(),
         name: file.name,
         size: file.size,
         type: file.type,
-        file: file, // Store the actual file object
+        file: file, // CRITICAL: Keep the actual File object for upload
+        preview: preview, // URL for preview (will be revoked later)
+        lastModified: file.lastModified,
       };
     } catch (error) {
       console.error("Error adding attachment:", error);
@@ -48,7 +104,63 @@ export const addFileAttachment = createAsyncThunk(
   }
 );
 
-// Send individual email WITH files attached - FIXED to use fetch API
+// export const sendIndividualMail = createAsyncThunk(
+//   "mailer/sendIndividualMail",
+//   async (
+//     { email, subject, message, customerName, attachments = [] },
+//     { rejectWithValue }
+//   ) => {
+//     try {
+//       console.log(
+//         "Sending email to:",
+//         email,
+//         "with",
+//         attachments.length,
+//         "attachments"
+//       );
+
+//       const formData = new FormData();
+//       formData.append("to", email);
+//       formData.append("subject", subject);
+//       formData.append("message", message);
+//       formData.append("customerName", customerName);
+
+//       // Add files to FormData
+//       attachments.forEach((attachment) => {
+//         if (attachment.file) {
+//           formData.append("attachments", attachment.file);
+//         }
+//       });
+
+//       const response = await post("/api/mailer/send-individual", formData, {
+//         headers: {
+//           Authorization: `Bearer ${getAuthToken()}`,
+//         },
+//       });
+
+//       console.log("Email sent successfully:", response);
+
+//       return {
+//         email,
+//         subject,
+//         message,
+//         attachments: attachments.map((att) => ({
+//           name: att.name,
+//           size: att.size,
+//           type: att.type,
+//         })),
+//         sentAt: new Date().toISOString(),
+//         customerName,
+//       };
+//     } catch (error) {
+//       console.error("Send email error:", error);
+//       return rejectWithValue(error.message || "Failed to send email");
+//     }
+//   }
+// );
+// In sendIndividualMail function, add more detailed logging:
+
+// FIXED: Send individual email - Following categories pattern
 export const sendIndividualMail = createAsyncThunk(
   "mailer/sendIndividualMail",
   async (
@@ -56,33 +168,71 @@ export const sendIndividualMail = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      console.log(
-        "Sending email to:",
-        email,
-        "with",
-        attachments.length,
-        "attachments"
+      console.log("=== SENDING EMAIL DEBUG ===");
+      console.log("Email to:", email);
+      console.log("Attachments:", attachments.length);
+
+      // Prepare the data payload
+      const emailData = {
+        to: email,
+        subject: subject,
+        message: message,
+        customerName: customerName,
+        attachments: attachments, // This will be processed by createFormData
+      };
+
+      // Check if we have file upload (any File object in attachments)
+      const hasFile = attachments.some(
+        (attachment) => attachment.file instanceof File
       );
 
-      const formData = new FormData();
-      formData.append("to", email);
-      formData.append("subject", subject);
-      formData.append("message", message);
-      formData.append("customerName", customerName);
+      let data;
+      let config = {};
 
-      // Add files to FormData
-      attachments.forEach((attachment) => {
-        if (attachment.file) {
-          formData.append("attachments", attachment.file);
+      if (hasFile) {
+        console.log("Has files - using FormData");
+        data = createFormData(emailData);
+        config = {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            ...(getAuthToken() && {
+              Authorization: `Bearer ${getAuthToken()}`,
+            }),
+          },
+        };
+      } else {
+        console.log("No files - using JSON");
+        // For no files, we still need to format the data properly
+        data = {
+          to: email,
+          subject: subject,
+          message: message,
+          customerName: customerName,
+        };
+        config = {
+          headers: {
+            "Content-Type": "application/json",
+            ...(getAuthToken() && {
+              Authorization: `Bearer ${getAuthToken()}`,
+            }),
+          },
+        };
+      }
+
+      // Debug FormData contents if it's FormData
+      if (hasFile) {
+        console.log("FormData entries:");
+        for (let [key, value] of data.entries()) {
+          if (key === "attachments") {
+            console.log(`${key}:`, value.name, value.size, value.type);
+          } else {
+            console.log(`${key}:`, value);
+          }
         }
-      });
+      }
 
-      const response = await post("/api/mailer/send-individual", formData, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-      });
-
+      // Use your custom post function (like categories do)
+      const response = await post("/api/mailer/send-individual", data, config);
       console.log("Email sent successfully:", response);
 
       return {
@@ -104,7 +254,7 @@ export const sendIndividualMail = createAsyncThunk(
   }
 );
 
-// Send broadcast email WITH files attached - FIXED to use fetch API
+// FIXED: Send broadcast email - Following categories pattern
 export const broadcastMail = createAsyncThunk(
   "mailer/broadcastMail",
   async (
@@ -112,32 +262,68 @@ export const broadcastMail = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      console.log(
-        "Broadcasting email to",
-        recipients.length,
-        "recipients with",
-        attachments.length,
-        "attachments"
+      console.log("=== BROADCASTING EMAIL DEBUG ===");
+      console.log("Recipients:", recipients.length);
+      console.log("Attachments:", attachments.length);
+
+      // Prepare the data payload
+      const emailData = {
+        subject: subject,
+        message: message,
+        recipients: recipients,
+        attachments: attachments, // This will be processed by createFormData
+      };
+
+      // Check if we have file upload (any File object in attachments)
+      const hasFile = attachments.some(
+        (attachment) => attachment.file instanceof File
       );
 
-      const formData = new FormData();
-      formData.append("subject", subject);
-      formData.append("message", message);
-      formData.append("recipients", JSON.stringify(recipients));
+      let data;
+      let config = {};
 
-      // Add files to FormData
-      attachments.forEach((attachment) => {
-        if (attachment.file) {
-          formData.append("attachments", attachment.file);
+      if (hasFile) {
+        console.log("Has files - using FormData");
+        data = createFormData(emailData);
+        config = {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            ...(getAuthToken() && {
+              Authorization: `Bearer ${getAuthToken()}`,
+            }),
+          },
+        };
+      } else {
+        console.log("No files - using JSON");
+        data = {
+          subject: subject,
+          message: message,
+          recipients: JSON.stringify(recipients),
+        };
+        config = {
+          headers: {
+            "Content-Type": "application/json",
+            ...(getAuthToken() && {
+              Authorization: `Bearer ${getAuthToken()}`,
+            }),
+          },
+        };
+      }
+
+      // Debug FormData contents if it's FormData
+      if (hasFile) {
+        console.log("FormData entries:");
+        for (let [key, value] of data.entries()) {
+          if (key === "attachments") {
+            console.log(`${key}:`, value.name, value.size, value.type);
+          } else {
+            console.log(`${key}:`, value);
+          }
         }
-      });
+      }
 
-      const response = await post("/api/mailer/broadcast", formData, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-      });
-
+      // Use your custom post function
+      const response = await post("/api/mailer/broadcast", data, config);
       console.log("Broadcast email sent successfully:", response);
 
       return {
@@ -318,13 +504,13 @@ const mailerSlice = createSlice({
         };
 
         console.log(
-          `✅ Loaded ${emailData.length} real booking emails from database`
+          `Loaded ${emailData.length} real booking emails from database`
         );
       })
       .addCase(fetchBookingMails.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        console.error("❌ Failed to fetch booking emails:", action.payload);
+        console.error("Failed to fetch booking emails:", action.payload);
 
         // Fallback to sample data only when API fails
         console.log("Using fallback sample data");
@@ -340,12 +526,12 @@ const mailerSlice = createSlice({
       .addCase(addFileAttachment.fulfilled, (state, action) => {
         state.uploadingAttachment = false;
         state.mailComposition.attachments.push(action.payload);
-        console.log("✅ File attachment added:", action.payload.name);
+        console.log("File attachment added:", action.payload.name);
       })
       .addCase(addFileAttachment.rejected, (state, action) => {
         state.uploadingAttachment = false;
         state.error = action.payload;
-        console.error("❌ Failed to add attachment:", action.payload);
+        console.error("Failed to add attachment:", action.payload);
       })
 
       // Send individual mail
@@ -378,12 +564,12 @@ const mailerSlice = createSlice({
           isComposing: false,
         };
 
-        console.log("✅ Individual email sent successfully");
+        console.log("Individual email sent successfully");
       })
       .addCase(sendIndividualMail.rejected, (state, action) => {
         state.sendingMail = false;
         state.error = action.payload;
-        console.error("❌ Individual email failed:", action.payload);
+        console.error("Individual email failed:", action.payload);
       })
 
       // Broadcast mail
@@ -417,13 +603,13 @@ const mailerSlice = createSlice({
         };
 
         console.log(
-          `✅ Broadcast email sent to ${action.payload.recipientCount} recipients`
+          `Broadcast email sent to ${action.payload.recipientCount} recipients`
         );
       })
       .addCase(broadcastMail.rejected, (state, action) => {
         state.sendingMail = false;
         state.error = action.payload;
-        console.error("❌ Broadcast email failed:", action.payload);
+        console.error("Broadcast email failed:", action.payload);
       })
 
       // Fetch mail history

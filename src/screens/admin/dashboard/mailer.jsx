@@ -180,49 +180,124 @@ const MailerScreen = () => {
     handleFiles(files);
   };
 
-  const handleFiles = async (files) => {
-    const validFiles = files.filter((file) => {
-      // Check file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        notifyError(`File ${file.name} is too large. Maximum size is 10MB.`);
-        return false;
+  // FAST - Process all files in parallel and batch notifications
+const handleFiles = async (files) => {
+  const validFiles = files.filter((file) => {
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      notifyError(`File ${file.name} is too large. Maximum size is 10MB.`);
+      return false;
+    }
+
+    // Check file type
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png", 
+      "image/gif",
+      "image/webp",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "text/csv",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      notifyError(`File type ${file.type} is not supported for ${file.name}`);
+      return false;
+    }
+
+    return true;
+  });
+
+  if (validFiles.length === 0) return;
+
+  // OPTIMIZED: Process all files in parallel
+  try {
+    const results = await Promise.allSettled(
+      validFiles.map(file => dispatch(addFileAttachment(file)).unwrap())
+    );
+
+    // Batch process results for better performance
+    const successful = [];
+    const failed = [];
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        successful.push(validFiles[index].name);
+      } else {
+        failed.push(validFiles[index].name);
       }
-
-      // Check file type
-      const allowedTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "text/plain",
-        "text/csv",
-      ];
-
-      if (!allowedTypes.includes(file.type)) {
-        notifyError(`File type ${file.type} is not supported for ${file.name}`);
-        return false;
-      }
-
-      return true;
     });
 
-    if (validFiles.length === 0) return;
-
-    // Add files one by one
-    for (const file of validFiles) {
-      try {
-        await dispatch(addFileAttachment(file)).unwrap(); // Changed from uploadAttachment
-        notifySuccess(`${file.name} added successfully`);
-      } catch (err) {
-        notifyError(`Failed to add ${file.name}`);
+    // Single batch notifications instead of one per file
+    if (successful.length > 0) {
+      if (successful.length === 1) {
+        notifySuccess(`${successful[0]} added successfully`);
+      } else {
+        notifySuccess(`${successful.length} files added successfully`);
       }
     }
-  };
+
+    if (failed.length > 0) {
+      if (failed.length === 1) {
+        notifyError(`Failed to add ${failed[0]}`);
+      } else {
+        notifyError(`Failed to add ${failed.length} files`);
+      }
+    }
+
+  } catch (error) {
+    console.error("Error processing files:", error);
+    notifyError("Error processing some files");
+  }
+};
+
+  // const handleFiles = async (files) => {
+  //   const validFiles = files.filter((file) => {
+  //     // Check file size (10MB limit)
+  //     if (file.size > 10 * 1024 * 1024) {
+  //       notifyError(`File ${file.name} is too large. Maximum size is 10MB.`);
+  //       return false;
+  //     }
+
+  //     // Check file type
+  //     const allowedTypes = [
+  //       "image/jpeg",
+  //       "image/png",
+  //       "image/gif",
+  //       "image/webp",
+  //       "application/pdf",
+  //       "application/msword",
+  //       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  //       "application/vnd.ms-excel",
+  //       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  //       "text/plain",
+  //       "text/csv",
+  //     ];
+
+  //     if (!allowedTypes.includes(file.type)) {
+  //       notifyError(`File type ${file.type} is not supported for ${file.name}`);
+  //       return false;
+  //     }
+
+  //     return true;
+  //   });
+
+  //   if (validFiles.length === 0) return;
+
+  //   // Add files one by one
+  //   for (const file of validFiles) {
+  //     try {
+  //       await dispatch(addFileAttachment(file)).unwrap(); // Changed from uploadAttachment
+  //       notifySuccess(`${file.name} added successfully`);
+  //     } catch (err) {
+  //       notifyError(`Failed to add ${file.name}`);
+  //     }
+  //   }
+  // };
 
   const handleDrag = (e) => {
     e.preventDefault();

@@ -749,7 +749,7 @@ const QuoteCategoryItemsScreen = () => {
             className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-6 py-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-medium"
           >
             <Eye className="w-5 h-5" />
-            <span>Preview Quote ({cartCount})</span>
+            <span> Continue  ({cartCount})</span>
             <ChevronRight className="w-4 h-4" />
           </button>
 

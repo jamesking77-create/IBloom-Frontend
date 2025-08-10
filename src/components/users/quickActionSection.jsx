@@ -45,7 +45,7 @@ const QuickActionsSection = ({ navigate }) => {
   }, []);
 
   const handleOrderByDate = () => {
-    console.log("Navigate to /order-by-date");
+      navigate('/warehouseinfo');
   };
 
   const handleBookItems = () => {

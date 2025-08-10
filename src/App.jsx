@@ -1,3 +1,4 @@
+// Updated App.js with Quote Routes
 import { useState, useEffect } from 'react';
 import './App.css';
 import Login from './screens/admin/auth/login';
@@ -23,7 +24,15 @@ import AboutPage from './components/users/aboutUsPage';
 import GalleryPage from './components/users/galleryPage';
 import ContactPage from './components/users/contactPage';
 import FaqPage from './components/users/faqPage';
+import OrderProcessPage from './screens/users/orderProcessPage';
+import WarehouseInfoPage from './screens/users/warehouseInfoPage';
+import SmartCategoriesScreen from './screens/users/smartCategoryScreen';
+import QuoteCategoriesScreen from './screens/users/quoteCategoriesScreen';
+import QuoteCategoryItemsScreen from './screens/users/quoteCategoryItemsScreen';
+import QuoteSuccessScreen from './screens/users/quoteSuccessScreen';
+import CustomerInfoForm from './components/users/customerInfoForm';
 
+// Quote System Components
 
 
 const PrivateRoute = ({ children }) => {
@@ -77,9 +86,17 @@ function AppContent() {
           <Route path="contact" element={<ContactPage />} />
           <Route path="category/:categoryId" element={<CategoriesPage />} />
           <Route path="eventbooking" element={<EventBookingPage />} />
+          <Route path="warehouseinfo" element={<WarehouseInfoPage />} />
+          <Route path="orderprocess" element={<OrderProcessPage />} />
+          <Route path="smartcategory" element={<SmartCategoriesScreen/>} />
+          
+          {/* Quote System Routes - More Specific Paths */}
+          <Route path="request-quote" element={<QuoteCategoriesScreen />} />
+          <Route path="request-quote/category/:categoryId" element={<QuoteCategoryItemsScreen />} />
+          <Route path="quote-submission-success" element={<QuoteSuccessScreen />} />
+          <Route path="/quote-customer-info" element={<CustomerInfoForm />} />
         </Route>
         
-       
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

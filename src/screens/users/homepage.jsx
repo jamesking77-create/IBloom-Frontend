@@ -635,7 +635,7 @@ const HomePage = () => {
               )}
 
               <button
-                onClick={() => navigate("/quote")}
+                onClick={() => navigate("/request-quote")}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center mx-auto animate-scale-in"
                 style={{ animationDelay: "0.6s" }}
               >
@@ -1067,7 +1067,7 @@ const HomePage = () => {
               Book Your Event
             </button>
             <button
-              onClick={() => navigate("/quote")}
+              onClick={() => navigate("/request-quote")}
               className="glass-effect text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center hover:bg-white/20"
             >
               <Quote className="mr-2 w-5 h-5" />

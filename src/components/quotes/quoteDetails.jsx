@@ -35,7 +35,7 @@ import {
   addCommunication
 } from '../../store/slices/quote-slice';
 
-export const QuoteDetails = ({ quote, onClose }) => {
+export function QuoteDetails({ quote, onClose }){
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('details');
   const [editingResponse, setEditingResponse] = useState(false);

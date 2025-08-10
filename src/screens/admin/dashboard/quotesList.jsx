@@ -38,8 +38,8 @@ import {
   Save
 } from 'lucide-react';
 
-import { QuoteDetails } from '../../../components/quotes/QuoteDetails';
-import QuoteResponseModal from '../../../UI/quoteResponseModal';
+import { QuoteDetails } from '../../../components/quotes/quoteDetails';
+
 
 // Redux imports
 import { 

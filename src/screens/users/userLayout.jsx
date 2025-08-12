@@ -12,8 +12,16 @@ import {
   Instagram,
   Menu,
   X,
+  Home,
+  Info,
+  HelpCircle,
+  Image as ImageIcon,
+  PhoneCall,
+  ShoppingCart,
+  Package,
+  Calendar
 } from "lucide-react";
-import { fetchProfile } from "../../store/slices/profile-slice"; // Adjust path as needed
+import { fetchProfile } from "../../store/slices/profile-slice";
 import logoimg from "../../assets/ibloomcut.png";
 import fullLogo from "../../assets/ibloomcut.png";
 
@@ -37,7 +45,7 @@ const UserLayout = () => {
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      setIsScrolled(scrollPosition > 100); // Shrink after scrolling 100px
+      setIsScrolled(scrollPosition > 100);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -89,67 +97,21 @@ const UserLayout = () => {
   }, [isMobileMenuOpen]);
 
   const navigationLinks = [
-    { to: "/", label: "Home" },
-    { to: "/about", label: "About Us" },
-    { to: "/faq", label: "FAQ" },
-    { to: "/gallery", label: "Gallery" },
-    { to: "/contact", label: "Contact" },
+    { to: "/", label: "Home", icon: Home },
+    { to: "/about", label: "About Us", icon: Info },
+    { to: "/faq", label: "FAQ", icon: HelpCircle },
+    { to: "/gallery", label: "Gallery", icon: ImageIcon },
+    { to: "/contact", label: "Contact", icon: PhoneCall },
   ];
 
   return (
     <div className="min-h-screen bg-gray-200">
       <style>
         {`
-          /* Enhanced Mobile Menu Animations */
-          @keyframes morphIn {
+          /* Professional Mobile Menu Animations */
+          @keyframes slideInRight {
             0% {
-              transform: translateX(100%) scale(0.3) rotate(15deg);
-              border-radius: 50%;
-              opacity: 0;
-            }
-            30% {
-              transform: translateX(80%) scale(0.6) rotate(8deg);
-              border-radius: 40px;
-              opacity: 0.7;
-            }
-            60% {
-              transform: translateX(40%) scale(0.85) rotate(3deg);
-              border-radius: 25px;
-              opacity: 0.9;
-            }
-            100% {
-              transform: translateX(0) scale(1) rotate(0deg);
-              border-radius: 0px;
-              opacity: 1;
-            }
-          }
-
-          @keyframes morphOut {
-            0% {
-              transform: translateX(0) scale(1) rotate(0deg);
-              border-radius: 0px;
-              opacity: 1;
-            }
-            30% {
-              transform: translateX(20%) scale(0.9) rotate(-3deg);
-              border-radius: 15px;
-              opacity: 0.9;
-            }
-            60% {
-              transform: translateX(60%) scale(0.7) rotate(-8deg);
-              border-radius: 30px;
-              opacity: 0.7;
-            }
-            100% {
-              transform: translateX(100%) scale(0.3) rotate(-15deg);
-              border-radius: 50%;
-              opacity: 0;
-            }
-          }
-
-          @keyframes slideInItems {
-            0% {
-              transform: translateX(50px);
+              transform: translateX(100%);
               opacity: 0;
             }
             100% {
@@ -158,53 +120,76 @@ const UserLayout = () => {
             }
           }
 
-          @keyframes slideOutItems {
+          @keyframes slideOutRight {
             0% {
               transform: translateX(0);
               opacity: 1;
             }
             100% {
-              transform: translateX(50px);
+              transform: translateX(100%);
+              opacity: 0;
+            }
+          }
+
+          @keyframes fadeInUp {
+            0% {
+              transform: translateY(20px);
+              opacity: 0;
+            }
+            100% {
+              transform: translateY(0);
+              opacity: 1;
+            }
+          }
+
+          @keyframes fadeOutDown {
+            0% {
+              transform: translateY(0);
+              opacity: 1;
+            }
+            100% {
+              transform: translateY(20px);
               opacity: 0;
             }
           }
 
           .mobile-menu-enter {
-            animation: morphIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: slideInRight 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
           }
 
           .mobile-menu-exit {
-            animation: morphOut 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            animation: slideOutRight 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
           }
 
           .menu-item-enter {
-            animation: slideInItems 0.4s ease-out forwards;
+            animation: fadeInUp 0.4s ease-out forwards;
           }
 
           .menu-item-exit {
-            animation: slideOutItems 0.3s ease-in forwards;
+            animation: fadeOutDown 0.2s ease-in forwards;
           }
 
-          /* Staggered animation delays for menu items */
-          .menu-item-0 { animation-delay: 0.1s; }
-          .menu-item-1 { animation-delay: 0.15s; }
-          .menu-item-2 { animation-delay: 0.2s; }
-          .menu-item-3 { animation-delay: 0.25s; }
-          .menu-item-4 { animation-delay: 0.3s; }
-          .menu-item-5 { animation-delay: 0.35s; }
+          /* Staggered animation delays */
+          .menu-item-0 { animation-delay: 0.05s; }
+          .menu-item-1 { animation-delay: 0.1s; }
+          .menu-item-2 { animation-delay: 0.15s; }
+          .menu-item-3 { animation-delay: 0.2s; }
+          .menu-item-4 { animation-delay: 0.25s; }
+          .menu-item-5 { animation-delay: 0.3s; }
+          .menu-item-6 { animation-delay: 0.35s; }
 
-          /* Custom scrollbar for rentals dropdown */
+          /* Custom scrollbar */
           .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
           }
 
           .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
+            background: rgba(243, 244, 246, 0.5);
             border-radius: 10px;
           }
 
           .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(156, 163, 175, 0.5);
+            background: rgba(156, 163, 175, 0.6);
             border-radius: 10px;
           }
 
@@ -212,10 +197,16 @@ const UserLayout = () => {
             background: rgba(156, 163, 175, 0.8);
           }
 
-          /* Enhanced backdrop blur */
-          .enhanced-backdrop {
-            backdrop-filter: blur(20px) saturate(180%);
-            background: rgba(255, 255, 255, 0.98);
+          /* Enhanced backdrop */
+          .professional-backdrop {
+            backdrop-filter: blur(20px) saturate(150%);
+            background: rgba(255, 255, 255, 0.95);
+          }
+
+          /* Hamburger animation */
+          .hamburger-line {
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform-origin: center;
           }
         `}
       </style>
@@ -368,14 +359,14 @@ const UserLayout = () => {
               className="relative cursor-pointer"
               onClick={() => navigate("/eventbooking")}
             >
-              <div className="text-4xl animate-bounce">🛒</div>
+              <ShoppingCart className="w-6 h-6 text-gray-700 hover:text-blue-600 transition-colors duration-300" />
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Mobile Navigation - Only show on mobile */}
-      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white/98 backdrop-blur-lg border-b border-gray-200/50 shadow-lg">
+      {/* Professional Mobile Navigation */}
+      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 professional-backdrop border-b border-gray-200/30 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           {/* Logo */}
           <Link to="/" className="flex items-center">
@@ -389,29 +380,31 @@ const UserLayout = () => {
           </Link>
 
           {/* Mobile Menu Icons */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {/* Cart Icon */}
             <button
               onClick={() => navigate("/eventbooking")}
-              className="p-2 hover:bg-gray-100 rounded-full transition-all duration-300 transform hover:scale-110"
+              className="p-2.5 hover:bg-gray-100 rounded-lg transition-all duration-300 transform hover:scale-105 relative"
+              aria-label="View cart"
             >
-              <div className="text-2xl">🛒</div>
+              <ShoppingCart className="w-5 h-5 text-gray-700" />
             </button>
 
-            {/* Enhanced Hamburger Menu */}
+            {/* Professional Hamburger Menu */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-all duration-300 transform hover:scale-110 relative"
+              className="p-2.5 hover:bg-gray-100 rounded-lg transition-all duration-300 transform hover:scale-105 relative"
+              aria-label="Toggle menu"
             >
-              <div className="relative w-6 h-6">
-                <span className={`absolute top-0 left-0 w-6 h-0.5 bg-gray-700 transition-all duration-300 transform origin-center ${
-                  isMobileMenuOpen ? 'rotate-45 translate-y-2.5' : ''
+              <div className="relative w-5 h-5 flex flex-col justify-center">
+                <span className={`hamburger-line absolute w-5 h-0.5 bg-gray-700 ${
+                  isMobileMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-1.5'
                 }`}></span>
-                <span className={`absolute top-2.5 left-0 w-6 h-0.5 bg-gray-700 transition-all duration-300 ${
+                <span className={`hamburger-line absolute w-5 h-0.5 bg-gray-700 ${
                   isMobileMenuOpen ? 'opacity-0' : 'opacity-100'
                 }`}></span>
-                <span className={`absolute top-5 left-0 w-6 h-0.5 bg-gray-700 transition-all duration-300 transform origin-center ${
-                  isMobileMenuOpen ? '-rotate-45 -translate-y-2.5' : ''
+                <span className={`hamburger-line absolute w-5 h-0.5 bg-gray-700 ${
+                  isMobileMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-1.5'
                 }`}></span>
               </div>
             </button>
@@ -420,7 +413,7 @@ const UserLayout = () => {
 
         {/* Mobile Menu Overlay */}
         <div
-          className={`fixed inset-0 bg-black/60 transition-all duration-500 z-40 ${
+          className={`fixed inset-0 bg-black/50 transition-all duration-300 z-40 ${
             isMobileMenuOpen ? "opacity-100 backdrop-blur-sm" : "opacity-0 pointer-events-none"
           }`}
           onClick={() => setIsMobileMenuOpen(false)}
@@ -428,16 +421,13 @@ const UserLayout = () => {
 
         {/* Professional Mobile Menu Panel */}
         <div
-          className={`fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] h-screen enhanced-backdrop shadow-2xl ${
+          className={`fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] h-screen professional-backdrop shadow-xl border-l border-gray-200/30 ${
             isMobileMenuOpen ? "mobile-menu-enter" : "mobile-menu-exit"
           }`}
-          style={{
-            transformOrigin: 'top right',
-          }}
         >
           <div className="flex flex-col h-screen">
-            {/* Header with Logo and Close Button */}
-            <div className={`flex items-center justify-between p-6 border-b border-gray-200/30 bg-white/50 shrink-0 ${
+            {/* Header */}
+            <div className={`flex items-center justify-between p-6 border-b border-gray-200/30 shrink-0 ${
               isMobileMenuOpen ? "menu-item-enter menu-item-0" : "menu-item-exit"
             }`}>
               <div className="h-8 w-auto">
@@ -449,116 +439,112 @@ const UserLayout = () => {
               </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-all duration-300 transform hover:scale-110"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-all duration-300"
+                aria-label="Close menu"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
 
-            {/* Rentals Section - Top Half */}
-            <div className={`flex-1 border-b border-gray-200/30 bg-gray-50/50 max-h-[45vh] ${
-              isMobileMenuOpen ? "menu-item-enter menu-item-1" : "menu-item-exit"
-            }`}>
-              <div className="p-4 h-full flex flex-col">
-                <button
-                  className="w-full flex items-center justify-between px-4 py-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/50 shrink-0"
-                  onClick={() => setIsRentalsDropdownOpen(!isRentalsDropdownOpen)}
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                      <span className="text-blue-600 text-sm font-semibold">🏪</span>
-                    </div>
-                    <span className="font-medium text-gray-800">Our Rentals</span>
-                  </div>
-                  <ChevronDown
-                    className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${
-                      isRentalsDropdownOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {/* Categories List */}
-                <div
-                  className={`overflow-hidden transition-all duration-500 ease-in-out flex-1 ${
-                    isRentalsDropdownOpen ? "opacity-100 mt-3" : "opacity-0"
-                  }`}
-                >
-                  <div className="bg-white rounded-lg border border-gray-200/50 h-full overflow-y-auto custom-scrollbar">
-                    {userData.categories && userData.categories.length > 0 ? (
-                      userData.categories.map((category, index) => (
-                        <button
-                          key={category.id}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-all duration-200 flex items-center space-x-3 group/item border-b border-gray-100 last:border-b-0"
-                          onClick={() => handleCategorySelect(category)}
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                            {category.name.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-800 text-sm truncate">
-                              {category.name}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              View collection
-                            </div>
-                          </div>
-                          <ChevronDown className="w-4 h-4 text-gray-400 rotate-[-90deg] group-hover/item:translate-x-1 transition-transform duration-200" />
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-8 text-center">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <span className="text-gray-400 text-xl">📦</span>
-                        </div>
-                        <p className="text-gray-500 text-sm">No categories available</p>
+            {/* Navigation Links */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4 space-y-1">
+                {/* Rentals Section - Moved to Top */}
+                <div className={`${
+                  isMobileMenuOpen ? "menu-item-enter menu-item-1" : "menu-item-exit"
+                }`}>
+                  <button
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-all duration-300 group"
+                    onClick={() => setIsRentalsDropdownOpen(!isRentalsDropdownOpen)}
+                  >
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-50 transition-colors duration-300">
+                        <Package className="w-5 h-5 group-hover:text-blue-600" />
                       </div>
-                    )}
+                      <span className="font-medium">Our Rentals</span>
+                    </div>
+                    <ChevronDown
+                      className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${
+                        isRentalsDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* Categories Dropdown */}
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      isRentalsDropdownOpen ? "max-h-64 opacity-100 mt-2" : "max-h-0 opacity-0"
+                    }`}
+                  >
+                    <div className="bg-gray-50 rounded-lg border border-gray-200/50 mx-4 overflow-y-auto custom-scrollbar max-h-60">
+                      {userData.categories && userData.categories.length > 0 ? (
+                        userData.categories.map((category, index) => (
+                          <button
+                            key={category.id}
+                            className="w-full text-left px-4 py-3 hover:bg-white transition-all duration-200 flex items-center space-x-3 group/item border-b border-gray-200/30 last:border-b-0"
+                            onClick={() => handleCategorySelect(category)}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm shrink-0">
+                              {category.name.charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-800 text-sm truncate">
+                                {category.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                View collection
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-6 text-center">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <Package className="w-5 h-5 text-gray-400" />
+                          </div>
+                          <p className="text-gray-500 text-sm">No categories available</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Navigation Links - Bottom Half */}
-            <div className="flex-1 overflow-y-auto bg-white/80 max-h-[45vh]">
-              <div className="p-4 space-y-2">
-                {navigationLinks.map((link, index) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-all duration-300 group ${
-                      isMobileMenuOpen ? `menu-item-enter menu-item-${index + 2}` : "menu-item-exit"
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-100 transition-colors duration-300">
-                      <span className="text-sm">
-                        {link.label === 'Home' && '🏠'}
-                        {link.label === 'About Us' && 'ℹ️'}
-                        {link.label === 'FAQ' && '❓'}
-                        {link.label === 'Gallery' && '🖼️'}
-                        {link.label === 'Contact' && '📞'}
-                      </span>
-                    </div>
-                    <span className="font-medium">{link.label}</span>
-                  </Link>
-                ))}
+                {/* Other Navigation Links */}
+                {navigationLinks.map((link, index) => {
+                  const IconComponent = link.icon;
+                  return (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className={`flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-all duration-300 group ${
+                        isMobileMenuOpen ? `menu-item-enter menu-item-${index + 2}` : "menu-item-exit"
+                      }`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-50 transition-colors duration-300">
+                        <IconComponent className="w-5 h-5 group-hover:text-blue-600" />
+                      </div>
+                      <span className="font-medium">{link.label}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
             {/* Bottom CTA Button */}
-            <div className={`p-6 bg-white border-t border-gray-200/30 shrink-0 ${
-              isMobileMenuOpen ? "menu-item-enter menu-item-7" : "menu-item-exit"
+            <div className={`p-6 border-t border-gray-200/30 shrink-0 ${
+              isMobileMenuOpen ? `menu-item-enter menu-item-${navigationLinks.length + 2}` : "menu-item-exit"
             }`}>
               <button
                 onClick={() => {
                   navigate("/eventbooking");
                   setIsMobileMenuOpen(false);
                 }}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-4 rounded-lg transition-all duration-300 shadow-lg font-semibold text-base transform hover:scale-[1.02] hover:-translate-y-0.5 relative overflow-hidden"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-4 rounded-lg transition-all duration-300 shadow-lg font-semibold text-base transform hover:scale-[1.02] hover:-translate-y-0.5 relative overflow-hidden group"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 <div className="relative flex items-center justify-center">
-                  <span className="mr-2">📅</span>
+                  <Calendar className="w-5 h-5 mr-2" />
                   Book Event Now
                 </div>
               </button>
@@ -691,7 +677,7 @@ const UserLayout = () => {
               className="relative cursor-pointer"
               onClick={() => navigate("/eventbooking")}
             >
-              <div className="text-3xl animate-bounce">🛒</div>
+              <ShoppingCart className="w-6 h-6 text-gray-700 hover:text-blue-600 transition-colors duration-300" />
             </div>
           </div>
         </div>

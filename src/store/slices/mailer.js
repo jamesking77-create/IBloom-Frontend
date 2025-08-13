@@ -12,7 +12,7 @@ const getAuthToken = () => {
 // Helper function to create form data for file uploads (copied from categories)
 const createFormData = (data) => {
   const formData = new FormData();
-  
+
   Object.keys(data).forEach((key) => {
     if (key === "attachments" && Array.isArray(data[key])) {
       // CRITICAL FIX: Handle attachments array - add each file individually
@@ -33,7 +33,7 @@ const createFormData = (data) => {
       formData.append(key, String(data[key]));
     }
   });
-  
+
   return formData;
 };
 
@@ -54,7 +54,6 @@ export const fetchBookingMails = createAsyncThunk(
 );
 
 // Add file to attachments (no upload, just store file)
-// In your Redux slice - update addFileAttachment
 export const addFileAttachment = createAsyncThunk(
   "mailer/addFileAttachment",
   async (file, { rejectWithValue }) => {
@@ -63,27 +62,36 @@ export const addFileAttachment = createAsyncThunk(
 
       // Validate file size (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
-        throw new Error(`File ${file.name} is too large. Maximum size is 10MB.`);
+        throw new Error(
+          `File ${file.name} is too large. Maximum size is 10MB.`
+        );
       }
 
       // Validate file type
       const allowedTypes = [
-        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp",
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
         "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "text/plain", "text/csv"
+        "text/plain",
+        "text/csv",
       ];
 
       if (!allowedTypes.includes(file.type)) {
-        throw new Error(`File type ${file.type} is not supported for ${file.name}`);
+        throw new Error(
+          `File type ${file.type} is not supported for ${file.name}`
+        );
       }
 
       // Create preview URL for images
       let preview = null;
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith("image/")) {
         preview = URL.createObjectURL(file);
       }
 
@@ -93,8 +101,8 @@ export const addFileAttachment = createAsyncThunk(
         name: file.name,
         size: file.size,
         type: file.type,
-        file: file, // CRITICAL: Keep the actual File object for upload
-        preview: preview, // URL for preview (will be revoked later)
+        file: file, //Keep the actual File object for upload
+        preview: preview,
         lastModified: file.lastModified,
       };
     } catch (error) {
@@ -168,17 +176,13 @@ export const sendIndividualMail = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      console.log("=== SENDING EMAIL DEBUG ===");
-      console.log("Email to:", email);
-      console.log("Attachments:", attachments.length);
-
       // Prepare the data payload
       const emailData = {
         to: email,
         subject: subject,
         message: message,
         customerName: customerName,
-        attachments: attachments, // This will be processed by createFormData
+        attachments: attachments,
       };
 
       // Check if we have file upload (any File object in attachments)
@@ -190,7 +194,6 @@ export const sendIndividualMail = createAsyncThunk(
       let config = {};
 
       if (hasFile) {
-        console.log("Has files - using FormData");
         data = createFormData(emailData);
         config = {
           headers: {
@@ -221,7 +224,6 @@ export const sendIndividualMail = createAsyncThunk(
 
       // Debug FormData contents if it's FormData
       if (hasFile) {
-        console.log("FormData entries:");
         for (let [key, value] of data.entries()) {
           if (key === "attachments") {
             console.log(`${key}:`, value.name, value.size, value.type);
@@ -231,7 +233,6 @@ export const sendIndividualMail = createAsyncThunk(
         }
       }
 
-      // Use your custom post function (like categories do)
       const response = await post("/api/mailer/send-individual", data, config);
       console.log("Email sent successfully:", response);
 
@@ -254,7 +255,6 @@ export const sendIndividualMail = createAsyncThunk(
   }
 );
 
-// FIXED: Send broadcast email - Following categories pattern
 export const broadcastMail = createAsyncThunk(
   "mailer/broadcastMail",
   async (
@@ -262,16 +262,12 @@ export const broadcastMail = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      console.log("=== BROADCASTING EMAIL DEBUG ===");
-      console.log("Recipients:", recipients.length);
-      console.log("Attachments:", attachments.length);
-
       // Prepare the data payload
       const emailData = {
         subject: subject,
         message: message,
         recipients: recipients,
-        attachments: attachments, // This will be processed by createFormData
+        attachments: attachments,
       };
 
       // Check if we have file upload (any File object in attachments)
@@ -283,7 +279,6 @@ export const broadcastMail = createAsyncThunk(
       let config = {};
 
       if (hasFile) {
-        console.log("Has files - using FormData");
         data = createFormData(emailData);
         config = {
           headers: {
@@ -294,7 +289,6 @@ export const broadcastMail = createAsyncThunk(
           },
         };
       } else {
-        console.log("No files - using JSON");
         data = {
           subject: subject,
           message: message,
@@ -312,7 +306,6 @@ export const broadcastMail = createAsyncThunk(
 
       // Debug FormData contents if it's FormData
       if (hasFile) {
-        console.log("FormData entries:");
         for (let [key, value] of data.entries()) {
           if (key === "attachments") {
             console.log(`${key}:`, value.name, value.size, value.type);
@@ -347,19 +340,61 @@ export const broadcastMail = createAsyncThunk(
 // Async thunk for fetching mail history
 export const fetchMailHistory = createAsyncThunk(
   "mailer/fetchMailHistory",
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await fetch("/api/mailer/history");
-      if (!response.ok) {
-        throw new Error("Failed to fetch mail history");
-      }
-      const data = await response.json();
-      return data;
+      const {
+        page = 1,
+        limit = 20,
+        type,
+        status,
+        senderEmail,
+        startDate,
+        endDate,
+      } = params;
+
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (type) queryParams.append("type", type);
+      if (status) queryParams.append("status", status);
+      if (senderEmail) queryParams.append("senderEmail", senderEmail);
+      if (startDate) queryParams.append("startDate", startDate);
+      if (endDate) queryParams.append("endDate", endDate);
+
+      const response = await get(`/api/mailer/history?${queryParams}`, {
+        headers: {
+          ...(getAuthToken() && {
+            Authorization: `Bearer ${getAuthToken()}`,
+          }),
+        },
+      });
+
+      console.log("Mail history fetched:", response.data);
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      console.error("Failed to fetch mail history:", error);
+      return rejectWithValue(error.message || "Failed to fetch mail history");
     }
   }
 );
+// export const fetchMailHistory = createAsyncThunk(
+//   "mailer/fetchMailHistory",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       const response = await fetch("/api/mailer/history");
+//       if (!response.ok) {
+//         throw new Error("Failed to fetch mail history");
+//       }
+//       const data = await response.json();
+//       return data;
+//     } catch (error) {
+//       return rejectWithValue(error.message);
+//     }
+//   }
+// );
 
 // Fallback sample data (only used when API fails)
 const fallbackSampleMails = [
@@ -390,11 +425,19 @@ const initialState = {
 
   // Mail history
   mailHistory: [],
+  historyPagination: {
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+  },
 
   // UI state
   loading: false,
   sendingMail: false,
   uploadingAttachment: false,
+  fetchingHistory: false,
   error: null,
 
   // Filters and search
@@ -407,6 +450,8 @@ const initialState = {
     emailsSentToday: 0,
     emailsSentThisMonth: 0,
     lastEmailSent: null,
+    lastEmailSubject: null,
+    lastEmailType: null,
   },
 };
 
@@ -518,6 +563,33 @@ const mailerSlice = createSlice({
         state.stats.totalRecipients = fallbackSampleMails.length;
       })
 
+      .addCase(fetchMailHistory.pending, (state) => {
+        state.fetchingHistory = true;
+        state.error = null;
+      })
+      .addCase(fetchMailHistory.fulfilled, (state, action) => {
+        state.fetchingHistory = false;
+        const { history, pagination, stats } = action.payload.data || {};
+
+        state.mailHistory = history || [];
+        state.historyPagination = pagination || initialState.historyPagination;
+
+        // Update stats if provided
+        if (stats) {
+          state.stats = {
+            ...state.stats,
+            ...stats,
+          };
+        }
+
+        console.log(`Loaded ${history?.length || 0} mail history records`);
+      })
+      .addCase(fetchMailHistory.rejected, (state, action) => {
+        state.fetchingHistory = false;
+        state.error = action.payload;
+        console.error("Failed to fetch mail history:", action.payload);
+      })
+
       // Add file attachment
       .addCase(addFileAttachment.pending, (state) => {
         state.uploadingAttachment = true;
@@ -543,11 +615,11 @@ const mailerSlice = createSlice({
         state.sendingMail = false;
 
         // Add to mail history
-        state.mailHistory.unshift({
-          id: Date.now(),
-          type: "individual",
-          ...action.payload,
-        });
+        // state.mailHistory.unshift({
+        //   id: Date.now(),
+        //   type: "individual",
+        //   ...action.payload,
+        // });
 
         // Update stats
         state.stats.emailsSentToday += 1;
@@ -581,11 +653,11 @@ const mailerSlice = createSlice({
         state.sendingMail = false;
 
         // Add to mail history
-        state.mailHistory.unshift({
-          id: Date.now(),
-          type: "broadcast",
-          ...action.payload,
-        });
+        // state.mailHistory.unshift({
+        //   id: Date.now(),
+        //   type: "broadcast",
+        //   ...action.payload,
+        // });
 
         // Update stats
         state.stats.emailsSentToday += action.payload.recipientCount;
@@ -610,19 +682,6 @@ const mailerSlice = createSlice({
         state.sendingMail = false;
         state.error = action.payload;
         console.error("Broadcast email failed:", action.payload);
-      })
-
-      // Fetch mail history
-      .addCase(fetchMailHistory.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchMailHistory.fulfilled, (state, action) => {
-        state.loading = false;
-        state.mailHistory = action.payload.history || [];
-      })
-      .addCase(fetchMailHistory.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
       });
   },
 });

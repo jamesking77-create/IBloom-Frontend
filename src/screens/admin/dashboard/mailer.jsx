@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import {
   fetchBookingMails,
+  fetchMailHistory,
   sendIndividualMail,
   broadcastMail,
   addFileAttachment, // Changed from uploadAttachment
@@ -62,6 +63,9 @@ const MailerScreen = () => {
   const loading = useSelector(selectMailerLoading);
   const sendingMail = useSelector(selectSendingMail);
   const uploadingAttachment = useSelector(selectUploadingAttachment);
+  const fetchingHistory = useSelector(
+    (state) => state.mailer?.fetchingHistory || false
+  );
   const error = useSelector(selectMailerError);
   const searchQuery = useSelector(selectSearchQuery);
   const statusFilter = useSelector(selectStatusFilter);
@@ -85,7 +89,7 @@ const MailerScreen = () => {
 
   const handleStartComposing = (type, recipient = null) => {
     dispatch(startComposing({ type, recipient }));
-    
+
     // Auto-select all emails when starting broadcast composition
     if (type === "broadcast") {
       setSelectedMails(filteredMails.map((mail) => mail.id));
@@ -181,79 +185,78 @@ const MailerScreen = () => {
   };
 
   // FAST - Process all files in parallel and batch notifications
-const handleFiles = async (files) => {
-  const validFiles = files.filter((file) => {
-    // Check file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      notifyError(`File ${file.name} is too large. Maximum size is 10MB.`);
-      return false;
-    }
-
-    // Check file type
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png", 
-      "image/gif",
-      "image/webp",
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "text/plain",
-      "text/csv",
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      notifyError(`File type ${file.type} is not supported for ${file.name}`);
-      return false;
-    }
-
-    return true;
-  });
-
-  if (validFiles.length === 0) return;
-
-  // OPTIMIZED: Process all files in parallel
-  try {
-    const results = await Promise.allSettled(
-      validFiles.map(file => dispatch(addFileAttachment(file)).unwrap())
-    );
-
-    // Batch process results for better performance
-    const successful = [];
-    const failed = [];
-
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        successful.push(validFiles[index].name);
-      } else {
-        failed.push(validFiles[index].name);
+  const handleFiles = async (files) => {
+    const validFiles = files.filter((file) => {
+      // Check file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        notifyError(`File ${file.name} is too large. Maximum size is 10MB.`);
+        return false;
       }
+
+      // Check file type
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/plain",
+        "text/csv",
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        notifyError(`File type ${file.type} is not supported for ${file.name}`);
+        return false;
+      }
+
+      return true;
     });
 
-    // Single batch notifications instead of one per file
-    if (successful.length > 0) {
-      if (successful.length === 1) {
-        notifySuccess(`${successful[0]} added successfully`);
-      } else {
-        notifySuccess(`${successful.length} files added successfully`);
-      }
-    }
+    if (validFiles.length === 0) return;
 
-    if (failed.length > 0) {
-      if (failed.length === 1) {
-        notifyError(`Failed to add ${failed[0]}`);
-      } else {
-        notifyError(`Failed to add ${failed.length} files`);
-      }
-    }
+    // OPTIMIZED: Process all files in parallel
+    try {
+      const results = await Promise.allSettled(
+        validFiles.map((file) => dispatch(addFileAttachment(file)).unwrap())
+      );
 
-  } catch (error) {
-    console.error("Error processing files:", error);
-    notifyError("Error processing some files");
-  }
-};
+      // Batch process results for better performance
+      const successful = [];
+      const failed = [];
+
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          successful.push(validFiles[index].name);
+        } else {
+          failed.push(validFiles[index].name);
+        }
+      });
+
+      // Single batch notifications instead of one per file
+      if (successful.length > 0) {
+        if (successful.length === 1) {
+          notifySuccess(`${successful[0]} added successfully`);
+        } else {
+          notifySuccess(`${successful.length} files added successfully`);
+        }
+      }
+
+      if (failed.length > 0) {
+        if (failed.length === 1) {
+          notifyError(`Failed to add ${failed[0]}`);
+        } else {
+          notifyError(`Failed to add ${failed.length} files`);
+        }
+      }
+    } catch (error) {
+      console.error("Error processing files:", error);
+      notifyError("Error processing some files");
+    }
+  };
 
   // const handleFiles = async (files) => {
   //   const validFiles = files.filter((file) => {
@@ -298,6 +301,18 @@ const handleFiles = async (files) => {
   //     }
   //   }
   // };
+
+  const handleHistoryToggle = async () => {
+    if (!showHistory) {
+      try {
+        await dispatch(fetchMailHistory()).unwrap();
+        notifyInfo("Mail history loaded");
+      } catch (err) {
+        notifyError("Failed to load mail history");
+      }
+    }
+    setShowHistory(!showHistory);
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -454,7 +469,8 @@ const handleFiles = async (files) => {
                   </button>
 
                   <button
-                    onClick={() => setShowHistory(!showHistory)}
+                    // onClick={() => setShowHistory(!showHistory)}
+                    onClick={handleHistoryToggle}
                     className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors"
                   >
                     <Clock className="w-4 h-4 mr-2" />
@@ -883,13 +899,32 @@ const handleFiles = async (files) => {
           {showHistory && (
             <div className="mt-6 bg-white rounded-lg shadow">
               <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Recent Emails
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Recent Emails
+                  </h3>
+                  <button
+                    onClick={() => dispatch(fetchMailHistory())}
+                    disabled={fetchingHistory}
+                    className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                  >
+                    {fetchingHistory ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                    ) : (
+                      <Clock className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="max-h-96 overflow-y-auto">
-                {mailHistory.length === 0 ? (
+                {fetchingHistory ? (
+                  /* ADD loading state */
+                  <div className="p-6 text-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-gray-600">Loading history...</p>
+                  </div>
+                ) : mailHistory.length === 0 ? (
                   <div className="p-6 text-center">
                     <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                     <p className="text-gray-600">No email history</p>
@@ -897,7 +932,7 @@ const handleFiles = async (files) => {
                 ) : (
                   <div className="divide-y divide-gray-200">
                     {mailHistory.slice(0, 10).map((mail) => (
-                      <div key={mail.id} className="p-4">
+                      <div key={mail.id || mail._id} className="p-4">
                         <div className="flex items-start space-x-3">
                           <div
                             className={`p-1.5 rounded-full ${
@@ -928,14 +963,36 @@ const handleFiles = async (files) => {
                                 mail.attachments.length > 0 && (
                                   <Paperclip className="w-3 h-3 text-gray-400" />
                                 )}
+                              {/* ADD status indicator */}
+                              <span
+                                className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                                  mail.status === "sent"
+                                    ? "bg-green-100 text-green-800"
+                                    : mail.status === "failed"
+                                    ? "bg-red-100 text-red-800"
+                                    : mail.status === "partial"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {mail.status}
+                              </span>
                             </div>
                             <p className="text-xs text-gray-600 mt-1">
                               {mail.type === "broadcast"
-                                ? `Sent to ${mail.recipientCount} recipients`
-                                : `Sent to ${mail.customerName}`}
+                                ? `Sent to ${
+                                    mail.recipientCount ||
+                                    mail.recipients?.length ||
+                                    0
+                                  } recipients`
+                                : `Sent to ${
+                                    mail.recipientName || mail.customerName
+                                  }`}
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
-                              {new Date(mail.sentAt).toLocaleString()}
+                              {new Date(
+                                mail.sentAt || mail.createdAt
+                              ).toLocaleString()}
                             </p>
                           </div>
                         </div>

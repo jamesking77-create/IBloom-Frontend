@@ -367,7 +367,7 @@ const handleNext = () => {
                 >
                   <Plus className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2 group-hover:rotate-90 transition-transform duration-300" />
                   <span className="hidden xs:inline">Add More Items</span>
-                  <span className="xs:hidden">Add</span>
+                  <span className="xs:hidden">Add Items</span>
                 </button>
                 {cartItems.length > 0 && (
                   <button

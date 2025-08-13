@@ -1,4 +1,4 @@
-// screens/user/CategoriesPage.js - COMPLETE FIXED VERSION WITH ITEM DETAILS MODAL
+// screens/user/CategoriesPage.js - UPDATED WITH NAVIGATION SOURCE DETECTION
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -22,6 +22,16 @@ const CategoriesPage = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [modalItem, setModalItem] = useState(null);
+
+  // NEW: Detect navigation source from location state
+  const navigationSource = location.state?.from || 'home'; // Default to 'home' if no source
+  const fromEventBooking = navigationSource === 'eventbooking';
+  const fromOrderProcess = navigationSource === 'orderprocess';
+  const warehouseInfo = location.state?.warehouseInfo; // For order process
+
+  console.log('🔍 Navigation source detected:', navigationSource);
+  console.log('📍 From Event Booking:', fromEventBooking);
+  console.log('📍 From Order Process:', fromOrderProcess);
 
   // Get categories data from Redux store
   const { categories, isLoading } = useSelector((state) => state.categories);
@@ -80,14 +90,14 @@ const CategoriesPage = () => {
     setFilteredItems(items);
   }, [category, searchQuery, sortBy]);
 
-  // UPDATED: Handle item click to open modal
+  // Handle item click to open modal
   const handleItemClick = (item) => {
     console.log('Opening details modal for item:', item);
     setModalItem(item);
     setShowDetailsModal(true);
   };
 
-  // NEW: Handle modal close
+  // Handle modal close
   const handleCloseModal = () => {
     setShowDetailsModal(false);
     setModalItem(null);
@@ -109,10 +119,46 @@ const CategoriesPage = () => {
     return `₦${numericPrice.toLocaleString('en-NG')}`;
   };
 
-  // FIXED: Proper price processing before adding to cart
+  // UPDATED: Enhanced navigation logic based on source
+  const navigateToCorrectScreen = (processedItem) => {
+    console.log('🚀 Navigating based on source:', navigationSource);
+    
+    if (fromEventBooking) {
+      console.log('📅 Navigating back to Event Booking');
+      navigate('/eventbooking', { 
+        state: { 
+          selectedItem: processedItem, 
+          category: category,
+          fromBooking: true // Indicate we're returning to booking
+        } 
+      });
+    } else if (fromOrderProcess) {
+      console.log('📦 Navigating back to Order Process');
+      navigate('/order-process', { 
+        state: { 
+          selectedItem: processedItem, 
+          category: category,
+          fromWarehouse: true,
+          warehouseInfo: warehouseInfo // Pass warehouse info back
+        } 
+      });
+    } else {
+      // Default behavior - navigate to event booking for new users
+      console.log('🏠 Default navigation to Event Booking');
+      navigate('/eventbooking', { 
+        state: { 
+          selectedItem: processedItem, 
+          category: category 
+        } 
+      });
+    }
+  };
+
+  // UPDATED: Enhanced add to cart process with source-aware navigation
   const addToCartProcess = (item) => {
     console.log('🛒 Original item:', item);
     console.log('🛒 Original price:', item.price, typeof item.price);
+    console.log('🛒 Navigation source:', navigationSource);
     
     let processedPrice;
     if (typeof item.price === 'string') {
@@ -136,14 +182,33 @@ const CategoriesPage = () => {
     
     const isCartEmpty = cartItems.length === 0;
     
-    if (isCartEmpty) {
-      navigate('/eventbooking', { 
+    // FIXED: For order process, always navigate back after adding item
+    if (fromOrderProcess) {
+      // Add item to cart
+      dispatch(addToCart({ 
+        item: processedItem,
+        dates: null,
+        allowDuplicates: false 
+      }));
+      
+      // Always navigate back to order process for order flow
+      console.log('📦 Navigating back to Order Process after adding item');
+      navigate('/orderprocess', { 
         state: { 
-          selectedItem: processedItem, 
-          category: category 
+          fromWarehouse: true,
+          warehouseInfo: warehouseInfo,
+          addedItem: processedItem // Pass added item info
         } 
       });
+      return;
+    }
+    
+    // For event booking or default behavior
+    if (isCartEmpty) {
+      // For empty cart, navigate directly to the appropriate screen
+      navigateToCorrectScreen(processedItem);
     } else {
+      // For non-empty cart, add item and show popup
       dispatch(addToCart({ 
         item: processedItem,
         dates: null,
@@ -155,19 +220,38 @@ const CategoriesPage = () => {
     }
   };
 
-  // NEW: Handle add to cart from modal
+  // UPDATED: Handle add to cart from modal with proper order process handling
   const handleModalAddToCart = (item) => {
     console.log('🛒 Adding to cart from modal:', item);
+    console.log('🛒 Navigation source from modal:', navigationSource);
     
+    // FIXED: For order process, always navigate back after adding item
+    if (fromOrderProcess) {
+      dispatch(addToCart({ 
+        item: item,
+        dates: null,
+        allowDuplicates: false 
+      }));
+      
+      handleCloseModal(); // Close modal first
+      
+      // Navigate back to order process
+      console.log('📦 Navigating back to Order Process from modal');
+      navigate('/order-process', { 
+        state: { 
+          fromWarehouse: true,
+          warehouseInfo: warehouseInfo,
+          addedItem: item // Pass added item info
+        } 
+      });
+      return;
+    }
+    
+    // For event booking or default behavior
     const isCartEmpty = cartItems.length === 0;
     
     if (isCartEmpty) {
-      navigate('/eventbooking', { 
-        state: { 
-          selectedItem: item, 
-          category: category 
-        } 
-      });
+      navigateToCorrectScreen(item);
     } else {
       dispatch(addToCart({ 
         item: item,
@@ -186,10 +270,54 @@ const CategoriesPage = () => {
     setSelectedItem(null);
   };
 
+  // UPDATED: View cart with proper order process navigation
   const handleViewCart = () => {
     setShowPopup(false);
     setSelectedItem(null);
-    dispatch(openCart());
+    
+    // Navigate to the appropriate screen instead of opening cart sidebar
+    if (fromEventBooking) {
+      console.log('📅 Returning to Event Booking from popup');
+      navigate('/eventbooking', { 
+        state: { 
+          fromBooking: true 
+        } 
+      });
+    } else if (fromOrderProcess) {
+      console.log('📦 Returning to Order Process from popup');
+      navigate('/order-process', { 
+        state: { 
+          fromWarehouse: true,
+          warehouseInfo: warehouseInfo 
+        } 
+      });
+    } else {
+      // Default behavior - open cart sidebar
+      dispatch(openCart());
+    }
+  };
+
+  // UPDATED: Back button navigation with proper route
+  const handleBackNavigation = () => {
+    if (fromEventBooking) {
+      console.log('📅 Going back to Event Booking');
+      navigate('/eventbooking', { 
+        state: { 
+          fromBooking: true 
+        } 
+      });
+    } else if (fromOrderProcess) {
+      console.log('📦 Going back to Order Process');
+      navigate('/order-process', { // FIXED: Use correct route
+        state: { 
+          fromWarehouse: true,
+          warehouseInfo: warehouseInfo 
+        } 
+      });
+    } else {
+      // Default - go back to home
+      navigate('/');
+    }
   };
 
   if (isLoading && !category) {
@@ -211,11 +339,11 @@ const CategoriesPage = () => {
           <h2 className="text-2xl font-semibold text-gray-700 mb-2">Category Not Found</h2>
           <p className="text-gray-500 mb-6">The category you're looking for doesn't exist.</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={handleBackNavigation}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-300 flex items-center mx-auto"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Home
+            Go Back
           </button>
         </div>
       </div>
@@ -238,7 +366,7 @@ const CategoriesPage = () => {
         <div className="absolute inset-0 flex items-center justify-center text-center text-white z-10">
           <div className="max-w-4xl mx-auto px-4">
             <button
-              onClick={() => navigate('/')}
+              onClick={handleBackNavigation}
               className="mb-4 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-all duration-300 backdrop-blur-sm flex items-center mx-auto"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -257,6 +385,14 @@ const CategoriesPage = () => {
                 <Package className="w-4 h-4 mr-2" />
                 <span>{category.itemCount || 0} items available</span>
               </div>
+              {/* NEW: Show navigation context */}
+              {(fromEventBooking || fromOrderProcess) && (
+                <div className="flex items-center bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
+                  <span className="text-sm font-medium">
+                    {fromEventBooking ? '📅 Event Booking' : '📦 Order Process'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -295,6 +431,12 @@ const CategoriesPage = () => {
             Showing {filteredItems.length} of {category.itemCount || 0} items
             {searchQuery && (
               <span> for "{searchQuery}"</span>
+            )}
+            {/* NEW: Show navigation context in results */}
+            {(fromEventBooking || fromOrderProcess) && (
+              <span className="ml-2 text-blue-600 font-medium">
+                • Adding to {fromEventBooking ? 'Event Booking' : 'Order Process'}
+              </span>
             )}
           </div>
         </div>
@@ -353,6 +495,13 @@ const CategoriesPage = () => {
                           <span className="ml-1">{formatPrice(item.price).replace('₦', '')}</span>
                         </div>
                       </div>
+
+                      {/* NEW: Show navigation context badge */}
+                      {(fromEventBooking || fromOrderProcess) && (
+                        <div className="absolute top-4 left-4 bg-blue-600/90 backdrop-blur-sm text-white rounded-full px-2 py-1 text-xs font-medium">
+                          {fromEventBooking ? '📅' : '📦'}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="p-6">
@@ -373,9 +522,15 @@ const CategoriesPage = () => {
                         </button>
                         <button
                           onClick={() => addToCartProcess(item)}
-                          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 font-medium"
+                          className={`flex-1 px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 font-medium ${
+                            fromEventBooking 
+                              ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
+                              : fromOrderProcess
+                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
+                              : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                          }`}
                         >
-                          Add To Cart
+                          {fromEventBooking ? 'Add to Booking' : fromOrderProcess ? 'Add to Order' : 'Add To Cart'}
                         </button>
                       </div>
                     </div>
@@ -387,13 +542,14 @@ const CategoriesPage = () => {
         </div>
       </div>
 
-      {/* Item Added Popup */}
+      {/* UPDATED: Item Added Popup with source-aware messaging */}
       <ItemAddedPopup 
         isOpen={showPopup}
         onClose={handleClosePopup}
         item={selectedItem}
         category={category}
         onViewCart={handleViewCart}
+        navigationSource={navigationSource} // Pass navigation source to popup
       />
 
       {/* Item Details Modal */}
@@ -403,6 +559,7 @@ const CategoriesPage = () => {
         item={modalItem}
         category={category}
         onAddToCart={handleModalAddToCart}
+        navigationSource={navigationSource} // Pass navigation source to modal
       />
 
       {/* Floating Chat Box Component */}

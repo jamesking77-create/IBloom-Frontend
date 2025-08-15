@@ -1,4 +1,4 @@
-// store/slices/quote-slice.js - FIXED VERSION for Real Backend Integration
+// store/slices/quote-slice.js - UPDATED VERSION with Enhanced WebSocket Integration
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 // API Configuration
@@ -110,7 +110,7 @@ export const fetchQuotes = createAsyncThunk(
   }
 );
 
-// Fetch quote by ID (Admin only)
+// Other async thunks remain the same...
 export const fetchQuoteById = createAsyncThunk(
   "quotes/fetchQuoteById",
   async (quoteId, { rejectWithValue }) => {
@@ -128,7 +128,6 @@ export const fetchQuoteById = createAsyncThunk(
   }
 );
 
-// Update quote status (Admin only)
 export const updateQuoteStatus = createAsyncThunk(
   "quotes/updateQuoteStatus",
   async ({ quoteId, status }, { rejectWithValue }) => {
@@ -149,7 +148,6 @@ export const updateQuoteStatus = createAsyncThunk(
   }
 );
 
-// Mark quote as viewed (Admin only)
 export const markQuoteAsViewed = createAsyncThunk(
   "quotes/markQuoteAsViewed",
   async (quoteId, { rejectWithValue }) => {
@@ -169,7 +167,6 @@ export const markQuoteAsViewed = createAsyncThunk(
   }
 );
 
-// Create quote response (Admin only)
 export const createQuoteResponse = createAsyncThunk(
   "quotes/createQuoteResponse",
   async ({ quoteId, responseData }, { rejectWithValue }) => {
@@ -190,7 +187,6 @@ export const createQuoteResponse = createAsyncThunk(
   }
 );
 
-// Update quote response (Admin only)
 export const updateQuoteResponse = createAsyncThunk(
   "quotes/updateQuoteResponse",
   async ({ quoteId, responseData }, { rejectWithValue }) => {
@@ -211,7 +207,6 @@ export const updateQuoteResponse = createAsyncThunk(
   }
 );
 
-// Send quote response (Admin only)
 export const sendQuoteResponse = createAsyncThunk(
   "quotes/sendQuoteResponse",
   async ({ quoteId, sendOptions = {} }, { rejectWithValue }) => {
@@ -232,7 +227,6 @@ export const sendQuoteResponse = createAsyncThunk(
   }
 );
 
-// Add communication log (Admin only)
 export const addCommunication = createAsyncThunk(
   "quotes/addCommunication",
   async ({ quoteId, communication }, { rejectWithValue }) => {
@@ -253,7 +247,6 @@ export const addCommunication = createAsyncThunk(
   }
 );
 
-// Delete quote (Admin only)
 export const deleteQuote = createAsyncThunk(
   "quotes/deleteQuote",
   async (quoteId, { rejectWithValue }) => {
@@ -273,7 +266,6 @@ export const deleteQuote = createAsyncThunk(
   }
 );
 
-// Get quote statistics (Admin only)
 export const getQuoteStats = createAsyncThunk(
   "quotes/getQuoteStats",
   async (_, { rejectWithValue }) => {
@@ -291,7 +283,6 @@ export const getQuoteStats = createAsyncThunk(
   }
 );
 
-// Export quotes (Admin only)
 export const exportQuotes = createAsyncThunk(
   "quotes/exportQuotes",
   async (params = {}, { rejectWithValue }) => {
@@ -310,7 +301,6 @@ export const exportQuotes = createAsyncThunk(
   }
 );
 
-// Verify quote (Public)
 export const verifyQuote = createAsyncThunk(
   "quotes/verifyQuote",
   async (quoteId, { rejectWithValue }) => {
@@ -403,6 +393,8 @@ const initialState = {
   // WebSocket connection state
   wsConnected: false,
   wsError: null,
+  wsConnectionAttempts: 0,
+  wsReconnectTimer: null,
   
   // Export data
   exportedData: null,
@@ -524,11 +516,16 @@ const quotesSlice = createSlice({
       }
     },
 
-    // WebSocket connection state
+    // ENHANCED: WebSocket connection state management
     setWebSocketConnected: (state, action) => {
       state.wsConnected = action.payload;
       if (action.payload) {
         state.wsError = null;
+        state.wsConnectionAttempts = 0;
+        if (state.wsReconnectTimer) {
+          clearTimeout(state.wsReconnectTimer);
+          state.wsReconnectTimer = null;
+        }
       }
     },
 
@@ -538,10 +535,22 @@ const quotesSlice = createSlice({
       state.wsConnected = false;
     },
 
-    // Handle real-time quote updates from WebSocket
+    // WebSocket connection attempt
+    incrementWebSocketAttempts: (state) => {
+      state.wsConnectionAttempts += 1;
+    },
+
+    // Set reconnect timer
+    setWebSocketReconnectTimer: (state, action) => {
+      state.wsReconnectTimer = action.payload;
+    },
+
+    // ENHANCED: Handle real-time quote updates from WebSocket
     handleNewQuoteNotification: (state, action) => {
       const newQuote = action.payload;
-      // Add to beginning of list if not already exists
+      console.log('📥 Handling new quote notification:', newQuote);
+      
+      // Check if quote already exists
       const exists = state.quotes.some(quote => 
         quote._id === newQuote._id || quote.quoteId === newQuote.quoteId
       );
@@ -551,12 +560,17 @@ const quotesSlice = createSlice({
         state.stats.total += 1;
         state.stats.byStatus.pending += 1;
         state.stats.unviewed += 1;
+        console.log('✅ New quote added to state');
+      } else {
+        console.log('ℹ️ Quote already exists in state');
       }
     },
 
     // Handle quote status update from WebSocket
     handleQuoteStatusUpdate: (state, action) => {
       const { quoteId, oldStatus, newStatus } = action.payload;
+      console.log('📥 Handling quote status update:', quoteId, oldStatus, '->', newStatus);
+      
       const index = state.quotes.findIndex(quote => 
         quote._id === quoteId || quote.quoteId === quoteId
       );
@@ -570,6 +584,7 @@ const quotesSlice = createSlice({
           state.stats.byStatus[oldStatus] -= 1;
         }
         state.stats.byStatus[newStatus] += 1;
+        console.log('✅ Quote status updated in state');
       }
       
       // Update current quote if it matches
@@ -584,6 +599,7 @@ const quotesSlice = createSlice({
     // Handle quote deletion from WebSocket
     handleQuoteDeletion: (state, action) => {
       const quoteId = action.payload;
+      console.log('📥 Handling quote deletion:', quoteId);
       
       // Remove from quotes list
       const index = state.quotes.findIndex(quote => 
@@ -602,6 +618,7 @@ const quotesSlice = createSlice({
         if (!deletedQuote.viewedByAdmin) {
           state.stats.unviewed -= 1;
         }
+        console.log('✅ Quote removed from state');
       }
       
       // Clear current quote if it was deleted
@@ -618,6 +635,8 @@ const quotesSlice = createSlice({
     // Handle quote response created from WebSocket
     handleQuoteResponseCreated: (state, action) => {
       const { quoteId, response } = action.payload;
+      console.log('📥 Handling quote response created:', quoteId);
+      
       const index = state.quotes.findIndex(quote => 
         quote._id === quoteId || quote.quoteId === quoteId
       );
@@ -627,6 +646,7 @@ const quotesSlice = createSlice({
         state.quotes[index].status = 'responded';
         state.quotes[index].respondedAt = new Date().toISOString();
         state.quotes[index].updatedAt = new Date().toISOString();
+        console.log('✅ Quote response added to state');
       }
     },
 
@@ -695,6 +715,53 @@ const quotesSlice = createSlice({
       .addCase(fetchQuotes.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || 'Failed to fetch quotes';
+      })
+
+      // Continue with other reducers (keeping existing patterns)...
+      
+      // Delete quote
+      .addCase(deleteQuote.pending, (state) => {
+        state.deleting = true;
+        state.deleteError = null;
+      })
+      .addCase(deleteQuote.fulfilled, (state, action) => {
+        state.deleting = false;
+        const quoteId = action.payload;
+        
+        // Find and remove from quotes list
+        const index = state.quotes.findIndex(quote => 
+          quote._id === quoteId || quote.quoteId === quoteId || quote.id === quoteId
+        );
+        
+        if (index !== -1) {
+          const deletedQuote = state.quotes[index];
+          state.quotes.splice(index, 1);
+          
+          // Update stats
+          state.stats.total -= 1;
+          if (state.stats.byStatus[deletedQuote.status] > 0) {
+            state.stats.byStatus[deletedQuote.status] -= 1;
+          }
+          if (!deletedQuote.viewedByAdmin) {
+            state.stats.unviewed = Math.max(0, state.stats.unviewed - 1);
+          }
+        }
+        
+        // Clear current quote if it was deleted
+        if (state.currentQuote && (
+          state.currentQuote._id === quoteId || 
+          state.currentQuote.quoteId === quoteId || 
+          state.currentQuote.id === quoteId
+        )) {
+          state.currentQuote = null;
+        }
+        
+        // Remove from selected quotes
+        state.selectedQuoteIds = state.selectedQuoteIds.filter(id => id !== quoteId);
+      })
+      .addCase(deleteQuote.rejected, (state, action) => {
+        state.deleting = false;
+        state.deleteError = action.payload;
       })
 
       // Fetch quote by ID
@@ -929,51 +996,6 @@ const quotesSlice = createSlice({
         console.error('Failed to add communication:', action.payload);
       })
 
-      // Delete quote
-      .addCase(deleteQuote.pending, (state) => {
-        state.deleting = true;
-        state.deleteError = null;
-      })
-      .addCase(deleteQuote.fulfilled, (state, action) => {
-        state.deleting = false;
-        const quoteId = action.payload;
-        
-        // Find and remove from quotes list
-        const index = state.quotes.findIndex(quote => 
-          quote._id === quoteId || quote.quoteId === quoteId || quote.id === quoteId
-        );
-        
-        if (index !== -1) {
-          const deletedQuote = state.quotes[index];
-          state.quotes.splice(index, 1);
-          
-          // Update stats
-          state.stats.total -= 1;
-          if (state.stats.byStatus[deletedQuote.status] > 0) {
-            state.stats.byStatus[deletedQuote.status] -= 1;
-          }
-          if (!deletedQuote.viewedByAdmin) {
-            state.stats.unviewed = Math.max(0, state.stats.unviewed - 1);
-          }
-        }
-        
-        // Clear current quote if it was deleted
-        if (state.currentQuote && (
-          state.currentQuote._id === quoteId || 
-          state.currentQuote.quoteId === quoteId || 
-          state.currentQuote.id === quoteId
-        )) {
-          state.currentQuote = null;
-        }
-        
-        // Remove from selected quotes
-        state.selectedQuoteIds = state.selectedQuoteIds.filter(id => id !== quoteId);
-      })
-      .addCase(deleteQuote.rejected, (state, action) => {
-        state.deleting = false;
-        state.deleteError = action.payload;
-      })
-
       // Get quote statistics
       .addCase(getQuoteStats.pending, (state) => {
         // No loading state for stats
@@ -1036,6 +1058,8 @@ export const {
   updateQuoteLocally,
   setWebSocketConnected,
   setWebSocketError,
+  incrementWebSocketAttempts,
+  setWebSocketReconnectTimer,
   handleNewQuoteNotification,
   handleQuoteStatusUpdate,
   handleQuoteDeletion,
@@ -1086,6 +1110,7 @@ export const selectVerificationData = (state) => state.quotes?.verificationData;
 // WebSocket Selectors
 export const selectWebSocketConnected = (state) => state.quotes?.wsConnected;
 export const selectWebSocketError = (state) => state.quotes?.wsError;
+export const selectWebSocketAttempts = (state) => state.quotes?.wsConnectionAttempts;
 
 // Computed Selectors
 export const selectQuoteById = (quoteId) => (state) =>

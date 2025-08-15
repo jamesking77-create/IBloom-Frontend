@@ -215,7 +215,7 @@ const UserLayout = () => {
       <nav className="hidden md:block fixed top-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-700 ease-out">
         {/* Expanded Nav (Default State) */}
         <div
-          className={`bg-gray-200/80 backdrop-blur-lg rounded-4xl px-16 py-4 shadow-xl border border-gray-200/50 transition-all duration-700 ease-out w-[75vw] max-w-none ${
+          className={`bg-gray-200/80 backdrop-blur-lg rounded-full px-16 py-4 shadow-xl border border-gray-200/50 transition-all duration-700 ease-out w-[75vw] max-w-none ${
             isScrolled
               ? "opacity-0 scale-90 translate-y-2 pointer-events-none"
               : "opacity-100 scale-100 translate-y-0"

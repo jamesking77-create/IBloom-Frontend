@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   Eye, 
@@ -30,16 +30,12 @@ import {
   MoreVertical,
   Bell,
   Loader2,
-  Menu,
   X,
-  ArrowLeft,
   Send,
-  DollarSign,
   Save
 } from 'lucide-react';
 
 import { QuoteDetails } from '../../../components/quotes/quoteDetails';
-
 
 // Redux imports
 import { 
@@ -50,7 +46,6 @@ import {
   createQuoteResponse,
   updateQuoteResponse,
   sendQuoteResponse,
-  addCommunication,
   setFilters,
   clearFilters,
   setWebSocketConnected,
@@ -94,144 +89,165 @@ export const QuotesList = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [responseQuote, setResponseQuote] = useState(null);
-  const [editingQuote, setEditingQuote] = useState(null);
   const [editingResponse, setEditingResponse] = useState({});
   const [viewMode, setViewMode] = useState('cards');
   const [expandedQuote, setExpandedQuote] = useState(null);
   const [showActionMenu, setShowActionMenu] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  // WebSocket refs
+  const wsRef = useRef(null);
+  const isComponentMounted = useRef(true);
 
   // WebSocket connection
-  const [ws, setWs] = useState(null);
+  const connectWebSocket = useCallback(() => {
+    if (!isComponentMounted.current) return;
 
-  // Initialize WebSocket connection
-  useEffect(() => {
-    const connectWebSocket = () => {
-      try {
-        const wsHost = import.meta.env.VITE_WS_HOST || 'localhost:5000';
-        const wsUrl = `ws://${wsHost}/websocket`;
-        
-        console.log('🔌 Connecting to Quote WebSocket:', wsUrl);
-        
-        const socket = new WebSocket(wsUrl);
-        
-        socket.onopen = () => {
-          console.log('✅ Quote WebSocket connected');
-          dispatch(setWebSocketConnected(true));
-          
-          const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-          if (token) {
-            socket.send(JSON.stringify({
-              type: 'authenticate',
-              token: token,
-              module: 'quotes'
-            }));
-          }
-        };
-        
-        socket.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            console.log('📥 WebSocket message:', message);
-            
-            if (message.module === 'quotes' || message.type?.startsWith('quote_')) {
-              switch (message.type) {
-                case 'quote_created':
-                case 'new_quote':
-                  console.log('🆕 New quote received:', message.data);
-                  dispatch(handleNewQuoteNotification(message.data));
-                  addNotification({
-                    type: 'new_quote',
-                    title: 'New Quote Request',
-                    message: `${message.data.customer?.name || 'Customer'} requested a quote for ${message.data.categoryName}`,
-                    timestamp: new Date(),
-                    data: message.data
-                  });
-                  dispatch(fetchQuotes(filters));
-                  break;
-                  
-                case 'quote_status_updated':
-                  console.log('🔄 Quote status updated:', message.data);
-                  dispatch(handleQuoteStatusUpdate(message.data));
-                  break;
-                  
-                case 'quote_deleted':
-                  console.log('🗑️ Quote deleted:', message.data);
-                  dispatch(handleQuoteDeletion(message.data.quoteId));
-                  break;
-                  
-                case 'quote_response_created':
-                  console.log('📝 Quote response created:', message.data);
-                  dispatch(fetchQuotes(filters));
-                  break;
-                  
-                case 'authentication_success':
-                  console.log('✅ WebSocket authenticated for quotes');
-                  break;
-              }
-            }
-          } catch (err) {
-            console.error('❌ Error parsing WebSocket message:', err);
-          }
-        };
-        
-        socket.onclose = (event) => {
-          console.log('📵 WebSocket disconnected:', event.code, event.reason);
-          dispatch(setWebSocketConnected(false));
-          
-          if (event.code !== 1000) {
-            setTimeout(() => {
-              console.log('🔄 Attempting to reconnect WebSocket...');
-              connectWebSocket();
-            }, 3000);
-          }
-        };
-        
-        socket.onerror = (error) => {
-          console.error('❌ WebSocket error:', error);
-          dispatch(setWebSocketError('WebSocket connection failed'));
-        };
-        
-        setWs(socket);
-        
-      } catch (error) {
-        console.error('❌ Failed to create WebSocket connection:', error);
-        dispatch(setWebSocketError('Failed to connect to real-time updates'));
+    try {
+      const wsHost = import.meta.env.VITE_WS_HOST || 'localhost:5000';
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProtocol}//${wsHost}/websocket`;
+      
+      console.log('🔌 Connecting to WebSocket:', wsUrl);
+      
+      if (wsRef.current) {
+        wsRef.current.close();
       }
-    };
 
+      const socket = new WebSocket(wsUrl);
+      wsRef.current = socket;
+      
+      socket.onopen = () => {
+        if (!isComponentMounted.current) return;
+        
+        console.log('✅ WebSocket connected for quotes');
+        dispatch(setWebSocketConnected(true));
+        
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+        
+        // Identify as admin
+        socket.send(JSON.stringify({
+          type: 'identify',
+          clientType: 'admin',
+          userId: 'admin-user'
+        }));
+
+        // Authenticate if token exists
+        if (token) {
+          socket.send(JSON.stringify({
+            type: 'authenticate',
+            token: token,
+            clientType: 'admin'
+          }));
+        }
+
+        // Subscribe to quotes module
+        socket.send(JSON.stringify({
+          type: 'subscribe',
+          module: 'quotes'
+        }));
+      };
+      
+      socket.onmessage = (event) => {
+        if (!isComponentMounted.current) return;
+        
+        try {
+          const message = JSON.parse(event.data);
+          
+          // Handle quote notifications
+          if (message.module === 'quotes' || message.type?.includes('quote')) {
+            switch (message.type) {
+              case 'new_quote':
+                console.log('🆕 New quote received:', message.data);
+                dispatch(handleNewQuoteNotification(message.data));
+                addNotification({
+                  type: 'new_quote',
+                  title: 'New Quote Request',
+                  message: `${message.data.customer?.name} requested a quote`,
+                  timestamp: new Date()
+                });
+                break;
+                
+              case 'quote_status_updated':
+                console.log('🔄 Quote status updated:', message.data);
+                dispatch(handleQuoteStatusUpdate(message.data));
+                break;
+                
+              case 'quote_deleted':
+                console.log('🗑️ Quote deleted:', message.data);
+                dispatch(handleQuoteDeletion(message.data.quoteId || message.data._id));
+                break;
+            }
+          }
+        } catch (err) {
+          console.error('❌ Error parsing WebSocket message:', err);
+        }
+      };
+      
+      socket.onclose = (event) => {
+        if (!isComponentMounted.current) return;
+        
+        console.log('📵 WebSocket disconnected:', event.code);
+        dispatch(setWebSocketConnected(false));
+        
+        // Reconnect if not a clean close
+        if (event.code !== 1000) {
+          setTimeout(() => {
+            if (isComponentMounted.current) {
+              connectWebSocket();
+            }
+          }, 3000);
+        }
+      };
+      
+      socket.onerror = (error) => {
+        console.error('❌ WebSocket error:', error);
+        dispatch(setWebSocketError('WebSocket connection failed'));
+      };
+      
+    } catch (error) {
+      console.error('❌ Failed to create WebSocket connection:', error);
+      dispatch(setWebSocketError('Failed to connect to real-time updates'));
+    }
+  }, [dispatch]);
+
+  // Initialize WebSocket
+  useEffect(() => {
+    isComponentMounted.current = true;
     connectWebSocket();
 
     return () => {
-      if (ws) {
-        console.log('🔌 Closing WebSocket connection');
-        ws.close(1000, 'Component unmounting');
+      isComponentMounted.current = false;
+      if (wsRef.current) {
+        wsRef.current.close(1000, 'Component unmounting');
       }
     };
-  }, []);
+  }, [connectWebSocket]);
 
-  // Add notification helper
+  // Fetch quotes on mount and filter changes
+  useEffect(() => {
+    dispatch(fetchQuotes(filters));
+  }, [dispatch, filters]);
+
+  // Notification helper
   const addNotification = useCallback((notification) => {
+    if (!isComponentMounted.current) return;
+    
     const notificationWithId = { ...notification, id: Date.now() };
     setNotifications(prev => [notificationWithId, ...prev.slice(0, 4)]);
     
     setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== notificationWithId.id));
+      if (isComponentMounted.current) {
+        setNotifications(prev => prev.filter(n => n.id !== notificationWithId.id));
+      }
     }, 5000);
   }, []);
 
-  // Fetch quotes on component mount and when filters change
-  useEffect(() => {
-    console.log('📊 Fetching quotes...');
-    dispatch(fetchQuotes(filters));
-  }, [dispatch, filters]);
-
+  // Event handlers
   const handleViewQuote = async (quote) => {
     setSelectedQuote(quote);
     setShowDetails(true);
-    setShowMobileMenu(false);
     
     if (!quote.viewedByAdmin) {
       try {
@@ -273,7 +289,6 @@ export const QuotesList = () => {
     if (!responseQuote) return;
     
     try {
-      // Calculate totals
       const itemsTotal = editingResponse.items?.reduce((sum, item) => 
         sum + ((item.unitPrice || 0) * (item.quantity || 1)), 0) || 0;
       
@@ -306,9 +321,6 @@ export const QuotesList = () => {
       setShowResponseModal(false);
       setResponseQuote(null);
       setEditingResponse({});
-      
-      // Refresh quotes to get updated data
-      dispatch(fetchQuotes(filters));
       
       addNotification({
         type: 'success',
@@ -356,7 +368,6 @@ export const QuotesList = () => {
   };
 
   const handleRefresh = () => {
-    console.log('🔄 Manual refresh requested');
     dispatch(fetchQuotes(filters));
   };
 
@@ -385,7 +396,6 @@ export const QuotesList = () => {
       try {
         await dispatch(deleteQuote(quoteId)).unwrap();
         setShowActionMenu(null);
-        setShowMobileMenu(false);
         
         addNotification({
           type: 'success',
@@ -418,27 +428,29 @@ export const QuotesList = () => {
     setExpandedQuote(expandedQuote === quoteId ? null : quoteId);
   };
 
+  // Helper functions
   const calculateResponseTotal = (items = [], discount = 0, tax = 0, deliveryFee = 0, setupFee = 0) => {
     const subtotal = items.reduce((sum, item) => 
       sum + ((item.unitPrice || 0) * (item.quantity || 1)), 0);
     return subtotal - discount + tax + deliveryFee + setupFee;
   };
 
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'reviewed': return 'bg-blue-100 text-blue-800';
+      case 'responded': return 'bg-green-100 text-green-800';
+      case 'accepted': return 'bg-emerald-100 text-emerald-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'expired': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Components
   const StatusDropdown = ({ quote }) => {
     const statuses = ['pending', 'reviewed', 'responded', 'accepted', 'cancelled', 'expired'];
     const quoteId = quote.quoteId || quote._id;
-    
-    const getStatusColor = (status) => {
-      switch(status) {
-        case 'pending': return 'bg-yellow-100 text-yellow-800';
-        case 'reviewed': return 'bg-blue-100 text-blue-800';
-        case 'responded': return 'bg-green-100 text-green-800';
-        case 'accepted': return 'bg-emerald-100 text-emerald-800';
-        case 'cancelled': return 'bg-red-100 text-red-800';
-        case 'expired': return 'bg-gray-100 text-gray-800';
-        default: return 'bg-gray-100 text-gray-800';
-      }
-    };
 
     return (
       <div className="flex items-center space-x-2">
@@ -573,26 +585,23 @@ export const QuotesList = () => {
         !quote.viewedByAdmin ? 'ring-2 ring-emerald-200' : ''
       }`}>
         {/* Card Header */}
-        <div className="p-3 md:p-4 border-b border-gray-100">
+        <div className="p-4 border-b border-gray-100">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3 flex-1 min-w-0">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <Hash className="w-4 h-4 md:w-5 md:h-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <Hash className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center space-x-2">
-                  <h3 className="font-semibold text-sm md:text-base text-gray-900 truncate">
+                  <h3 className="font-semibold text-base text-gray-900 truncate">
                     #{quote.quoteId || 'N/A'}
                   </h3>
                   {!quote.viewedByAdmin && (
                     <span className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0"></span>
                   )}
                 </div>
-                <p className="text-xs md:text-sm text-gray-500 truncate">
+                <p className="text-sm text-gray-500 truncate">
                   {quote.customer?.name || 'Anonymous'}
-                </p>
-                <p className="text-xs text-gray-400 truncate md:hidden">
-                  {quote.customer?.email || 'N/A'}
                 </p>
               </div>
             </div>
@@ -611,10 +620,10 @@ export const QuotesList = () => {
         </div>
 
         {/* Card Content */}
-        <div className="p-3 md:p-4">
+        <div className="p-4">
           {/* Basic Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mb-3 md:mb-4">
-            <div className="hidden md:flex items-center text-sm text-gray-600">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <div className="flex items-center text-sm text-gray-600">
               <Mail size={14} className="mr-2 text-gray-400 flex-shrink-0" />
               <span className="truncate">{quote.customer?.email || 'N/A'}</span>
             </div>
@@ -634,7 +643,7 @@ export const QuotesList = () => {
 
           {/* Category & Event Type */}
           {(quote.categoryName || quote.customer?.eventType) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mb-3 md:mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               {quote.categoryName && (
                 <div className="flex items-center text-sm text-gray-600">
                   <Tag size={14} className="mr-2 text-gray-400 flex-shrink-0" />
@@ -652,7 +661,7 @@ export const QuotesList = () => {
 
           {/* Response Status */}
           {hasResponse && (
-            <div className="mb-3 md:mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
@@ -673,7 +682,7 @@ export const QuotesList = () => {
 
           {/* Expandable Section */}
           {(quote.customer?.eventDate || quote.customer?.eventLocation || quote.customer?.specialRequests) && (
-            <div className="mb-3 md:mb-4">
+            <div className="mb-4">
               <button
                 onClick={() => toggleExpanded(quote.quoteId || quote._id)}
                 className="flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors mb-2"
@@ -683,7 +692,7 @@ export const QuotesList = () => {
               </button>
 
               {isExpanded && (
-                <div className="space-y-2 md:space-y-3 p-3 bg-gray-50 rounded-lg">
+                <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
                   {quote.customer?.eventDate && (
                     <div className="flex items-center text-sm text-gray-600">
                       <Calendar size={14} className="mr-2 text-gray-400 flex-shrink-0" />
@@ -708,13 +717,6 @@ export const QuotesList = () => {
                       <span className="break-words">{quote.customer.specialRequests}</span>
                     </div>
                   )}
-                  
-                  <div className="flex items-center text-sm text-gray-600">
-                    {quote.customer?.preferredContact === 'email' && <Mail size={14} className="mr-2 text-gray-400" />}
-                    {quote.customer?.preferredContact === 'phone' && <Phone size={14} className="mr-2 text-gray-400" />}
-                    {quote.customer?.preferredContact === 'whatsapp' && <MessageSquare size={14} className="mr-2 text-gray-400" />}
-                    <span>Prefers: {quote.customer?.preferredContact || 'phone'} contact</span>
-                  </div>
                 </div>
               )}
             </div>
@@ -783,7 +785,7 @@ export const QuotesList = () => {
   };
 
   // Quote Response Modal Component
-  const QuoteResponseModalComponent = () => {
+  const QuoteResponseModal = () => {
     if (!showResponseModal || !responseQuote) return null;
 
     const updateItemPrice = (index, field, value) => {
@@ -815,9 +817,9 @@ export const QuotesList = () => {
     return (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-4 md:p-6 border-b border-gray-200 sticky top-0 bg-white">
+          <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg md:text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-900">
                 {responseQuote.response ? 'Edit Quote Response' : 'Create Quote Response'}
               </h2>
               <button
@@ -832,7 +834,7 @@ export const QuotesList = () => {
             </p>
           </div>
 
-          <div className="p-4 md:p-6 space-y-6">
+          <div className="p-6 space-y-6">
             {/* Response Message */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -997,7 +999,7 @@ export const QuotesList = () => {
             </div>
           </div>
 
-          <div className="p-4 md:p-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+          <div className="p-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
             <button
               onClick={() => setShowResponseModal(false)}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
@@ -1040,7 +1042,7 @@ export const QuotesList = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile Notifications */}
+      {/* Notifications */}
       {notifications.length > 0 && (
         <div className="fixed top-4 right-4 z-50 space-y-2">
           {notifications.map((notification) => (
@@ -1562,7 +1564,7 @@ export const QuotesList = () => {
       </div>
 
       {/* Quote Response Modal */}
-      <QuoteResponseModalComponent />
+      <QuoteResponseModal />
 
       {/* Loading Overlays */}
       {updating && (

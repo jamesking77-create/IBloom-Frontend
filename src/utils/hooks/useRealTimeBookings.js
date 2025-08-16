@@ -1,186 +1,96 @@
-// useRealtimeBooking.js - FIXED VERSION
+// utils/hooks/useRealTimeBookings.js - FIXED VERSION
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
 
-const useRealtimeBooking = (options = {}) => {
-  const {
-    enabled = true,
-    clientType = 'user', // 'admin' or 'user'
-    userId = null,
-    autoReconnect = true,
-    reconnectDelay = 3000,
-    maxReconnectAttempts = 5,
-    onNewBooking = null,
-    onBookingStatusUpdate = null,
-    onBookingDeleted = null,
-    onConnected = null,
-    onDisconnected = null,
-    onError = null,
-  } = options;
-
-  const dispatch = useDispatch();
+const useRealtimeBooking = ({
+  enabled = true,
+  clientType = 'admin',
+  onNewBooking = null,
+  onBookingStatusUpdate = null,
+  onBookingDeleted = null,
+  onConnected = null,
+  onDisconnected = null,
+  onError = null,
+}) => {
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
+  
+  const [isConnected, setIsConnected] = useState(false);
   const [connectionState, setConnectionState] = useState('disconnected');
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
-  const [lastMessage, setLastMessage] = useState(null);
-  const [clientId, setClientId] = useState(null);
   const [connectionError, setConnectionError] = useState(null);
+  const [clientId, setClientId] = useState(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const RECONNECT_INTERVAL = 3000;
+  const HEARTBEAT_INTERVAL = 30000;
 
-  // FIXED: Proper WebSocket URL construction
+  // Get WebSocket URL
   const getWebSocketUrl = useCallback(() => {
-    // Get base URL from environment
-    const baseUrl = import.meta.env.VITE_SERVER_BASEURL;
-    
-    if (!baseUrl) {
-      console.error('❌ VITE_SERVER_BASEURL not configured');
-      throw new Error('WebSocket URL not configured');
-    }
-
-    console.log('🔗 Base URL from env:', baseUrl);
-
-    let wsUrl;
-    
-    // FIXED: Better URL construction logic
-    if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
-      // Local development - use ws://
-      wsUrl = baseUrl.replace(/^https?:\/\//, 'ws://');
-    } else {
-      // Production - use wss:// (secure WebSocket)
-      wsUrl = baseUrl.replace(/^https?:\/\//, 'wss://');
-    }
-    
-    // Remove trailing slash and add WebSocket path
-    wsUrl = wsUrl.replace(/\/$/, '') + '/websocket';
-    
-    console.log('🔗 Constructed WebSocket URL:', wsUrl);
+    const baseUrl = import.meta.env.VITE_SERVER_BASEURL || 'http://localhost:5000/';
+    const wsUrl = baseUrl.replace(/^http/, 'ws').replace(/\/$/, '') + '/websocket';
+    console.log('🔌 WebSocket URL:', wsUrl);
     return wsUrl;
   }, []);
 
-  // Clean up function
-  const cleanup = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
-    }
-    if (wsRef.current) {
-      // Remove event listeners to prevent memory leaks
-      wsRef.current.onopen = null;
-      wsRef.current.onmessage = null;
-      wsRef.current.onclose = null;
-      wsRef.current.onerror = null;
-      
-      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
-        try {
-          wsRef.current.close(1000, 'Component cleanup');
-        } catch (error) {
-          console.warn('⚠️ Error during cleanup:', error);
-        }
-      }
-      wsRef.current = null;
-    }
-  }, []);
-
-  // Send message to WebSocket
-  const sendMessage = useCallback((message) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      try {
-        const messageWithTimestamp = {
-          ...message,
-          clientTimestamp: new Date().toISOString()
-        };
-        wsRef.current.send(JSON.stringify(messageWithTimestamp));
-        console.log('📤 WebSocket message sent:', message.type);
-        return true;
-      } catch (error) {
-        console.error('❌ Failed to send WebSocket message:', error);
-        setConnectionError(error.message);
-        return false;
-      }
-    } else {
-      const state = wsRef.current ? wsRef.current.readyState : 'null';
-      console.warn(`⚠️ WebSocket not connected (state: ${state}), cannot send message:`, message.type);
-      return false;
-    }
-  }, []);
-
-  // Handle incoming WebSocket messages
+  // Handle incoming messages
   const handleMessage = useCallback((event) => {
     try {
       const message = JSON.parse(event.data);
-      console.log('📥 WebSocket message received:', message.type, message);
-      
-      setLastMessage(message);
-      setConnectionError(null); // Clear any previous errors
+      console.log('📥 WebSocket message received:', message.type, message.module || 'no-module');
 
       switch (message.type) {
         case 'connection_established':
+          console.log('✅ Connection established with server');
           setClientId(message.clientId);
+          setIsConnected(true);
           setConnectionState('connected');
+          setConnectionError(null);
           setReconnectAttempts(0);
-          console.log('✅ WebSocket connected with client ID:', message.clientId);
           
-          // IMPORTANT: Wait a bit before sending identify message
-          setTimeout(() => {
-            // Identify client
-            sendMessage({
-              type: 'identify',
-              clientType: clientType,
-              userId: userId
-            });
-            
-            // Subscribe to booking updates
-            setTimeout(() => {
-              sendMessage({
-                type: 'subscribe_booking_updates'
-              });
-            }, 100);
-          }, 100);
+          // Subscribe to bookings module
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              type: 'subscribe',
+              module: 'bookings'
+            }));
+            console.log('📻 Subscribed to bookings module');
+          }
           
-          if (onConnected) onConnected(message);
-          break;
-
-        case 'identification_confirmed':
-          console.log('👤 Client identified as:', message.clientType);
+          if (onConnected) onConnected();
           break;
 
         case 'subscription_confirmed':
-          console.log('📻 Subscribed to:', message.subscription);
+          console.log(`📻 Subscription confirmed for module: ${message.module}`);
           break;
 
         case 'new_booking':
           console.log('🔔 New booking notification:', message.data);
-          if (onNewBooking) {
+          if (onNewBooking && message.module === 'bookings') {
             onNewBooking(message.data);
           }
           break;
 
         case 'booking_status_update':
           console.log('🔄 Booking status update:', message.data);
-          if (onBookingStatusUpdate) {
+          if (onBookingStatusUpdate && message.module === 'bookings') {
             onBookingStatusUpdate(message.data);
           }
           break;
 
         case 'booking_deleted':
-          console.log('🗑️ Booking deleted:', message.data);
-          if (onBookingDeleted) {
+          console.log('🗑️ Booking deleted notification:', message.data);
+          if (onBookingDeleted && message.module === 'bookings') {
             onBookingDeleted(message.data);
           }
           break;
 
-        case 'pong':
-          console.log('🏓 Received pong from server');
+        case 'identification_confirmed':
+          console.log('👤 Client identification confirmed:', message.clientType);
           break;
 
-        case 'server_shutdown':
-          console.log('🛑 Server shutting down:', message.message);
-          setConnectionState('disconnected');
+        case 'pong':
+          console.log('🏓 Pong received from server');
           break;
 
         case 'error':
@@ -189,247 +99,175 @@ const useRealtimeBooking = (options = {}) => {
           if (onError) onError(new Error(message.message));
           break;
 
+        case 'server_shutdown':
+          console.warn('🛑 Server is shutting down');
+          setConnectionError('Server is shutting down');
+          break;
+
         default:
-          console.log('❓ Unknown message type:', message.type);
+          console.log('❓ Unknown message type:', message.type, message);
       }
     } catch (error) {
-      console.error('❌ Failed to parse WebSocket message:', error);
-      setConnectionError('Failed to parse server message');
+      console.error('❌ Error parsing WebSocket message:', error);
       if (onError) onError(error);
     }
-  }, [clientType, userId, onNewBooking, onBookingStatusUpdate, onBookingDeleted, onConnected, onError, sendMessage]);
+  }, [onNewBooking, onBookingStatusUpdate, onBookingDeleted, onConnected, onError]);
 
-  // Setup heartbeat (ping/pong)
-  const setupHeartbeat = useCallback(() => {
+  // Heartbeat mechanism
+  const startHeartbeat = useCallback(() => {
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
     }
-    
+
     heartbeatIntervalRef.current = setInterval(() => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        sendMessage({ type: 'ping' });
-      } else {
-        console.warn('⚠️ Heartbeat: WebSocket not open, clearing interval');
-        if (heartbeatIntervalRef.current) {
-          clearInterval(heartbeatIntervalRef.current);
-          heartbeatIntervalRef.current = null;
+        try {
+          wsRef.current.send(JSON.stringify({ type: 'ping' }));
+          console.log('🏓 Ping sent to server');
+        } catch (error) {
+          console.error('❌ Error sending ping:', error);
         }
       }
-    }, 30000); // Ping every 30 seconds
-  }, [sendMessage]);
+    }, HEARTBEAT_INTERVAL);
+  }, []);
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  }, []);
 
   // Connect to WebSocket
   const connect = useCallback(() => {
     if (!enabled) {
-      console.log('🔇 WebSocket disabled');
+      console.log('🚫 WebSocket disabled');
       return;
     }
 
-    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
-      console.log('✅ WebSocket already connected/connecting');
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('✅ WebSocket already connected');
       return;
     }
-
-    console.log('🔌 Connecting to WebSocket...');
-    setConnectionState('connecting');
-    setConnectionError(null);
 
     try {
+      console.log('🔌 Attempting to connect to WebSocket...');
+      setConnectionState('connecting');
+      setConnectionError(null);
+
       const wsUrl = getWebSocketUrl();
-      console.log('🔗 Attempting WebSocket connection to:', wsUrl);
-      
       wsRef.current = new WebSocket(wsUrl);
 
-      // Set connection timeout
-      const connectionTimeout = setTimeout(() => {
-        if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
-          console.error('❌ WebSocket connection timeout');
-          wsRef.current.close();
-          setConnectionState('error');
-          setConnectionError('Connection timeout');
-        }
-      }, 10000); // 10 second timeout
-
       wsRef.current.onopen = (event) => {
-        clearTimeout(connectionTimeout);
         console.log('✅ WebSocket connection opened');
-        setupHeartbeat();
-        // Don't set connected state here - wait for connection_established message
+        setConnectionState('connected');
+        
+        // Send identification message
+        wsRef.current.send(JSON.stringify({
+          type: 'identify',
+          clientType: clientType,
+          timestamp: new Date().toISOString()
+        }));
+        
+        startHeartbeat();
       };
 
       wsRef.current.onmessage = handleMessage;
 
       wsRef.current.onclose = (event) => {
-        clearTimeout(connectionTimeout);
-        console.log('📵 WebSocket connection closed:', {
-          code: event.code,
-          reason: event.reason,
-          wasClean: event.wasClean
-        });
-        
+        console.log('📵 WebSocket connection closed:', event.code, event.reason);
+        setIsConnected(false);
         setConnectionState('disconnected');
-        setClientId(null);
+        stopHeartbeat();
         
-        if (heartbeatIntervalRef.current) {
-          clearInterval(heartbeatIntervalRef.current);
-          heartbeatIntervalRef.current = null;
-        }
+        if (onDisconnected) onDisconnected();
 
-        if (onDisconnected) onDisconnected(event);
-
-        // Auto-reconnect logic
-        if (autoReconnect && event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
-          const delay = Math.min(reconnectDelay * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff, max 30s
-          console.log(`🔄 Attempting to reconnect in ${delay}ms... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+        // Attempt to reconnect if not a clean close
+        if (event.code !== 1000 && event.code !== 1001 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          console.log(`🔄 Attempting to reconnect... (${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
+          setReconnectAttempts(prev => prev + 1);
           
           reconnectTimeoutRef.current = setTimeout(() => {
-            setReconnectAttempts(prev => prev + 1);
             connect();
-          }, delay);
-        } else if (reconnectAttempts >= maxReconnectAttempts) {
+          }, RECONNECT_INTERVAL * (reconnectAttempts + 1)); // Exponential backoff
+        } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
           console.error('❌ Max reconnection attempts reached');
-          setConnectionState('error');
-          setConnectionError('Max reconnection attempts reached');
+          setConnectionError('Failed to reconnect after multiple attempts');
         }
       };
 
       wsRef.current.onerror = (error) => {
-        clearTimeout(connectionTimeout);
-        console.error('❌ WebSocket error:', error);
+        console.error('❌ WebSocket connection error:', error);
+        setConnectionError('Connection failed');
         setConnectionState('error');
-        setConnectionError('WebSocket connection error');
         if (onError) onError(error);
       };
 
     } catch (error) {
-      console.error('❌ Failed to create WebSocket connection:', error);
-      setConnectionState('error');
+      console.error('❌ Error creating WebSocket connection:', error);
       setConnectionError(error.message);
+      setConnectionState('error');
       if (onError) onError(error);
     }
-  }, [
-    enabled, 
-    getWebSocketUrl, 
-    handleMessage, 
-    setupHeartbeat, 
-    autoReconnect, 
-    reconnectAttempts, 
-    maxReconnectAttempts, 
-    reconnectDelay, 
-    onDisconnected, 
-    onError
-  ]);
+  }, [enabled, clientType, handleMessage, reconnectAttempts, getWebSocketUrl, startHeartbeat, stopHeartbeat, onDisconnected, onError]);
 
-  // Disconnect from WebSocket
+  // Disconnect WebSocket
   const disconnect = useCallback(() => {
-    console.log('📵 Manually disconnecting WebSocket...');
-    cleanup();
+    console.log('📵 Disconnecting WebSocket...');
+    
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
+    stopHeartbeat();
+    
+    if (wsRef.current) {
+      wsRef.current.close(1000, 'Manual disconnect');
+      wsRef.current = null;
+    }
+    
+    setIsConnected(false);
     setConnectionState('disconnected');
     setClientId(null);
     setReconnectAttempts(0);
-    setConnectionError(null);
-  }, [cleanup]);
+  }, [stopHeartbeat]);
 
-  // Manually trigger reconnection
+  // Manual reconnect
   const reconnect = useCallback(() => {
-    console.log('🔄 Manually reconnecting WebSocket...');
+    console.log('🔄 Manual reconnect requested');
+    setReconnectAttempts(0);
     disconnect();
-    setTimeout(() => {
-      setReconnectAttempts(0);
-      connect();
-    }, 1000);
+    setTimeout(connect, 1000);
   }, [disconnect, connect]);
 
-  // Emit booking success (for user side)
-  const emitBookingSuccess = useCallback((bookingData) => {
-    console.log('🎉 Emitting booking success:', bookingData);
-    return sendMessage({
-      type: 'booking_completed',
-      data: {
-        bookingId: bookingData.bookingId || bookingData._id,
-        clientType: 'user',
-        timestamp: new Date().toISOString()
-      }
-    });
-  }, [sendMessage]);
-
-  // Effect to handle connection
+  // Initialize connection
   useEffect(() => {
     if (enabled) {
-      // Small delay to ensure component is mounted
-      const timer = setTimeout(() => {
-        connect();
-      }, 100);
-      
-      return () => {
-        clearTimeout(timer);
-        cleanup();
-      };
+      connect();
     }
 
-    return cleanup;
-  }, [enabled]); // Only reconnect if enabled changes
+    return () => {
+      disconnect();
+    };
+  }, [enabled]); // Only depend on enabled to avoid infinite reconnections
 
-  // Reset reconnect attempts when connection is successful
+  // Cleanup on unmount
   useEffect(() => {
-    if (connectionState === 'connected') {
-      setReconnectAttempts(0);
-      setConnectionError(null);
-    }
-  }, [connectionState]);
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 WebSocket Hook State:', {
-      connectionState,
-      clientId,
-      reconnectAttempts,
-      enabled,
-      error: connectionError
-    });
-  }, [connectionState, clientId, reconnectAttempts, enabled, connectionError]);
-
-  // Return hook interface
   return {
-    // Connection state
+    isConnected,
     connectionState,
-    isConnected: connectionState === 'connected',
-    isConnecting: connectionState === 'connecting',
-    isDisconnected: connectionState === 'disconnected',
-    hasError: connectionState === 'error',
-    
-    // Connection info
+    connectionError,
     clientId,
     reconnectAttempts,
-    lastMessage,
-    connectionError,
-    
-    // Connection control
     connect,
     disconnect,
     reconnect,
-    
-    // Message functions
-    sendMessage,
-    emitBookingSuccess,
-    
-    // Connection stats
-    stats: {
-      connectionState,
-      clientId,
-      reconnectAttempts,
-      maxReconnectAttempts,
-      autoReconnect,
-      enabled,
-      error: connectionError,
-      wsUrl: (() => {
-        try {
-          return getWebSocketUrl();
-        } catch (e) {
-          return 'Error constructing URL';
-        }
-      })()
-    }
   };
 };
 

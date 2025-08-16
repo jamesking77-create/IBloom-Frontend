@@ -52,7 +52,6 @@ const ContactPage = () => {
     setSubmitStatus(null);
     setErrorMessage("");
 
-    // Simulate form submission
     try {
       const payload = {
         to: adminEmail,
@@ -84,7 +83,7 @@ const ContactPage = () => {
         },
       };
 
-      // Send to /api/mailer/send-email (adjust if your base URL prefix is different)
+      // Send to /api/mailer/send-email
       await post("/api/mailer/send-email", payload);
 
       setSubmitStatus("success");
@@ -169,7 +168,7 @@ const ContactPage = () => {
       href: "#",
       color: "text-purple-600",
       available: true,
-    },
+    }
   ];
 
   const eventTypes = [
@@ -286,7 +285,7 @@ const ContactPage = () => {
                 {submitStatus === "error" && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center text-red-700">
                     <AlertCircle className="w-5 h-5 mr-3" />
-                    Something went wrong. Please try again.
+                    {errorMessage || "Something went wrong. Please try again."}
                   </div>
                 )}
 
@@ -554,9 +553,12 @@ const ContactPage = () => {
               <button className="bg-white text-gray-800 px-6 py-3 rounded-lg border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 font-medium">
                 View FAQ
               </button>
-              <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 font-medium">
-                Live Chat
-              </button>
+              <a
+                href="mailto:ibloomrentals@gmail.com"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 font-medium inline-block"
+              >
+                Send MSG
+              </a>
             </div>
           </div>
         </div>

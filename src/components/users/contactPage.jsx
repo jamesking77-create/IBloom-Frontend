@@ -1,34 +1,38 @@
 // screens/users/ContactPage.js
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Clock, 
-  Send, 
-  Facebook, 
-  Instagram, 
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { post } from "../../utils/api";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Send,
+  Facebook,
+  Instagram,
   Twitter,
   MessageCircle,
   CheckCircle,
-  AlertCircle
-} from 'lucide-react';
+  AlertCircle,
+} from "lucide-react";
 
 const ContactPage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    eventType: '',
-    eventDate: '',
-    message: ''
+    name: "",
+    email: "",
+    phone: "",
+    eventType: "",
+    eventDate: "",
+    message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
-
+  const [errorMessage, setErrorMessage] = useState("");
   const { userData } = useSelector((state) => state.profile);
+
+  // Admin email fallback
+  const adminEmail = userData?.email || "adeoyemayopoelijah@gmail.com";
 
   useEffect(() => {
     setIsVisible(true);
@@ -36,30 +40,67 @@ const ContactPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+    setSubmitStatus(null);
+    setErrorMessage("");
+
     // Simulate form submission
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setSubmitStatus('success');
+      const payload = {
+        to: adminEmail,
+        subject: `New Contact Inquiry from ${formData.name} - ${
+          formData.eventType || "General"
+        }`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; border-bottom: 1px solid #ddd; padding-bottom: 10px;">New Contact Message</h2>
+            <p><strong>Name:</strong> ${formData.name}</p>
+            <p><strong>Email:</strong> ${formData.email}</p>
+            <p><strong>Phone:</strong> ${formData.phone || "Not provided"}</p>
+            <p><strong>Event Type:</strong> ${
+              formData.eventType || "Not specified"
+            }</p>
+            <p><strong>Event Date:</strong> ${
+              formData.eventDate || "Not specified"
+            }</p>
+            <p><strong>Message:</strong> ${formData.message.replace(
+              /\n/g,
+              "<br>"
+            )}</p>
+            <p style="color: #666; font-size: 12px; margin-top: 20px;">Sent on: ${new Date().toLocaleString()}</p>
+          </div>
+        `,
+        from: {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+        },
+      };
+
+      // Send to /api/mailer/send-email (adjust if your base URL prefix is different)
+      await post("/api/mailer/send-email", payload);
+
+      setSubmitStatus("success");
       setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        eventType: '',
-        eventDate: '',
-        message: ''
+        name: "",
+        email: "",
+        phone: "",
+        eventType: "",
+        eventDate: "",
+        message: "",
       });
     } catch (error) {
-      setSubmitStatus('error');
+      setSubmitStatus("error");
+      setErrorMessage(
+        error.message || "Failed to send message. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setSubmitStatus(null), 5000);
@@ -72,7 +113,7 @@ const ContactPage = () => {
       // Fallback to default location
       return "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.789!2d3.4347!3d6.4548!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103bf50c5b1f5b5b%3A0x2d4e8f6a7c9b1234!2s178B%20Corporation%20Drive%2C%20Dolphin%20Estate%2C%20Ikoyi%2C%20Lagos%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1735649200";
     }
-    
+
     // Create a search-based embed URL that doesn't require API key
     const encodedLocation = encodeURIComponent(location);
     return `https://maps.google.com/maps?width=100%25&height=600&hl=en&q=${encodedLocation}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
@@ -90,7 +131,7 @@ const ContactPage = () => {
   // Helper function to get Google Maps search URL
   const getLocationSearchUrl = (location) => {
     if (!location) {
-      return 'https://maps.google.com/?q=Corporation+Drive+Dolphin+Estate+Ikoyi+Lagos';
+      return "https://maps.google.com/?q=Corporation+Drive+Dolphin+Estate+Ikoyi+Lagos";
     }
     const encodedLocation = encodeURIComponent(location);
     return `https://maps.google.com/?q=${encodedLocation}`;
@@ -99,46 +140,46 @@ const ContactPage = () => {
   const contactInfo = [
     {
       icon: Phone,
-      title: 'Phone',
-      details: userData?.phone || 'No phone number available',
-      href: userData?.phone ? `tel:${userData.phone}` : '#',
-      color: 'text-green-600',
-      available: !!userData?.phone
+      title: "Phone",
+      details: userData?.phone || "No phone number available",
+      href: userData?.phone ? `tel:${userData.phone}` : "#",
+      color: "text-green-600",
+      available: !!userData?.phone,
     },
     {
       icon: Mail,
-      title: 'Email',
-      details: userData?.email || 'No email available',
-      href: userData?.email ? `mailto:${userData.email}` : '#',
-      color: 'text-blue-600',
-      available: !!userData?.email
+      title: "Email",
+      details: userData?.email || "No email available",
+      href: userData?.email ? `mailto:${userData.email}` : "#",
+      color: "text-blue-600",
+      available: !!userData?.email,
     },
     {
       icon: MapPin,
-      title: 'Location',
-      details: userData?.location || 'No location available',
+      title: "Location",
+      details: userData?.location || "No location available",
       href: getLocationSearchUrl(userData?.location),
-      color: 'text-red-600',
-      available: !!userData?.location
+      color: "text-red-600",
+      available: !!userData?.location,
     },
     {
       icon: Clock,
-      title: 'Business Hours',
-      details: 'Mon - Sat: 8AM - 8PM',
-      href: '#',
-      color: 'text-purple-600',
-      available: true
-    }
+      title: "Business Hours",
+      details: "Mon - Sat: 8AM - 8PM",
+      href: "#",
+      color: "text-purple-600",
+      available: true,
+    },
   ];
 
   const eventTypes = [
-    'Wedding',
-    'Birthday Party',
-    'Corporate Event',
-    'Anniversary',
-    'Baby Shower',
-    'Graduation',
-    'Other'
+    "Wedding",
+    "Birthday Party",
+    "Corporate Event",
+    "Anniversary",
+    "Baby Shower",
+    "Graduation",
+    "Other",
   ];
 
   return (
@@ -147,17 +188,24 @@ const ContactPage = () => {
       <section className="relative py-20 md:py-32 bg-gradient-to-br from-teal-600 via-blue-600 to-indigo-700 overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative max-w-4xl mx-auto px-4 text-center">
-          <div className={`text-white transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <div
+            className={`text-white transform transition-all duration-1000 ${
+              isVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-10 opacity-0"
+            }`}
+          >
             <MessageCircle className="w-16 h-16 mx-auto mb-6 animate-bounce" />
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Get In Touch
             </h1>
             <p className="text-xl md:text-2xl leading-relaxed">
-              Ready to plan your perfect event? We're here to help make it extraordinary.
+              Ready to plan your perfect event? We're here to help make it
+              extraordinary.
             </p>
           </div>
         </div>
-        
+
         {/* Animated Background Elements */}
         <div className="absolute top-20 left-10 w-24 h-24 bg-white/10 rounded-full animate-pulse"></div>
         <div className="absolute bottom-20 right-20 w-32 h-32 bg-white/5 rounded-full animate-bounce"></div>
@@ -171,18 +219,26 @@ const ContactPage = () => {
             {contactInfo.map((info, index) => (
               <div
                 key={index}
-                className={`bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl border border-gray-100 text-center group transform transition-all duration-500 hover:-translate-y-2 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'} ${!info.available ? 'opacity-60' : ''}`}
+                className={`bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl border border-gray-100 text-center group transform transition-all duration-500 hover:-translate-y-2 ${
+                  isVisible
+                    ? "translate-y-0 opacity-100"
+                    : "translate-y-10 opacity-0"
+                } ${!info.available ? "opacity-60" : ""}`}
                 style={{ transitionDelay: `${index * 150}ms` }}
               >
-                <div className={`w-12 h-12 ${info.color} bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                <div
+                  className={`w-12 h-12 ${info.color} bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}
+                >
                   <info.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">{info.title}</h3>
-                {info.available && info.href !== '#' ? (
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                  {info.title}
+                </h3>
+                {info.available && info.href !== "#" ? (
                   <a
                     href={info.href}
-                    target={info.title === 'Location' ? '_blank' : '_self'}
-                    rel={info.title === 'Location' ? 'noopener noreferrer' : ''}
+                    target={info.title === "Location" ? "_blank" : "_self"}
+                    rel={info.title === "Location" ? "noopener noreferrer" : ""}
                     className="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm break-words"
                   >
                     {info.details}
@@ -203,24 +259,31 @@ const ContactPage = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Form */}
-            <div className={`transform transition-all duration-1000 ${isVisible ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'}`}>
+            <div
+              className={`transform transition-all duration-1000 ${
+                isVisible
+                  ? "translate-x-0 opacity-100"
+                  : "-translate-x-10 opacity-0"
+              }`}
+            >
               <div className="bg-gray-50 p-8 rounded-2xl shadow-lg">
                 <h2 className="text-3xl font-bold text-gray-800 mb-6">
                   Send Us a Message
                 </h2>
                 <p className="text-gray-600 mb-8">
-                  Fill out the form below and we'll get back to you within 24 hours.
+                  Fill out the form below and we'll get back to you within 24
+                  hours.
                 </p>
 
                 {/* Status Messages */}
-                {submitStatus === 'success' && (
+                {submitStatus === "success" && (
                   <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center text-green-700">
                     <CheckCircle className="w-5 h-5 mr-3" />
                     Message sent successfully! We'll get back to you soon.
                   </div>
                 )}
 
-                {submitStatus === 'error' && (
+                {submitStatus === "error" && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center text-red-700">
                     <AlertCircle className="w-5 h-5 mr-3" />
                     Something went wrong. Please try again.
@@ -285,7 +348,9 @@ const ContactPage = () => {
                       >
                         <option value="">Select event type</option>
                         {eventTypes.map((type) => (
-                          <option key={type} value={type}>{type}</option>
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -341,7 +406,13 @@ const ContactPage = () => {
             </div>
 
             {/* Map & Additional Info */}
-            <div className={`transform transition-all duration-1000 ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0'}`}>
+            <div
+              className={`transform transition-all duration-1000 ${
+                isVisible
+                  ? "translate-x-0 opacity-100"
+                  : "translate-x-10 opacity-0"
+              }`}
+            >
               <div className="h-full flex flex-col">
                 {/* Interactive Map */}
                 <div className="rounded-2xl h-64 mb-6 overflow-hidden shadow-lg border border-gray-200 relative group">
@@ -369,25 +440,29 @@ const ContactPage = () => {
                       title="IBLOOM Location - Default Location"
                     ></iframe>
                   )}
-                  
+
                   {/* Map overlay with company info */}
                   <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg">
                     <p className="text-sm font-semibold text-gray-800">
-                      {userData?.name || 'IBLOOM Rentals'}
+                      {userData?.name || "IBLOOM Rentals"}
                     </p>
                     <p className="text-xs text-gray-600 max-w-xs truncate">
-                      {userData?.location ? userData.location.split(',')[0] : 'No 178B Corporation Drive'}
+                      {userData?.location
+                        ? userData.location.split(",")[0]
+                        : "No 178B Corporation Drive"}
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Get Directions Button */}
                 <div className="mb-8">
                   <a
                     href={getDirectionsUrl(userData?.location)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center transform hover:scale-105 transition-all duration-300 shadow-lg ${!userData?.location ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    className={`w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center transform hover:scale-105 transition-all duration-300 shadow-lg ${
+                      !userData?.location ? "opacity-60 cursor-not-allowed" : ""
+                    }`}
                   >
                     <MapPin className="w-5 h-5 mr-3" />
                     Get Directions
@@ -401,8 +476,12 @@ const ContactPage = () => {
                       Quick Response Guarantee
                     </h3>
                     <p className="text-gray-600">
-                      We respond to all inquiries within 24 hours. For urgent requests, 
-                      please call us directly {userData?.phone ? `at ${userData.phone}` : 'via the contact form'}.
+                      We respond to all inquiries within 24 hours. For urgent
+                      requests, please call us directly{" "}
+                      {userData?.phone
+                        ? `at ${userData.phone}`
+                        : "via the contact form"}
+                      .
                     </p>
                   </div>
 
@@ -411,8 +490,8 @@ const ContactPage = () => {
                       Free Consultation
                     </h3>
                     <p className="text-gray-600">
-                      Schedule a free consultation to discuss your event needs and 
-                      get personalized recommendations from our experts.
+                      Schedule a free consultation to discuss your event needs
+                      and get personalized recommendations from our experts.
                     </p>
                   </div>
 
@@ -458,7 +537,13 @@ const ContactPage = () => {
       {/* FAQ Quick Links */}
       <section className="py-16 md:py-20 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <div className={`transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <div
+            className={`transform transition-all duration-1000 ${
+              isVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-10 opacity-0"
+            }`}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
               Have Questions?
             </h2>

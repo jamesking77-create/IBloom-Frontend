@@ -885,7 +885,8 @@ const UserLayout = () => {
                     </div>
                     <div className="flex items-center">
                       <Mail className="w-5 h-5 mr-3" />
-                      <span>ibloomrentals@gmail.com</span>
+                      {/* <span>ibloomrentals@gmail.com</span> */}
+                      <span>adeoyemayopoelijah@gmail.com</span>
                     </div>
                     <div className="flex items-center">
                       <MapPin className="w-5 h-5 mr-3" />

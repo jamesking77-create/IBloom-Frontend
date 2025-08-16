@@ -1,42 +1,55 @@
 // components/FloatingChatBox.js
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, X, User, Mail, Zap, CheckCircle, Move } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { get, post } from "../utils/api";
+import {
+  MessageCircle,
+  Send,
+  X,
+  User,
+  Mail,
+  Zap,
+  CheckCircle,
+  Move,
+} from "lucide-react";
 
-const FloatingChatBox = ({ 
-  adminEmail = "admin@yourcompany.com", 
-  companyName = "Your Company",
-  emailServiceUrl = "/api/send-email" // Your backend endpoint
-}) => {
+const FloatingChatBox = ({ emailServiceUrl = "/api/mailer/send-email" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimizing, setIsMinimizing] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: ''
+    name: "",
+    email: "",
+    message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-  
+  const [submitError, setSubmitError] = useState("");
+
   // Dragging state
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState({ 
-    x: typeof window !== 'undefined' ? window.innerWidth - 120 : 0, 
-    y: typeof window !== 'undefined' ? window.innerHeight - 120 : 0 
+  const [position, setPosition] = useState({
+    x: typeof window !== "undefined" ? window.innerWidth - 120 : 0,
+    y: typeof window !== "undefined" ? window.innerHeight - 120 : 0,
   });
-  
+
   const chatBoxRef = useRef(null);
   const nameInputRef = useRef(null);
   const dragStartRef = useRef({ x: 0, y: 0, time: 0 });
   const hasDraggedRef = useRef(false);
 
+  const { userData } = useSelector((state) => state.profile);
+
+  // Get admin email and company name from Redux, with fallbacks
+  const adminEmail = userData?.email || "adeoyemayopoelijah@gmail.com";
+  const companyName = userData?.name || "IBLOOM";
+
   // Get viewport dimensions for mobile responsiveness
   const getViewportDimensions = () => {
-    if (typeof window === 'undefined') return { width: 0, height: 0 };
+    if (typeof window === "undefined") return { width: 0, height: 0 };
     return {
       width: window.innerWidth,
-      height: window.innerHeight
+      height: window.innerHeight,
     };
   };
 
@@ -53,21 +66,21 @@ const FloatingChatBox = ({
       const { width, height } = getViewportDimensions();
       const chatBoxWidth = isOpen ? Math.min(384, width - 32) : 80; // 384px max width with 16px margin on each side
       const chatBoxHeight = isOpen ? Math.min(600, height - 100) : 80;
-      
-      setPosition(prev => ({
+
+      setPosition((prev) => ({
         x: Math.min(prev.x, width - chatBoxWidth),
-        y: Math.min(prev.y, height - chatBoxHeight)
+        y: Math.min(prev.y, height - chatBoxHeight),
       }));
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', handleResize);
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", handleResize);
       handleResize(); // Call once on mount
     }
-    
+
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('resize', handleResize);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("resize", handleResize);
       }
     };
   }, [isOpen]);
@@ -76,11 +89,13 @@ const FloatingChatBox = ({
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Ignore if we're dragging or if it's the floating button itself
-      if (chatBoxRef.current && 
-          !chatBoxRef.current.contains(event.target) && 
-          !isDragging && 
-          isOpen &&
-          !event.target.closest('[data-floating-button]')) {
+      if (
+        chatBoxRef.current &&
+        !chatBoxRef.current.contains(event.target) &&
+        !isDragging &&
+        isOpen &&
+        !event.target.closest("[data-floating-button]")
+      ) {
         handleClose();
       }
     };
@@ -88,14 +103,14 @@ const FloatingChatBox = ({
     if (isOpen && !isDragging) {
       // Small delay to prevent immediate closing on mobile
       const timer = setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('touchstart', handleClickOutside);
+        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("touchstart", handleClickOutside);
       }, 300);
-      
+
       return () => {
         clearTimeout(timer);
-        document.removeEventListener('mousedown', handleClickOutside);
-        document.removeEventListener('touchstart', handleClickOutside);
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside);
       };
     }
   }, [isOpen, isDragging]);
@@ -121,72 +136,74 @@ const FloatingChatBox = ({
   // Mouse drag handlers
   const handleMouseDown = (e) => {
     // Don't start drag on form elements or close button
-    if (e.target.closest('input') || 
-        e.target.closest('textarea') || 
-        e.target.closest('button[type="submit"]') ||
-        e.target.closest('[data-close-button]')) {
+    if (
+      e.target.closest("input") ||
+      e.target.closest("textarea") ||
+      e.target.closest('button[type="submit"]') ||
+      e.target.closest("[data-close-button]")
+    ) {
       return;
     }
-    
+
     setIsDragging(false); // Start with false
     hasDraggedRef.current = false;
-    
-    dragStartRef.current = { 
-      x: e.clientX, 
-      y: e.clientY, 
-      time: Date.now() 
+
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: Date.now(),
     };
-    
+
     setDragOffset({
       x: e.clientX - position.x,
-      y: e.clientY - position.y
+      y: e.clientY - position.y,
     });
-    
+
     // Add event listeners immediately
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
   };
 
   const handleMouseMove = (e) => {
     // Check if user has actually dragged (moved more than 3px)
     const dragDistance = Math.sqrt(
-      Math.pow(e.clientX - dragStartRef.current.x, 2) + 
-      Math.pow(e.clientY - dragStartRef.current.y, 2)
+      Math.pow(e.clientX - dragStartRef.current.x, 2) +
+        Math.pow(e.clientY - dragStartRef.current.y, 2)
     );
-    
+
     if (dragDistance > 3 && !hasDraggedRef.current) {
       setIsDragging(true);
       hasDraggedRef.current = true;
     }
-    
+
     if (hasDraggedRef.current) {
       e.preventDefault();
-      
+
       const newX = e.clientX - dragOffset.x;
       const newY = e.clientY - dragOffset.y;
-      
+
       // Keep within screen bounds
       const { width, height } = getViewportDimensions();
       const chatBoxWidth = isOpen ? Math.min(384, width - 32) : 80;
       const chatBoxHeight = isOpen ? Math.min(600, height - 100) : 80;
-      
+
       setPosition({
         x: Math.max(16, Math.min(newX, width - chatBoxWidth - 16)),
-        y: Math.max(16, Math.min(newY, height - chatBoxHeight - 16))
+        y: Math.max(16, Math.min(newY, height - chatBoxHeight - 16)),
       });
     }
   };
 
   const handleMouseUp = (e) => {
     // Clean up event listeners
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-    
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+
     // If it was just a click (no drag), open the chat
     if (!hasDraggedRef.current && !isOpen) {
       handleOpen();
     }
-    
+
     setIsDragging(false);
     hasDraggedRef.current = false;
   };
@@ -194,77 +211,80 @@ const FloatingChatBox = ({
   // Touch drag handlers for mobile
   const handleTouchStart = (e) => {
     // Don't start drag on form elements or close button
-    if (e.target.closest('input') || 
-        e.target.closest('textarea') || 
-        e.target.closest('button[type="submit"]') ||
-        e.target.closest('[data-close-button]')) {
+    if (
+      e.target.closest("input") ||
+      e.target.closest("textarea") ||
+      e.target.closest('button[type="submit"]') ||
+      e.target.closest("[data-close-button]")
+    ) {
       return;
     }
-    
+
     const touch = e.touches[0];
     setIsDragging(false); // Start with false
     hasDraggedRef.current = false;
-    
-    dragStartRef.current = { 
-      x: touch.clientX, 
-      y: touch.clientY, 
-      time: Date.now() 
+
+    dragStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
     };
-    
+
     setDragOffset({
       x: touch.clientX - position.x,
-      y: touch.clientY - position.y
+      y: touch.clientY - position.y,
     });
-    
+
     // Add event listeners immediately
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handleTouchEnd);
   };
 
   const handleTouchMove = (e) => {
     const touch = e.touches[0];
-    
+
     // Check if user has actually dragged
     const dragDistance = Math.sqrt(
-      Math.pow(touch.clientX - dragStartRef.current.x, 2) + 
-      Math.pow(touch.clientY - dragStartRef.current.y, 2)
+      Math.pow(touch.clientX - dragStartRef.current.x, 2) +
+        Math.pow(touch.clientY - dragStartRef.current.y, 2)
     );
-    
-    if (dragDistance > 8 && !hasDraggedRef.current) { // Slightly higher threshold for touch
+
+    if (dragDistance > 8 && !hasDraggedRef.current) {
+      // Slightly higher threshold for touch
       setIsDragging(true);
       hasDraggedRef.current = true;
       e.preventDefault(); // Prevent scrolling only when actually dragging
     }
-    
+
     if (hasDraggedRef.current) {
       e.preventDefault();
-      
+
       const newX = touch.clientX - dragOffset.x;
       const newY = touch.clientY - dragOffset.y;
-      
+
       const { width, height } = getViewportDimensions();
       const chatBoxWidth = isOpen ? Math.min(384, width - 32) : 80;
       const chatBoxHeight = isOpen ? Math.min(600, height - 100) : 80;
-      
+
       setPosition({
         x: Math.max(16, Math.min(newX, width - chatBoxWidth - 16)),
-        y: Math.max(16, Math.min(newY, height - chatBoxHeight - 16))
+        y: Math.max(16, Math.min(newY, height - chatBoxHeight - 16)),
       });
     }
   };
 
   const handleTouchEnd = (e) => {
     // Clean up event listeners
-    document.removeEventListener('touchmove', handleTouchMove);
-    document.removeEventListener('touchend', handleTouchEnd);
-    
+    document.removeEventListener("touchmove", handleTouchMove);
+    document.removeEventListener("touchend", handleTouchEnd);
+
     // If it was just a tap (no drag), open the chat
     if (!hasDraggedRef.current && !isOpen) {
       e.preventDefault(); // Prevent mouse events from firing
       e.stopPropagation();
       handleOpen();
     }
-    
+
     setIsDragging(false);
     hasDraggedRef.current = false;
   };
@@ -277,7 +297,7 @@ const FloatingChatBox = ({
     setIsOpen(true);
     setIsMinimizing(false);
     setSubmitSuccess(false);
-    setSubmitError('');
+    setSubmitError("");
   };
 
   const handleClose = () => {
@@ -286,93 +306,52 @@ const FloatingChatBox = ({
       setIsOpen(false);
       setIsMinimizing(false);
       setSubmitSuccess(false);
-      setSubmitError('');
+      setSubmitError("");
     }, 200);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     if (submitError) {
-      setSubmitError('');
+      setSubmitError("");
     }
-  };
-
-  const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
-      setSubmitError('Please fill in all fields');
-      return;
-    }
-
-    if (!isValidEmail(formData.email)) {
-      setSubmitError('Please enter a valid email address');
-      return;
-    }
-    
     setIsSubmitting(true);
-    setSubmitError('');
-    
-    try {
-      const response = await fetch(emailServiceUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: adminEmail,
-          subject: `New Message from ${formData.name} - ${companyName} Website`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-              <h2 style="color: #333; border-bottom: 2px solid #4F46E5; padding-bottom: 10px;">New Contact Message</h2>
-              
-              <div style="margin: 20px 0;">
-                <h3 style="color: #4F46E5; margin-bottom: 10px;">Contact Information:</h3>
-                <p><strong>Name:</strong> ${formData.name}</p>
-                <p><strong>Email:</strong> ${formData.email}</p>
-              </div>
-              
-              <div style="margin: 20px 0;">
-                <h3 style="color: #4F46E5; margin-bottom: 10px;">Message:</h3>
-                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #4F46E5;">
-                  ${formData.message.replace(/\n/g, '<br>')}
-                </div>
-              </div>
-              
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
-                <p>This message was sent from your ${companyName} website contact form.</p>
-                <p>Sent on: ${new Date().toLocaleString()}</p>
-              </div>
-            </div>
-          `,
-          from: {
-            name: formData.name,
-            email: formData.email
-          }
-        }),
-      });
+    setSubmitError("");
+    setSubmitSuccess(false);
 
-      if (response.ok) {
-        setSubmitSuccess(true);
-        setTimeout(() => {
-          setFormData({ name: '', email: '', message: '' });
-          handleClose();
-        }, 3000);
-      } else {
-        throw new Error('Failed to send message');
-      }
+    try {
+      const payload = {
+        to: adminEmail,
+        subject: `New Contact Message from ${formData.name}`,
+        html: `
+        <h2 style="color: #333333; margin-bottom: 20px;">Hello ${companyName},</h2>
+        <p><strong>Name:</strong> ${formData.name}</p>
+        <p><strong>Email:</strong> ${formData.email}</p>
+        <p><strong>Message:</strong> ${formData.message}</p>
+        <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+      `,
+        from: {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+        },
+      };
+
+      console.log("Sending payload:", payload); // Debug log
+
+      const response = await post(emailServiceUrl, payload);
+      setSubmitSuccess(true);
+      setFormData({ name: "", email: "", message: "" });
     } catch (error) {
-      console.error('Error sending email:', error);
-      setSubmitError('Failed to send message. Please try again.');
+      console.error("Submit error:", error);
+      setSubmitError(error.message || "Failed to send message");
     } finally {
       setIsSubmitting(false);
     }
@@ -520,13 +499,13 @@ const FloatingChatBox = ({
 
       {/* Floating Chat Button */}
       {!isOpen && (
-        <div 
+        <div
           className="fixed z-50 draggable"
           data-floating-button="true"
-          style={{ 
-            left: `${position.x}px`, 
+          style={{
+            left: `${position.x}px`,
             top: `${position.y}px`,
-            cursor: isDragging ? 'grabbing' : 'grab'
+            cursor: isDragging ? "grabbing" : "grab",
           }}
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
@@ -535,20 +514,22 @@ const FloatingChatBox = ({
             onClick={!isMobile ? handleButtonClick : undefined}
             onTouchEnd={isMobile ? handleButtonTouch : undefined}
             className={`relative group pulse-ring bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white ${
-              isMobile ? 'p-3' : 'p-4'
+              isMobile ? "p-3" : "p-4"
             } rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 ${
-              !isDragging ? 'animate-float' : ''
+              !isDragging ? "animate-float" : ""
             }`}
           >
-            <MessageCircle className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} />
-            
+            <MessageCircle className={`${isMobile ? "w-5 h-5" : "w-6 h-6"}`} />
+
             {/* Notification Badge */}
-            <div className={`absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full ${
-              isMobile ? 'w-5 h-5' : 'w-6 h-6'
-            } flex items-center justify-center animate-bounce font-bold`}>
+            <div
+              className={`absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full ${
+                isMobile ? "w-5 h-5" : "w-6 h-6"
+              } flex items-center justify-center animate-bounce font-bold`}
+            >
               1
             </div>
-            
+
             {/* Tooltip - Hidden on mobile */}
             {!isMobile && (
               <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
@@ -564,16 +545,19 @@ const FloatingChatBox = ({
 
       {/* Chat Box */}
       {isOpen && (
-        <div 
+        <div
           ref={chatBoxRef}
           className={`fixed z-50 draggable ${
-            isMinimizing ? 'slide-out-down' : 'slide-in-up'
-          } ${isDragging ? 'dragging' : ''}`}
-          style={{ 
-            left: `${Math.min(position.x, viewportWidth - chatBoxWidth - 16)}px`, 
+            isMinimizing ? "slide-out-down" : "slide-in-up"
+          } ${isDragging ? "dragging" : ""}`}
+          style={{
+            left: `${Math.min(
+              position.x,
+              viewportWidth - chatBoxWidth - 16
+            )}px`,
             top: `${position.y}px`,
             width: `${chatBoxWidth}px`,
-            maxHeight: isMobile ? '85vh' : '600px'
+            maxHeight: isMobile ? "85vh" : "600px",
           }}
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
@@ -584,12 +568,28 @@ const FloatingChatBox = ({
               <div className="absolute inset-0 bg-black/10"></div>
               <div className="relative flex items-center justify-between">
                 <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                  <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm flex-shrink-0`}>
-                    <Mail className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                  <div
+                    className={`${
+                      isMobile ? "w-8 h-8" : "w-10 h-10"
+                    } bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm flex-shrink-0`}
+                  >
+                    <Mail className={`${isMobile ? "w-4 h-4" : "w-5 h-5"}`} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className={`font-semibold ${isMobile ? 'text-sm' : 'text-base'} truncate`}>Contact Us</h3>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-100 truncate`}>We'll get back to you soon!</p>
+                    <h3
+                      className={`font-semibold ${
+                        isMobile ? "text-sm" : "text-base"
+                      } truncate`}
+                    >
+                      Contact Us
+                    </h3>
+                    <p
+                      className={`${
+                        isMobile ? "text-xs" : "text-sm"
+                      } text-blue-100 truncate`}
+                    >
+                      We'll get back to you soon!
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
@@ -601,43 +601,86 @@ const FloatingChatBox = ({
                   <button
                     onClick={handleClose}
                     data-close-button="true"
-                    className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors duration-200 flex-shrink-0`}
+                    className={`${
+                      isMobile ? "w-7 h-7" : "w-8 h-8"
+                    } bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors duration-200 flex-shrink-0`}
                   >
-                    <X className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                    <X className={`${isMobile ? "w-3 h-3" : "w-4 h-4"}`} />
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Content */}
-            <div className={`${isMobile ? 'p-4' : 'p-6'} overflow-y-auto`} style={{ maxHeight: isMobile ? 'calc(85vh - 60px)' : '540px' }}>
+            <div
+              className={`${isMobile ? "p-4" : "p-6"} overflow-y-auto`}
+              style={{ maxHeight: isMobile ? "calc(85vh - 60px)" : "540px" }}
+            >
               {submitSuccess ? (
                 <div className="text-center py-6 sm:py-8 bounce-in">
-                  <div className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4`}>
-                    <CheckCircle className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-green-600`} />
+                  <div
+                    className={`${
+                      isMobile ? "w-12 h-12" : "w-16 h-16"
+                    } bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4`}
+                  >
+                    <CheckCircle
+                      className={`${
+                        isMobile ? "w-6 h-6" : "w-8 h-8"
+                      } text-green-600`}
+                    />
                   </div>
-                  <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-gray-800 mb-2`}>Message Sent!</h3>
-                  <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-600`}>Thank you for reaching out. We'll respond within 24 hours.</p>
+                  <h3
+                    className={`${
+                      isMobile ? "text-base" : "text-lg"
+                    } font-semibold text-gray-800 mb-2`}
+                  >
+                    Message Sent!
+                  </h3>
+                  <p
+                    className={`${
+                      isMobile ? "text-sm" : "text-base"
+                    } text-gray-600`}
+                  >
+                    Thank you for reaching out. We'll respond within 24 hours.
+                  </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className={`space-y-${isMobile ? '3' : '4'}`}>
+                <form
+                  onSubmit={handleSubmit}
+                  className={`space-y-${isMobile ? "3" : "4"}`}
+                >
                   <div className="text-center mb-4 sm:mb-6">
-                    <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-600`}>
-                      Send us a message and we'll get back to you as soon as possible!
+                    <p
+                      className={`${
+                        isMobile ? "text-sm" : "text-base"
+                      } text-gray-600`}
+                    >
+                      Send us a message and we'll get back to you as soon as
+                      possible!
                     </p>
                   </div>
 
                   {/* Error Message */}
                   {submitError && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3 error-shake">
-                      <p className={`text-red-600 ${isMobile ? 'text-sm' : 'text-base'}`}>{submitError}</p>
+                      <p
+                        className={`text-red-600 ${
+                          isMobile ? "text-sm" : "text-base"
+                        }`}
+                      >
+                        {submitError}
+                      </p>
                     </div>
                   )}
 
-                  <div className={`space-y-${isMobile ? '3' : '4'}`}>
+                  <div className={`space-y-${isMobile ? "3" : "4"}`}>
                     {/* Name Input */}
                     <div className="relative group">
-                      <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200`} />
+                      <User
+                        className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+                          isMobile ? "w-4 h-4" : "w-5 h-5"
+                        } text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200`}
+                      />
                       <input
                         ref={nameInputRef}
                         type="text"
@@ -646,13 +689,21 @@ const FloatingChatBox = ({
                         onChange={handleInputChange}
                         placeholder="Your Name"
                         required
-                        className={`w-full ${isMobile ? 'pl-9 pr-3 py-2.5 text-sm' : 'pl-10 pr-4 py-3 text-base'} bg-gray-50 border border-gray-200 rounded-xl focus:outline-none input-glow transition-all duration-200 placeholder-gray-400`}
+                        className={`w-full ${
+                          isMobile
+                            ? "pl-9 pr-3 py-2.5 text-sm"
+                            : "pl-10 pr-4 py-3 text-base"
+                        } bg-gray-50 border border-gray-200 rounded-xl focus:outline-none input-glow transition-all duration-200 placeholder-gray-400`}
                       />
                     </div>
 
                     {/* Email Input */}
                     <div className="relative group">
-                      <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200`} />
+                      <Mail
+                        className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+                          isMobile ? "w-4 h-4" : "w-5 h-5"
+                        } text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200`}
+                      />
                       <input
                         type="email"
                         name="email"
@@ -660,7 +711,11 @@ const FloatingChatBox = ({
                         onChange={handleInputChange}
                         placeholder="Your Email Address"
                         required
-                        className={`w-full ${isMobile ? 'pl-9 pr-3 py-2.5 text-sm' : 'pl-10 pr-4 py-3 text-base'} bg-gray-50 border border-gray-200 rounded-xl focus:outline-none input-glow transition-all duration-200 placeholder-gray-400`}
+                        className={`w-full ${
+                          isMobile
+                            ? "pl-9 pr-3 py-2.5 text-sm"
+                            : "pl-10 pr-4 py-3 text-base"
+                        } bg-gray-50 border border-gray-200 rounded-xl focus:outline-none input-glow transition-all duration-200 placeholder-gray-400`}
                       />
                     </div>
 
@@ -673,7 +728,9 @@ const FloatingChatBox = ({
                         placeholder="How can we help you today?"
                         required
                         rows={isMobile ? "3" : "4"}
-                        className={`w-full ${isMobile ? 'p-3 text-sm' : 'p-4 text-base'} bg-gray-50 border border-gray-200 rounded-xl focus:outline-none input-glow transition-all duration-200 placeholder-gray-400 resize-none`}
+                        className={`w-full ${
+                          isMobile ? "p-3 text-sm" : "p-4 text-base"
+                        } bg-gray-50 border border-gray-200 rounded-xl focus:outline-none input-glow transition-all duration-200 placeholder-gray-400 resize-none`}
                       />
                     </div>
                   </div>
@@ -681,32 +738,56 @@ const FloatingChatBox = ({
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting || !formData.name.trim() || !formData.email.trim() || !formData.message.trim()}
-                    className={`w-full ${isMobile ? 'py-2.5' : 'py-3'} rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 ${
+                    disabled={
+                      isSubmitting ||
+                      !formData.name.trim() ||
+                      !formData.email.trim() ||
+                      !formData.message.trim()
+                    }
+                    className={`w-full ${
+                      isMobile ? "py-2.5" : "py-3"
+                    } rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 ${
                       isSubmitting
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : formData.name.trim() && formData.email.trim() && formData.message.trim()
-                        ? 'shimmer-button hover:shadow-xl'
-                        : 'bg-gray-300 cursor-not-allowed'
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : formData.name.trim() &&
+                          formData.email.trim() &&
+                          formData.message.trim()
+                        ? "shimmer-button hover:shadow-xl"
+                        : "bg-gray-300 cursor-not-allowed"
                     }`}
                   >
                     {isSubmitting ? (
                       <>
-                        <div className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} border-2 border-white/30 border-t-white rounded-full animate-spin`}></div>
-                        <span className={isMobile ? 'text-sm' : 'text-base'}>Sending...</span>
+                        <div
+                          className={`${
+                            isMobile ? "w-4 h-4" : "w-5 h-5"
+                          } border-2 border-white/30 border-t-white rounded-full animate-spin`}
+                        ></div>
+                        <span className={isMobile ? "text-sm" : "text-base"}>
+                          Sending...
+                        </span>
                       </>
                     ) : (
                       <>
-                        <Send className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                        <span className={isMobile ? 'text-sm' : 'text-base'}>Send Message</span>
+                        <Send
+                          className={`${isMobile ? "w-4 h-4" : "w-5 h-5"}`}
+                        />
+                        <span className={isMobile ? "text-sm" : "text-base"}>
+                          Send Message
+                        </span>
                       </>
                     )}
                   </button>
 
                   {/* Footer */}
                   <div className="text-center pt-2">
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500`}>
-                      We respect your privacy and will never share your information
+                    <p
+                      className={`${
+                        isMobile ? "text-xs" : "text-sm"
+                      } text-gray-500`}
+                    >
+                      We respect your privacy and will never share your
+                      information
                     </p>
                   </div>
                 </form>

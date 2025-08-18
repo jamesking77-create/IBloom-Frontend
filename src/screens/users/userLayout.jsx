@@ -19,9 +19,12 @@ import {
   PhoneCall,
   ShoppingCart,
   Package,
-  Calendar
+  Calendar,
 } from "lucide-react";
-import { fetchProfile, fetchPublicProfile } from "../../store/slices/profile-slice";
+import {
+  fetchProfile,
+  fetchPublicProfile,
+} from "../../store/slices/profile-slice";
 import { fetchCategories } from "../../store/slices/categoriesSlice";
 import logoimg from "../../assets/ibloomcut.png";
 import fullLogo from "../../assets/ibloomcut.png";
@@ -31,7 +34,7 @@ const UserLayout = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRentalsDropdownOpen, setIsRentalsDropdownOpen] = useState(false);
-  
+
   // Local state for profile data with fallbacks
   const [profileData, setProfileData] = useState({
     name: "IBLOOM",
@@ -40,41 +43,61 @@ const UserLayout = () => {
     email: "adeoyemayopoelijah@gmail.com",
     location: "85B, Lafiaji Way, Dolphin Estate",
     specialize: [],
-    categories: []
+    categories: [],
   });
-  
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   // Get profile data from Redux store
-  const { userData, loading, isPublicData } = useSelector((state) => state.profile);
+  const { userData, loading, isPublicData } = useSelector(
+    (state) => state.profile
+  );
   const { categories } = useSelector((state) => state.categories);
+
+  useEffect(() => {
+    console.log("=== PROFILE DATA DEBUG ===");
+    console.log("userData from Redux:", userData);
+    console.log("categories from Redux:", categories);
+    console.log("profileData state:", profileData);
+    console.log("loading:", loading);
+    console.log("isPublicData:", isPublicData);
+    console.log("=========================");
+  }, [userData, categories, profileData, loading, isPublicData]);
 
   // Load profile data on component mount
   useEffect(() => {
     const loadProfileData = async () => {
       try {
-        console.log('UserLayout: Loading profile data...');
-        
+        console.log("UserLayout: Loading profile data...");
+
         // Try authenticated profile first, with automatic public fallback
-        await dispatch(fetchProfile({ 
-          fallbackToPublic: true,
-          useCache: true 
-        })).unwrap();
-        
+        await dispatch(
+          fetchProfile({
+            fallbackToPublic: true,
+            useCache: true,
+          })
+        ).unwrap();
+
         // Also fetch categories
         await dispatch(fetchCategories()).unwrap();
-        
-        console.log('UserLayout: Profile data loaded successfully');
+
+        console.log("UserLayout: Profile data loaded successfully");
       } catch (error) {
-        console.warn("UserLayout: Profile fetch failed, trying public profile directly:", error);
-        
+        console.warn(
+          "UserLayout: Profile fetch failed, trying public profile directly:",
+          error
+        );
+
         // If the automatic fallback didn't work, try public profile directly
         try {
           await dispatch(fetchPublicProfile({ useCache: true })).unwrap();
-          console.log('UserLayout: Public profile loaded successfully');
+          console.log("UserLayout: Public profile loaded successfully");
         } catch (publicError) {
-          console.warn("UserLayout: Public profile fetch also failed:", publicError);
+          console.warn(
+            "UserLayout: Public profile fetch also failed:",
+            publicError
+          );
           // Will use fallback data from useState
         }
       }
@@ -86,8 +109,8 @@ const UserLayout = () => {
   // Update local profile state whenever Redux userData changes
   useEffect(() => {
     if (userData && Object.keys(userData).length > 0) {
-      console.log('UserLayout: Updating local profile state with:', userData);
-      setProfileData(prevData => ({
+      console.log("UserLayout: Updating local profile state with:", userData);
+      setProfileData((prevData) => ({
         ...prevData,
         name: userData.name || prevData.name,
         bio: userData.bio || prevData.bio,
@@ -95,7 +118,7 @@ const UserLayout = () => {
         email: userData.email || prevData.email,
         location: userData.location || prevData.location,
         specialize: userData.specialize || prevData.specialize,
-        categories: userData.categories || categories || prevData.categories
+        categories: userData.categories || categories || prevData.categories,
       }));
     }
   }, [userData, categories]);
@@ -311,7 +334,8 @@ const UserLayout = () => {
                   }`}
                 >
                   <div className="p-2 max-h-96 overflow-y-auto custom-scrollbar">
-                    {profileData.categories && profileData.categories.length > 0 ? (
+                    {profileData.categories &&
+                    profileData.categories.length > 0 ? (
                       profileData.categories.map((category) => (
                         <button
                           key={category.id}
@@ -456,15 +480,25 @@ const UserLayout = () => {
               aria-label="Toggle menu"
             >
               <div className="relative w-5 h-5 flex flex-col justify-center">
-                <span className={`hamburger-line absolute w-5 h-0.5 bg-gray-700 ${
-                  isMobileMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-1.5'
-                }`}></span>
-                <span className={`hamburger-line absolute w-5 h-0.5 bg-gray-700 ${
-                  isMobileMenuOpen ? 'opacity-0' : 'opacity-100'
-                }`}></span>
-                <span className={`hamburger-line absolute w-5 h-0.5 bg-gray-700 ${
-                  isMobileMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-1.5'
-                }`}></span>
+                <span
+                  className={`hamburger-line absolute w-5 h-0.5 bg-gray-700 ${
+                    isMobileMenuOpen
+                      ? "rotate-45 translate-y-0"
+                      : "-translate-y-1.5"
+                  }`}
+                ></span>
+                <span
+                  className={`hamburger-line absolute w-5 h-0.5 bg-gray-700 ${
+                    isMobileMenuOpen ? "opacity-0" : "opacity-100"
+                  }`}
+                ></span>
+                <span
+                  className={`hamburger-line absolute w-5 h-0.5 bg-gray-700 ${
+                    isMobileMenuOpen
+                      ? "-rotate-45 translate-y-0"
+                      : "translate-y-1.5"
+                  }`}
+                ></span>
               </div>
             </button>
           </div>
@@ -473,7 +507,9 @@ const UserLayout = () => {
         {/* Mobile Menu Overlay */}
         <div
           className={`fixed inset-0 bg-black/50 transition-all duration-300 z-40 ${
-            isMobileMenuOpen ? "opacity-100 backdrop-blur-sm" : "opacity-0 pointer-events-none"
+            isMobileMenuOpen
+              ? "opacity-100 backdrop-blur-sm"
+              : "opacity-0 pointer-events-none"
           }`}
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -486,9 +522,13 @@ const UserLayout = () => {
         >
           <div className="flex flex-col h-screen">
             {/* Header */}
-            <div className={`flex items-center justify-between p-6 border-b border-gray-200/30 shrink-0 ${
-              isMobileMenuOpen ? "menu-item-enter menu-item-0" : "menu-item-exit"
-            }`}>
+            <div
+              className={`flex items-center justify-between p-6 border-b border-gray-200/30 shrink-0 ${
+                isMobileMenuOpen
+                  ? "menu-item-enter menu-item-0"
+                  : "menu-item-exit"
+              }`}
+            >
               <div className="h-8 w-auto">
                 <img
                   src={fullLogo}
@@ -509,12 +549,18 @@ const UserLayout = () => {
             <div className="flex-1 overflow-y-auto">
               <div className="p-4 space-y-1">
                 {/* Rentals Section - Moved to Top */}
-                <div className={`${
-                  isMobileMenuOpen ? "menu-item-enter menu-item-1" : "menu-item-exit"
-                }`}>
+                <div
+                  className={`${
+                    isMobileMenuOpen
+                      ? "menu-item-enter menu-item-1"
+                      : "menu-item-exit"
+                  }`}
+                >
                   <button
                     className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-all duration-300 group"
-                    onClick={() => setIsRentalsDropdownOpen(!isRentalsDropdownOpen)}
+                    onClick={() =>
+                      setIsRentalsDropdownOpen(!isRentalsDropdownOpen)
+                    }
                   >
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-50 transition-colors duration-300">
@@ -532,11 +578,14 @@ const UserLayout = () => {
                   {/* Categories Dropdown */}
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isRentalsDropdownOpen ? "max-h-64 opacity-100 mt-2" : "max-h-0 opacity-0"
+                      isRentalsDropdownOpen
+                        ? "max-h-64 opacity-100 mt-2"
+                        : "max-h-0 opacity-0"
                     }`}
                   >
                     <div className="bg-gray-50 rounded-lg border border-gray-200/50 mx-4 overflow-y-auto custom-scrollbar max-h-60">
-                      {profileData.categories && profileData.categories.length > 0 ? (
+                      {profileData.categories &&
+                      profileData.categories.length > 0 ? (
                         profileData.categories.map((category, index) => (
                           <button
                             key={category.id}
@@ -561,7 +610,9 @@ const UserLayout = () => {
                           <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
                             <Package className="w-5 h-5 text-gray-400" />
                           </div>
-                          <p className="text-gray-500 text-sm">No categories available</p>
+                          <p className="text-gray-500 text-sm">
+                            No categories available
+                          </p>
                         </div>
                       )}
                     </div>
@@ -576,7 +627,9 @@ const UserLayout = () => {
                       key={link.to}
                       to={link.to}
                       className={`flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-all duration-300 group ${
-                        isMobileMenuOpen ? `menu-item-enter menu-item-${index + 2}` : "menu-item-exit"
+                        isMobileMenuOpen
+                          ? `menu-item-enter menu-item-${index + 2}`
+                          : "menu-item-exit"
                       }`}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
@@ -591,9 +644,13 @@ const UserLayout = () => {
             </div>
 
             {/* Bottom CTA Button */}
-            <div className={`p-6 border-t border-gray-200/30 shrink-0 ${
-              isMobileMenuOpen ? `menu-item-enter menu-item-${navigationLinks.length + 2}` : "menu-item-exit"
-            }`}>
+            <div
+              className={`p-6 border-t border-gray-200/30 shrink-0 ${
+                isMobileMenuOpen
+                  ? `menu-item-enter menu-item-${navigationLinks.length + 2}`
+                  : "menu-item-exit"
+              }`}
+            >
               <button
                 onClick={() => {
                   navigate("/eventbooking");
@@ -625,12 +682,8 @@ const UserLayout = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <h3 className="text-2xl font-bold">
-                {profileData.name}
-              </h3>
-              <p className="text-gray-400">
-                {profileData.bio}
-              </p>
+              <h3 className="text-2xl font-bold">{profileData.name}</h3>
+              <p className="text-gray-400">{profileData.bio}</p>
               <div className="flex space-x-4">
                 {/* Social Media Icons */}
                 <a
@@ -659,11 +712,11 @@ const UserLayout = () => {
                 </a>
               </div>
             </div>
-
             <div>
               <h4 className="text-lg font-semibold mb-4">Services</h4>
               <ul className="space-y-2 text-gray-400">
-                {profileData?.specialize && profileData?.specialize?.length > 0 ? (
+                {profileData?.specialize &&
+                profileData?.specialize?.length > 0 ? (
                   profileData.specialize.slice(0, 4).map((service, index) => (
                     <li key={index}>
                       <span className="hover:text-white transition-colors duration-300 cursor-pointer">
@@ -672,28 +725,7 @@ const UserLayout = () => {
                     </li>
                   ))
                 ) : (
-                  <>
-                    <li>
-                      <span className="hover:text-white transition-colors duration-300 cursor-pointer">
-                        Wedding Rentals
-                      </span>
-                    </li>
-                    <li>
-                      <span className="hover:text-white transition-colors duration-300 cursor-pointer">
-                        Corporate Events
-                      </span>
-                    </li>
-                    <li>
-                      <span className="hover:text-white transition-colors duration-300 cursor-pointer">
-                        Party Supplies
-                      </span>
-                    </li>
-                    <li>
-                      <span className="hover:text-white transition-colors duration-300 cursor-pointer">
-                        Tent Rentals
-                      </span>
-                    </li>
-                  </>
+                  <li className="text-gray-500">No services available</li>
                 )}
               </ul>
             </div>
@@ -713,40 +745,7 @@ const UserLayout = () => {
                     </li>
                   ))
                 ) : (
-                  <>
-                    <li>
-                      <Link
-                        to="/about"
-                        className="hover:text-white transition-colors duration-300"
-                      >
-                        About Us
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/gallery"
-                        className="hover:text-white transition-colors duration-300"
-                      >
-                        Gallery
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/faq"
-                        className="hover:text-white transition-colors duration-300"
-                      >
-                        FAQ
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/contact"
-                        className="hover:text-white transition-colors duration-300"
-                      >
-                        Contact
-                      </Link>
-                    </li>
-                  </>
+                  <li className="text-gray-500">No categories available</li>
                 )}
               </ul>
             </div>
@@ -772,30 +771,21 @@ const UserLayout = () => {
                     <span>{profileData.location}</span>
                   </div>
                 )}
-                {!profileData.phone && !profileData.email && !profileData.location && (
-                  <>
-                    <div className="flex items-center">
-                      <Phone className="w-5 h-5 mr-3" />
-                      <span>0817-225-8085</span>
+                {!profileData.phone &&
+                  !profileData.email &&
+                  !profileData.location && (
+                    <div className="text-gray-500">
+                      Contact information not available
                     </div>
-                    <div className="flex items-center">
-                      <Mail className="w-5 h-5 mr-3" />
-                      <span>adeoyemayopoelijah@gmail.com</span>
-                    </div>
-                    <div className="flex items-center">
-                      <MapPin className="w-5 h-5 mr-3" />
-                      <span>85B, Lafiaji Way, Dolphin Estate</span>
-                    </div>
-                  </>
-                )}
+                  )}
               </div>
             </div>
           </div>
 
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
             <p>
-              &copy; 2025 {profileData.name}. All rights reserved. |
-              Privacy Policy | Terms of Service
+              &copy; 2025 {profileData.name}. All rights reserved. | Privacy
+              Policy | Terms of Service
             </p>
           </div>
         </div>

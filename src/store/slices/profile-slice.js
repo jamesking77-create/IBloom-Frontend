@@ -1,6 +1,53 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { get, put, post } from "../../utils/api";
 
+// Local storage key for caching profile data
+const PROFILE_CACHE_KEY = 'user_profile_data';
+
+// Helper function to cache profile data in localStorage
+const cacheProfileData = (data) => {
+  try {
+    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
+      data,
+      timestamp: Date.now(),
+      // Cache for 5 minutes
+      expires: Date.now() + (5 * 60 * 1000)
+    }));
+  } catch (error) {
+    console.warn('Failed to cache profile data:', error);
+  }
+};
+
+// Helper function to get cached profile data
+const getCachedProfileData = () => {
+  try {
+    const cached = localStorage.getItem(PROFILE_CACHE_KEY);
+    if (!cached) return null;
+    
+    const { data, expires } = JSON.parse(cached);
+    
+    // Check if cache is still valid
+    if (Date.now() > expires) {
+      localStorage.removeItem(PROFILE_CACHE_KEY);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.warn('Failed to get cached profile data:', error);
+    return null;
+  }
+};
+
+// Helper function to clear profile cache
+const clearProfileCache = () => {
+  try {
+    localStorage.removeItem(PROFILE_CACHE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear profile cache:', error);
+  }
+};
+
 // API service functions for profile operations
 export const getProfileAPI = async () => {
   const response = await get("/api/users/profile");
@@ -36,22 +83,47 @@ export const updateProfileAPI = async (profileData) => {
   }
 };
 
-// Async thunk for fetching profile from backend
+// Enhanced async thunk for fetching profile with caching
 export const fetchProfile = createAsyncThunk(
   "profile/fetchProfile",
-  async (_, { rejectWithValue }) => {
+  async (options = {}, { rejectWithValue }) => {
     try {
+      const { forceRefresh = false, useCache = true } = options;
+      
+      // Try to get cached data first (if not forcing refresh and cache is enabled)
+      if (!forceRefresh && useCache) {
+        const cachedData = getCachedProfileData();
+        if (cachedData) {
+          console.log('Using cached profile data');
+          return cachedData;
+        }
+      }
+      
+      console.log('Fetching fresh profile data from API');
       const data = await getProfileAPI();
+      
+      // Cache the fresh data
+      if (data) {
+        cacheProfileData(data);
+      }
+      
       return data;
     } catch (error) {
+      console.error('Profile fetch error:', error);
+      
+      // If API fails, try to fallback to cached data
+      const cachedData = getCachedProfileData();
+      if (cachedData) {
+        console.log('API failed, using cached profile data as fallback');
+        return cachedData;
+      }
+      
       return rejectWithValue(error.message || "Failed to fetch profile");
     }
   }
 );
 
-// Only showing the key changes to your existing profile slice
-
-// Update the saveProfile thunk (replace your existing one)
+// Enhanced save profile thunk with cache invalidation
 export const saveProfile = createAsyncThunk(
   "profile/saveProfile",
   async (avatarFile = null, { getState, rejectWithValue }) => {
@@ -77,9 +149,15 @@ export const saveProfile = createAsyncThunk(
       }
       
       const data = await updateProfileAPI(profileData);
-      console.log("new profile data: ",data.data.user);
+      const updatedUser = data.data.user;
       
-      return data.data.user; // Return the updated user data
+      // Clear old cache and cache the new data
+      clearProfileCache();
+      cacheProfileData(updatedUser);
+      
+      console.log("Profile saved and cached:", updatedUser);
+      
+      return updatedUser;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to save profile");
     }
@@ -92,9 +170,33 @@ export const updateProfileField = createAsyncThunk(
   async (fieldData, { rejectWithValue }) => {
     try {
       const data = await updateProfileAPI(fieldData);
+      
+      // Update cache with new field data
+      const cachedData = getCachedProfileData();
+      if (cachedData) {
+        const updatedData = { ...cachedData, ...data };
+        cacheProfileData(updatedData);
+      }
+      
       return data;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to update profile field");
+    }
+  }
+);
+
+// Action to load profile from cache
+export const loadProfileFromCache = createAsyncThunk(
+  "profile/loadProfileFromCache",
+  async (_, { rejectWithValue }) => {
+    try {
+      const cachedData = getCachedProfileData();
+      if (cachedData) {
+        return cachedData;
+      }
+      return rejectWithValue("No cached data available");
+    } catch (error) {
+      return rejectWithValue("Failed to load cached profile");
     }
   }
 );
@@ -106,7 +208,7 @@ const initialState = {
     phone: "",
     location: "",
     joinDate: "",
-    avatar: null, // Will store the avatar object from your backend
+    avatar: null,
     bio: "",
     specialize: [],
     categories: [],
@@ -117,7 +219,7 @@ const initialState = {
     phone: "",
     location: "",
     joinDate: "",
-    avatar: null, // Will store the avatar object from your backend
+    avatar: null,
     bio: "",
     specialize: [],
     categories: [],
@@ -126,7 +228,9 @@ const initialState = {
   loading: false,
   error: null,
   saving: false,
-  selectedAvatarFile: null, // NEW: Store the selected file before upload
+  selectedAvatarFile: null,
+  lastFetched: null, // Track when data was last fetched
+  isFromCache: false, // Track if current data is from cache
 };
 
 const profileSlice = createSlice({
@@ -135,6 +239,7 @@ const profileSlice = createSlice({
   reducers: {
     setUserData: (state, action) => {
       state.userData = action.payload;
+      state.lastFetched = Date.now();
     },
     setEditData: (state, action) => {
       state.editData = { ...action.payload };
@@ -152,7 +257,6 @@ const profileSlice = createSlice({
     updateAvatar: (state, action) => {
       state.editData.avatar = action.payload;
     },
-    // NEW: Set selected avatar file
     setSelectedAvatarFile: (state, action) => {
       state.selectedAvatarFile = action.payload;
     },
@@ -174,6 +278,16 @@ const profileSlice = createSlice({
       state.loading = false;
       state.saving = false;
     },
+    // Action to clear profile cache manually
+    clearCache: (state) => {
+      clearProfileCache();
+      state.isFromCache = false;
+    },
+    // Action to force refresh profile data
+    forceRefresh: (state) => {
+      clearProfileCache();
+      state.isFromCache = false;
+    },
     syncCategoriesFromCategorySlice: (state, action) => {
       const categories = action.payload.map((cat) => ({
         id: cat.id,
@@ -182,11 +296,28 @@ const profileSlice = createSlice({
 
       state.userData.categories = categories;
       state.editData.categories = categories;
+      
+      // Update cache with new categories
+      const cachedData = getCachedProfileData();
+      if (cachedData) {
+        cacheProfileData({ ...cachedData, categories });
+      }
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch profile cases
+      // Load profile from cache cases
+      .addCase(loadProfileFromCache.fulfilled, (state, action) => {
+        state.userData = action.payload;
+        state.editData = { ...action.payload };
+        state.isFromCache = true;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(loadProfileFromCache.rejected, (state) => {
+        state.isFromCache = false;
+      })
+      // Fetch profile cases (enhanced with cache handling)
       .addCase(fetchProfile.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -195,12 +326,16 @@ const profileSlice = createSlice({
         state.loading = false;
         state.userData = action.payload;
         state.editData = { ...action.payload };
+        state.lastFetched = Date.now();
+        state.isFromCache = false; // This is fresh data
+        state.error = null;
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        // Don't clear userData if we have cached data as fallback
       })
-      // Save profile cases (now handles both profile + avatar upload)
+      // Save profile cases (enhanced with cache updates)
       .addCase(saveProfile.pending, (state) => {
         state.saving = true;
         state.error = null;
@@ -210,13 +345,15 @@ const profileSlice = createSlice({
         state.userData = action.payload;
         state.editData = { ...action.payload };
         state.isEditing = false;
-        state.selectedAvatarFile = null; // Clear selected file after save
+        state.selectedAvatarFile = null;
+        state.lastFetched = Date.now();
+        state.isFromCache = false;
       })
       .addCase(saveProfile.rejected, (state, action) => {
         state.saving = false;
         state.error = action.payload;
       })
-      // Update profile field cases
+      // Update profile field cases (enhanced with cache updates)
       .addCase(updateProfileField.pending, (state) => {
         state.saving = true;
         state.error = null;
@@ -225,12 +362,13 @@ const profileSlice = createSlice({
         state.saving = false;
         state.userData = { ...state.userData, ...action.payload };
         state.editData = { ...state.editData, ...action.payload };
+        state.lastFetched = Date.now();
       })
       .addCase(updateProfileField.rejected, (state, action) => {
         state.saving = false;
         state.error = action.payload;
       })
-      // Listen to category slice changes
+      // Listen to category slice changes (enhanced with cache updates)
       .addCase("categories/fetchCategories/fulfilled", (state, action) => {
         const categories = action.payload.map((cat) => ({
           id: cat.id,
@@ -240,6 +378,12 @@ const profileSlice = createSlice({
         state.userData.categories = categories;
         if (!state.isEditing) {
           state.editData.categories = categories;
+        }
+        
+        // Update cache with new categories
+        const cachedData = getCachedProfileData();
+        if (cachedData) {
+          cacheProfileData({ ...cachedData, categories });
         }
       })
       .addCase("categories/createCategory/fulfilled", (state, action) => {
@@ -261,6 +405,13 @@ const profileSlice = createSlice({
         if (!existsInEditData) {
           state.editData.categories.push(newCategory);
         }
+        
+        // Update cache
+        const cachedData = getCachedProfileData();
+        if (cachedData) {
+          const updatedCategories = [...(cachedData.categories || []), newCategory];
+          cacheProfileData({ ...cachedData, categories: updatedCategories });
+        }
       })
       .addCase("categories/updateCategory/fulfilled", (state, action) => {
         const updatedCategory = action.payload;
@@ -278,6 +429,18 @@ const profileSlice = createSlice({
         if (editDataIndex !== -1) {
           state.editData.categories[editDataIndex].name = updatedCategory.name;
         }
+        
+        // Update cache
+        const cachedData = getCachedProfileData();
+        if (cachedData && cachedData.categories) {
+          const categoryIndex = cachedData.categories.findIndex(
+            (cat) => cat.id === updatedCategory.id
+          );
+          if (categoryIndex !== -1) {
+            cachedData.categories[categoryIndex].name = updatedCategory.name;
+            cacheProfileData(cachedData);
+          }
+        }
       })
       .addCase("categories/deleteCategory/fulfilled", (state, action) => {
         const deletedCategoryId = action.payload;
@@ -288,6 +451,15 @@ const profileSlice = createSlice({
         state.editData.categories = state.editData.categories.filter(
           (cat) => cat.id !== deletedCategoryId
         );
+        
+        // Update cache
+        const cachedData = getCachedProfileData();
+        if (cachedData && cachedData.categories) {
+          const updatedCategories = cachedData.categories.filter(
+            (cat) => cat.id !== deletedCategoryId
+          );
+          cacheProfileData({ ...cachedData, categories: updatedCategories });
+        }
       });
   },
 });
@@ -299,12 +471,31 @@ export const {
   resetEditData,
   updateEditDataField,
   updateAvatar,
-  setSelectedAvatarFile, // NEW
+  setSelectedAvatarFile,
   addSpecialization,
   removeSpecialization,
   clearProfileError,
   clearLoadingStates,
+  clearCache,
+  forceRefresh,
   syncCategoriesFromCategorySlice,
 } = profileSlice.actions;
+
+// Selectors
+export const selectProfileData = (state) => state.profile.userData;
+export const selectIsProfileLoading = (state) => state.profile.loading;
+export const selectProfileError = (state) => state.profile.error;
+export const selectIsFromCache = (state) => state.profile.isFromCache;
+export const selectLastFetched = (state) => state.profile.lastFetched;
+
+// Helper function to check if profile data needs refresh
+export const shouldRefreshProfile = (state) => {
+  const lastFetched = selectLastFetched(state);
+  if (!lastFetched) return true;
+  
+  // Refresh if data is older than 5 minutes
+  const fiveMinutes = 5 * 60 * 1000;
+  return Date.now() - lastFetched > fiveMinutes;
+};
 
 export default profileSlice.reducer;

@@ -22,6 +22,7 @@ import {
   Calendar
 } from "lucide-react";
 import { fetchProfile } from "../../store/slices/profile-slice";
+import { fetchCategories } from "../../store/slices/categoriesSlice";
 import logoimg from "../../assets/ibloomcut.png";
 import fullLogo from "../../assets/ibloomcut.png";
 
@@ -30,16 +31,56 @@ const UserLayout = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRentalsDropdownOpen, setIsRentalsDropdownOpen] = useState(false);
+  
+  // Local state for profile data with fallbacks
+  const [profileData, setProfileData] = useState({
+    name: "IBLOOM",
+    bio: "Your premier destination for event rentals. Making every occasion extraordinary.",
+    phone: "0817-225-8085",
+    email: "adeoyemayopoelijah@gmail.com",
+    location: "85B, Lafiaji Way, Dolphin Estate",
+    specialize: [],
+    categories: []
+  });
+  
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   // Get profile data from Redux store
   const { userData, loading } = useSelector((state) => state.profile);
+  const { categories } = useSelector((state) => state.categories);
 
-  // Fetch profile data on component mount
+  // Load profile data on component mount and update local state
   useEffect(() => {
-    dispatch(fetchProfile());
+    const loadProfileData = async () => {
+      try {
+        // Always fetch fresh profile data when UserLayout mounts
+        await dispatch(fetchProfile()).unwrap();
+        await dispatch(fetchCategories()).unwrap();
+      } catch (error) {
+        console.warn("Failed to fetch profile data:", error);
+        // Keep using fallback data if fetch fails
+      }
+    };
+
+    loadProfileData();
   }, [dispatch]);
+
+  // Update local profile state whenever Redux userData changes
+  useEffect(() => {
+    if (userData && Object.keys(userData).length > 0) {
+      setProfileData(prevData => ({
+        ...prevData,
+        name: userData.name || prevData.name,
+        bio: userData.bio || prevData.bio,
+        phone: userData.phone || prevData.phone,
+        email: userData.email || prevData.email,
+        location: userData.location || prevData.location,
+        specialize: userData.specialize || prevData.specialize,
+        categories: userData.categories || categories || prevData.categories
+      }));
+    }
+  }, [userData, categories]);
 
   // Handle scroll behavior for navigation
   useEffect(() => {
@@ -252,8 +293,8 @@ const UserLayout = () => {
                   }`}
                 >
                   <div className="p-2 max-h-96 overflow-y-auto custom-scrollbar">
-                    {userData.categories && userData.categories.length > 0 ? (
-                      userData.categories.map((category) => (
+                    {profileData.categories && profileData.categories.length > 0 ? (
+                      profileData.categories.map((category) => (
                         <button
                           key={category.id}
                           className="w-full text-left px-4 py-3 hover:bg-blue-50 rounded-lg transition-all duration-200 flex items-center space-x-3 group/item"
@@ -477,8 +518,8 @@ const UserLayout = () => {
                     }`}
                   >
                     <div className="bg-gray-50 rounded-lg border border-gray-200/50 mx-4 overflow-y-auto custom-scrollbar max-h-60">
-                      {userData.categories && userData.categories.length > 0 ? (
-                        userData.categories.map((category, index) => (
+                      {profileData.categories && profileData.categories.length > 0 ? (
+                        profileData.categories.map((category, index) => (
                           <button
                             key={category.id}
                             className="w-full text-left px-4 py-3 hover:bg-white transition-all duration-200 flex items-center space-x-3 group/item border-b border-gray-200/30 last:border-b-0"
@@ -600,8 +641,8 @@ const UserLayout = () => {
                   }`}
                 >
                   <div className="p-2 max-h-80 overflow-y-auto custom-scrollbar">
-                    {userData.categories && userData.categories.length > 0 ? (
-                      userData.categories.map((category) => (
+                    {profileData.categories && profileData.categories.length > 0 ? (
+                      profileData.categories.map((category) => (
                         <button
                           key={category.id}
                           className="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-lg transition-all duration-200 flex items-center space-x-2 group/item"
@@ -691,17 +732,16 @@ const UserLayout = () => {
         </main>
       </div>
 
-      {/* Footer with Redux Data */}
+      {/* Footer with Profile Data */}
       <footer className="bg-gray-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
               <h3 className="text-2xl font-bold">
-                {userData.name || "IBLOOM"}
+                {profileData.name}
               </h3>
               <p className="text-gray-400">
-                {userData.bio ||
-                  "Your premier destination for event rentals. Making every occasion extraordinary."}
+                {profileData.bio}
               </p>
               <div className="flex space-x-4">
                 {/* Facebook */}
@@ -768,8 +808,8 @@ const UserLayout = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4">Services</h4>
               <ul className="space-y-2 text-gray-400">
-                {userData?.specialize && userData?.specialize?.length > 0 ? (
-                  userData.specialize.slice(0, 4).map((service, index) => (
+                {profileData?.specialize && profileData?.specialize?.length > 0 ? (
+                  profileData.specialize.slice(0, 4).map((service, index) => (
                     <li key={index}>
                       <span className="hover:text-white transition-colors duration-300 cursor-pointer">
                         {service}
@@ -806,8 +846,8 @@ const UserLayout = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4">Categories</h4>
               <ul className="space-y-2 text-gray-400">
-                {userData.categories && userData.categories.length > 0 ? (
-                  userData.categories.slice(0, 4).map((category) => (
+                {profileData.categories && profileData.categories.length > 0 ? (
+                  profileData.categories.slice(0, 4).map((category) => (
                     <li key={category.id}>
                       <Link
                         to={`/category/${category.id}`}
@@ -859,25 +899,25 @@ const UserLayout = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4">Contact Info</h4>
               <div className="space-y-3 text-gray-400">
-                {userData.phone && (
+                {profileData.phone && (
                   <div className="flex items-center">
                     <Phone className="w-5 h-5 mr-3" />
-                    <span>{userData.phone}</span>
+                    <span>{profileData.phone}</span>
                   </div>
                 )}
-                {userData.email && (
+                {profileData.email && (
                   <div className="flex items-center">
                     <Mail className="w-5 h-5 mr-3" />
-                    <span>{userData.email}</span>
+                    <span>{profileData.email}</span>
                   </div>
                 )}
-                {userData.location && (
+                {profileData.location && (
                   <div className="flex items-center">
                     <MapPin className="w-5 h-5 mr-3" />
-                    <span>{userData.location}</span>
+                    <span>{profileData.location}</span>
                   </div>
                 )}
-                {!userData.phone && !userData.email && !userData.location && (
+                {!profileData.phone && !profileData.email && !profileData.location && (
                   <>
                     <div className="flex items-center">
                       <Phone className="w-5 h-5 mr-3" />
@@ -885,7 +925,6 @@ const UserLayout = () => {
                     </div>
                     <div className="flex items-center">
                       <Mail className="w-5 h-5 mr-3" />
-                      {/* <span>ibloomrentals@gmail.com</span> */}
                       <span>adeoyemayopoelijah@gmail.com</span>
                     </div>
                     <div className="flex items-center">
@@ -900,7 +939,7 @@ const UserLayout = () => {
 
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
             <p>
-              &copy; 2025 {userData.name || "IBLOOM"}. All rights reserved. |
+              &copy; 2025 {profileData.name}. All rights reserved. |
               Privacy Policy | Terms of Service
             </p>
           </div>

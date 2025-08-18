@@ -145,6 +145,19 @@ const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [heroReady, setHeroReady] = useState(false);
   const [autoSlideIndex, setAutoSlideIndex] = useState(0);
+  
+  // Local state for profile data with fallbacks
+  const [profileData, setProfileData] = useState({
+    name: "IBLOOM",
+    bio: "Your premier destination for event rentals. Making every occasion extraordinary.",
+    phone: "0817-225-8085",
+    email: "adeoyemayopoelijah@gmail.com",
+    location: "85B, Lafiaji Way, Dolphin Estate",
+    specialize: [],
+    categories: [],
+    joinDate: null
+  });
+  
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -156,6 +169,39 @@ const HomePage = () => {
   // Redux state
   const { userData, loading: profileLoading } = useSelector((state) => state.profile);
   const { categories, isLoading: categoriesLoading } = useSelector((state) => state.categories);
+
+  // Load profile data on component mount and update local state
+  useEffect(() => {
+    const loadProfileData = async () => {
+      try {
+        // Always fetch fresh profile data when HomePage mounts
+        await dispatch(fetchProfile()).unwrap();
+        await dispatch(fetchCategories()).unwrap();
+      } catch (error) {
+        console.warn("Failed to fetch profile data:", error);
+        // Keep using fallback data if fetch fails
+      }
+    };
+
+    loadProfileData();
+  }, [dispatch]);
+
+  // Update local profile state whenever Redux userData changes
+  useEffect(() => {
+    if (userData && Object.keys(userData).length > 0) {
+      setProfileData(prevData => ({
+        ...prevData,
+        name: userData.name || prevData.name,
+        bio: userData.bio || prevData.bio,
+        phone: userData.phone || prevData.phone,
+        email: userData.email || prevData.email,
+        location: userData.location || prevData.location,
+        specialize: userData.specialize || prevData.specialize,
+        categories: userData.categories || categories || prevData.categories,
+        joinDate: userData.joinDate || prevData.joinDate
+      }));
+    }
+  }, [userData, categories]);
 
   // Optimized map URL generation
   const getMapUrl = useCallback((location) => {
@@ -180,7 +226,7 @@ const HomePage = () => {
       id: 1,
       image: "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951649/gabriel-domingues-leao-da-costa-cew-O_O5Bdg-unsplash_xbxxfb.jpg",
       optimizedImage: "https://res.cloudinary.com/dc7jgb30v/image/upload/w_1920,h_1080,c_fill,f_webp,q_auto:good/v1753951649/gabriel-domingues-leao-da-costa-cew-O_O5Bdg-unsplash_xbxxfb.jpg",
-      title: `${userData?.name || "Premium Event"} Rentals`,
+      title: `${profileData?.name || "Premium Event"} Rentals`,
       subtitle: "Transform your special moments",
     },
     {
@@ -197,7 +243,7 @@ const HomePage = () => {
       title: "Corporate Events",
       subtitle: "Professional solutions for success",
     },
-  ], [userData?.name]);
+  ], [profileData?.name]);
 
   // Memoized data with proper fallbacks
   const rentalCategories = useMemo(() => 
@@ -238,8 +284,8 @@ const HomePage = () => {
   ], []);
 
   const autoSlideCards = useMemo(() => 
-    userData?.specialize?.length > 0
-      ? userData.specialize.map((spec, index) => ({
+    profileData?.specialize?.length > 0
+      ? profileData.specialize.map((spec, index) => ({
           id: index + 1,
           title: spec,
           desc: `Professional ${spec.toLowerCase()} services`,
@@ -251,7 +297,7 @@ const HomePage = () => {
           { id: 3, title: "Expert Support", desc: "Professional event planning", icon: "👥" },
           { id: 4, title: "Flexible Pricing", desc: "Packages for every budget", icon: "💰" },
           { id: 5, title: "24/7 Service", desc: "Round-the-clock assistance", icon: "🕐" },
-        ], [userData?.specialize]
+        ], [profileData?.specialize]
   );
 
   const stats = useMemo(() => [
@@ -270,12 +316,6 @@ const HomePage = () => {
       return () => clearTimeout(timer);
     }
   }, [location.state]);
-
-  // Fetch data on mount
-  useEffect(() => {
-    dispatch(fetchProfile());
-    dispatch(fetchCategories());
-  }, [dispatch]);
 
   // Preload hero images with better error handling
   useEffect(() => {
@@ -500,9 +540,9 @@ const HomePage = () => {
               <p className="text-xl md:text-2xl mb-4 text-white animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
                 {heroSlides[currentSlide]?.subtitle}
               </p>
-              {userData?.bio && (
+              {profileData?.bio && (
                 <p className="text-lg mb-8 text-white max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-                  {userData.bio}
+                  {profileData.bio}
                 </p>
               )}
 
@@ -739,7 +779,7 @@ const HomePage = () => {
           }`}
         >
           <h2 className="text-4xl font-bold text-center text-white mb-4 drop-shadow-lg">
-            {userData?.specialize?.length > 0 ? "Our Specializations" : "Why Choose Us"}
+            {profileData?.specialize?.length > 0 ? "Our Specializations" : "Why Choose Us"}
           </h2>
           <p className="text-xl text-center text-white/90 drop-shadow-md">
             Experience the difference with our premium service
@@ -785,7 +825,7 @@ const HomePage = () => {
           {/* Full Width Map */}
           <div className="w-full h-96 rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 relative mb-12">
             <iframe
-              src={getMapUrl(userData?.location)}
+              src={getMapUrl(profileData?.location)}
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -793,16 +833,16 @@ const HomePage = () => {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               className="w-full h-full"
-              title={`Company Location - ${userData?.location || "Default Location"}`}
+              title={`Company Location - ${profileData?.location || "Default Location"}`}
             ></iframe>
             
             <div className="absolute top-4 left-4 glass-effect px-4 py-2 rounded-full text-sm font-medium text-gray-700">
-              📍 {userData?.location || "178B Corporation Drive, Dolphin Estate, Ikoyi"}
+              📍 {profileData?.location || "178B Corporation Drive, Dolphin Estate, Ikoyi"}
             </div>
             
             <div className="absolute bottom-4 right-4 glass-effect px-3 py-1 rounded-full text-xs text-gray-600">
               <a 
-                href={getDirectionsUrl(userData?.location)} 
+                href={getDirectionsUrl(profileData?.location)} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hover:text-blue-600 transition-colors"
@@ -842,7 +882,7 @@ const HomePage = () => {
       </div>
 
       {/* Company Info Section */}
-      {userData?.joinDate && (
+      {profileData?.joinDate && (
         <div
           data-animate="company-info"
           className={`section-content py-16 bg-white transition-all duration-800 ${
@@ -853,23 +893,23 @@ const HomePage = () => {
             <div className="mb-8">
               <Award className="w-16 h-16 mx-auto text-gradient mb-4" />
               <h2 className="text-3xl font-bold text-gray-800 mb-4">
-                About {userData.name}
+                About {profileData.name}
               </h2>
             </div>
             <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-              {userData.bio}
+              {profileData.bio}
             </p>
             <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
               <div className="flex items-center glass-effect px-4 py-2 rounded-full">
                 <span className="font-semibold">Established:</span>
                 <span className="ml-2">
-                  {dayjs(userData.joinDate).format("DD/MM/YYYY")}
+                  {dayjs(profileData.joinDate).format("DD/MM/YYYY")}
                 </span>
               </div>
-              {userData.location && (
+              {profileData.location && (
                 <div className="flex items-center glass-effect px-4 py-2 rounded-full">
                   <MapPin className="w-4 h-4 mr-1" />
-                  <span>{userData.location}</span>
+                  <span>{profileData.location}</span>
                 </div>
               )}
             </div>

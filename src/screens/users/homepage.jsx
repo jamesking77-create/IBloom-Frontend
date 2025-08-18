@@ -13,10 +13,14 @@ import {
   Award,
   Sparkles,
 } from "lucide-react";
-import { fetchProfile, fetchPublicProfile } from "../../store/slices/profile-slice";
+import { fetchProfile } from "../../store/slices/profile-slice";
 import { fetchCategories } from "../../store/slices/categoriesSlice";
 import FloatingChatBox from "../../UI/floatingChatBox";
 import QuickActionsSection from "../../components/users/quickActionSection";
+import { fetchCompanyInfo } from "../../store/slices/publicCompanyInfoSlice";
+
+
+
 
 // Performance optimized scroll hook
 function useOptimizedScroll() {
@@ -145,19 +149,6 @@ const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [heroReady, setHeroReady] = useState(false);
   const [autoSlideIndex, setAutoSlideIndex] = useState(0);
-  
-  // Local state for profile data with fallbacks
-  const [profileData, setProfileData] = useState({
-    name: "IBLOOM",
-    bio: "Your premier destination for event rentals. Making every occasion extraordinary.",
-    phone: "0817-225-8085",
-    email: "adeoyemayopoelijah@gmail.com",
-    location: "85B, Lafiaji Way, Dolphin Estate",
-    specialize: [],
-    categories: [],
-    joinDate: null
-  });
-  
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -166,60 +157,30 @@ const HomePage = () => {
   const scrollY = useOptimizedScroll();
   const { isVisible, observe } = useIntersectionObserver();
 
+  const { companyInfo, companyInfoLoading } = useSelector((state) => state.public);
+  
+  // useEffect(() => {
+  //   console.log("🏠 HomePage mounted");
+  //   console.log("📊 Public state:", publicState);
+  //   console.log("🚀 Dispatching fetchCompanyInfo...");
+    
+  //   dispatch(fetchCompanyInfo())
+  //     .then((result) => {
+  //       console.log("✅ Dispatch successful:", result);
+  //     })
+  //     .catch((error) => {
+  //       console.error("❌ Dispatch failed:", error);
+  //     });
+  // }, [dispatch]);
+  
+  // // Log state changes
+  // useEffect(() => {
+  //   console.log("🔄 Public state changed:", publicState);
+  // }, [publicState]);
+
   // Redux state
-  const { userData, loading: profileLoading, isPublicData } = useSelector((state) => state.profile);
+  const { userData, loading: profileLoading } = useSelector((state) => state.profile);
   const { categories, isLoading: categoriesLoading } = useSelector((state) => state.categories);
-
-  // Load profile data on component mount
-  useEffect(() => {
-    const loadProfileData = async () => {
-      try {
-        console.log('HomePage: Loading profile data...');
-        
-        // Try authenticated profile first, with automatic public fallback
-        await dispatch(fetchProfile({ 
-          fallbackToPublic: true,
-          useCache: true 
-        })).unwrap();
-        
-        // Also fetch categories
-        await dispatch(fetchCategories()).unwrap();
-        
-        console.log('HomePage: Profile data loaded successfully');
-      } catch (error) {
-        console.warn("HomePage: Profile fetch failed, trying public profile directly:", error);
-        
-        // If the automatic fallback didn't work, try public profile directly
-        try {
-          await dispatch(fetchPublicProfile({ useCache: true })).unwrap();
-          console.log('HomePage: Public profile loaded successfully');
-        } catch (publicError) {
-          console.warn("HomePage: Public profile fetch also failed:", publicError);
-          // Will use fallback data from useState
-        }
-      }
-    };
-
-    loadProfileData();
-  }, [dispatch]);
-
-  // Update local profile state whenever Redux userData changes
-  useEffect(() => {
-    if (userData && Object.keys(userData).length > 0) {
-      console.log('HomePage: Updating local profile state with:', userData);
-      setProfileData(prevData => ({
-        ...prevData,
-        name: userData.name || prevData.name,
-        bio: userData.bio || prevData.bio,
-        phone: userData.phone || prevData.phone,
-        email: userData.email || prevData.email,
-        location: userData.location || prevData.location,
-        specialize: userData.specialize || prevData.specialize,
-        categories: userData.categories || categories || prevData.categories,
-        joinDate: userData.joinDate || prevData.joinDate
-      }));
-    }
-  }, [userData, categories]);
 
   // Optimized map URL generation
   const getMapUrl = useCallback((location) => {
@@ -244,7 +205,7 @@ const HomePage = () => {
       id: 1,
       image: "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951649/gabriel-domingues-leao-da-costa-cew-O_O5Bdg-unsplash_xbxxfb.jpg",
       optimizedImage: "https://res.cloudinary.com/dc7jgb30v/image/upload/w_1920,h_1080,c_fill,f_webp,q_auto:good/v1753951649/gabriel-domingues-leao-da-costa-cew-O_O5Bdg-unsplash_xbxxfb.jpg",
-      title: `${profileData?.name || "Premium Event"} Rentals`,
+      title: `${companyInfo?.name || "Premium Event"} Rentals`,
       subtitle: "Transform your special moments",
     },
     {
@@ -261,7 +222,7 @@ const HomePage = () => {
       title: "Corporate Events",
       subtitle: "Professional solutions for success",
     },
-  ], [profileData?.name]);
+  ], [companyInfo?.name]);
 
   // Memoized data with proper fallbacks
   const rentalCategories = useMemo(() => 
@@ -302,8 +263,8 @@ const HomePage = () => {
   ], []);
 
   const autoSlideCards = useMemo(() => 
-    profileData?.specialize?.length > 0
-      ? profileData.specialize.map((spec, index) => ({
+    companyInfo?.specialize?.length > 0
+      ? userData.specialize.map((spec, index) => ({
           id: index + 1,
           title: spec,
           desc: `Professional ${spec.toLowerCase()} services`,
@@ -315,7 +276,7 @@ const HomePage = () => {
           { id: 3, title: "Expert Support", desc: "Professional event planning", icon: "👥" },
           { id: 4, title: "Flexible Pricing", desc: "Packages for every budget", icon: "💰" },
           { id: 5, title: "24/7 Service", desc: "Round-the-clock assistance", icon: "🕐" },
-        ], [profileData?.specialize]
+        ], [companyInfo?.specialize]
   );
 
   const stats = useMemo(() => [
@@ -334,6 +295,12 @@ const HomePage = () => {
       return () => clearTimeout(timer);
     }
   }, [location.state]);
+
+  // Fetch data on mount
+  useEffect(() => {
+    dispatch(fetchCompanyInfo());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   // Preload hero images with better error handling
   useEffect(() => {
@@ -558,9 +525,9 @@ const HomePage = () => {
               <p className="text-xl md:text-2xl mb-4 text-white animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
                 {heroSlides[currentSlide]?.subtitle}
               </p>
-              {profileData?.bio && (
+              {companyInfo?.bio && (
                 <p className="text-lg mb-8 text-white max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-                  {profileData.bio}
+                  {userData.bio}
                 </p>
               )}
 
@@ -797,7 +764,7 @@ const HomePage = () => {
           }`}
         >
           <h2 className="text-4xl font-bold text-center text-white mb-4 drop-shadow-lg">
-            {profileData?.specialize?.length > 0 ? "Our Specializations" : "Why Choose Us"}
+            {companyInfo?.specialize?.length > 0 ? "Our Specializations" : "Why Choose Us"}
           </h2>
           <p className="text-xl text-center text-white/90 drop-shadow-md">
             Experience the difference with our premium service
@@ -843,7 +810,7 @@ const HomePage = () => {
           {/* Full Width Map */}
           <div className="w-full h-96 rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 relative mb-12">
             <iframe
-              src={getMapUrl(profileData?.location)}
+              src={getMapUrl(companyInfo?.location)}
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -851,16 +818,16 @@ const HomePage = () => {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               className="w-full h-full"
-              title={`Company Location - ${profileData?.location || "Default Location"}`}
+              title={`Company Location - ${companyInfo?.location || "Default Location"}`}
             ></iframe>
             
             <div className="absolute top-4 left-4 glass-effect px-4 py-2 rounded-full text-sm font-medium text-gray-700">
-              📍 {profileData?.location || "178B Corporation Drive, Dolphin Estate, Ikoyi"}
+              📍 {companyInfo?.location || "178B Corporation Drive, Dolphin Estate, Ikoyi"}
             </div>
             
             <div className="absolute bottom-4 right-4 glass-effect px-3 py-1 rounded-full text-xs text-gray-600">
               <a 
-                href={getDirectionsUrl(profileData?.location)} 
+                href={getDirectionsUrl(companyInfo?.location)} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hover:text-blue-600 transition-colors"
@@ -900,7 +867,7 @@ const HomePage = () => {
       </div>
 
       {/* Company Info Section */}
-      {profileData?.joinDate && (
+      {companyInfo?.joinDate && (
         <div
           data-animate="company-info"
           className={`section-content py-16 bg-white transition-all duration-800 ${
@@ -911,23 +878,23 @@ const HomePage = () => {
             <div className="mb-8">
               <Award className="w-16 h-16 mx-auto text-gradient mb-4" />
               <h2 className="text-3xl font-bold text-gray-800 mb-4">
-                About {profileData.name}
+                About {userData.name}
               </h2>
             </div>
             <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-              {profileData.bio}
+              {userData.bio}
             </p>
             <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
               <div className="flex items-center glass-effect px-4 py-2 rounded-full">
                 <span className="font-semibold">Established:</span>
                 <span className="ml-2">
-                  {dayjs(profileData.joinDate).format("DD/MM/YYYY")}
+                  {dayjs(userData.joinDate).format("DD/MM/YYYY")}
                 </span>
               </div>
-              {profileData.location && (
+              {userData.location && (
                 <div className="flex items-center glass-effect px-4 py-2 rounded-full">
                   <MapPin className="w-4 h-4 mr-1" />
-                  <span>{profileData.location}</span>
+                  <span>{userData.location}</span>
                 </div>
               )}
             </div>

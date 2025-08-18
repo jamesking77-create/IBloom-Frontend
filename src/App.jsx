@@ -30,6 +30,39 @@ import QuoteCategoriesScreen from './screens/users/quoteCategoriesScreen';
 import QuoteCategoryItemsScreen from './screens/users/quoteCategoryItemsScreen';
 import QuoteSuccessScreen from './screens/users/quoteSuccessScreen';
 import CustomerInfoForm from './components/users/customerInfoForm';
+import { get } from './utils/api';
+
+const useKeepAlive = () => {
+  useEffect(() => {
+    const keepAlive = async () => {
+      try {
+        console.log('🏓 Sending keep-alive ping...');
+        const response = await get('/api/keep-alive');
+        console.log('✅ Keep-alive response:', response.data.message);
+        console.log('📊 Server uptime:', Math.floor(response.data.uptime / 60), 'minutes');
+        console.log('🕐 Timestamp:', response.data.timestamp);
+      } catch (error) {
+        console.error('❌ Keep-alive ping failed:', error.message);
+      }
+    };
+
+    // Send initial ping immediately when app loads
+    keepAlive();
+
+    // Set up interval to ping every 5 minutes (300,000 milliseconds)
+    const interval = setInterval(keepAlive, 5 * 60 * 1000);
+
+    console.log('🎯 Keep-alive system initialized - pinging every 5 minutes');
+
+    // Cleanup interval on component unmount
+    return () => {
+      clearInterval(interval);
+      console.log('🛑 Keep-alive interval cleared');
+    };
+  }, []);
+};
+
+
 
 // Inactivity Modal Component
 const InactivityModal = ({ isOpen, countdown, onStayLoggedIn, onLogout }) => {

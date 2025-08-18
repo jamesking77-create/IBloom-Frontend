@@ -11,6 +11,7 @@ import mailerReducer from "./slices/mailer";
 import categoriesReducer from "./slices/categoriesSlice";
 import quotesReducer from "./slices/quote-slice";
 import cartReducer from "./slices/cart-slice";
+import publicReducer from './slices/publicCompanyInfoSlice'
 const categorySyncMiddleware = (store) => (next) => (action) => {
   const result = next(action);
 
@@ -44,6 +45,7 @@ export const store = configureStore({
     categories: categoriesReducer,
     quotes:quotesReducer,
     cart: cartReducer,
+    public: publicReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

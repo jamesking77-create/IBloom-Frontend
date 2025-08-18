@@ -1,24 +1,23 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { get, put, post } from "../../utils/api";
 
-// Local storage key for caching profile data
+// Local storage keys for caching profile data
 const PROFILE_CACHE_KEY = 'user_profile_data';
+const PUBLIC_PROFILE_CACHE_KEY = 'public_business_profile_data';
 
-// Helper function to cache profile data in localStorage
+// Helper functions for caching private profile data
 const cacheProfileData = (data) => {
   try {
     localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
       data,
       timestamp: Date.now(),
-      // Cache for 5 minutes
-      expires: Date.now() + (5 * 60 * 1000)
+      expires: Date.now() + (5 * 60 * 1000) // Cache for 5 minutes
     }));
   } catch (error) {
     console.warn('Failed to cache profile data:', error);
   }
 };
 
-// Helper function to get cached profile data
 const getCachedProfileData = () => {
   try {
     const cached = localStorage.getItem(PROFILE_CACHE_KEY);
@@ -26,7 +25,6 @@ const getCachedProfileData = () => {
     
     const { data, expires } = JSON.parse(cached);
     
-    // Check if cache is still valid
     if (Date.now() > expires) {
       localStorage.removeItem(PROFILE_CACHE_KEY);
       return null;
@@ -39,27 +37,62 @@ const getCachedProfileData = () => {
   }
 };
 
-// Helper function to clear profile cache
+// Helper functions for caching public profile data
+const cachePublicProfileData = (data) => {
+  try {
+    localStorage.setItem(PUBLIC_PROFILE_CACHE_KEY, JSON.stringify({
+      data,
+      timestamp: Date.now(),
+      expires: Date.now() + (10 * 60 * 1000) // Cache for 10 minutes for public data
+    }));
+  } catch (error) {
+    console.warn('Failed to cache public profile data:', error);
+  }
+};
+
+const getCachedPublicProfileData = () => {
+  try {
+    const cached = localStorage.getItem(PUBLIC_PROFILE_CACHE_KEY);
+    if (!cached) return null;
+    
+    const { data, expires } = JSON.parse(cached);
+    
+    if (Date.now() > expires) {
+      localStorage.removeItem(PUBLIC_PROFILE_CACHE_KEY);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.warn('Failed to get cached public profile data:', error);
+    return null;
+  }
+};
+
 const clearProfileCache = () => {
   try {
     localStorage.removeItem(PROFILE_CACHE_KEY);
+    localStorage.removeItem(PUBLIC_PROFILE_CACHE_KEY);
   } catch (error) {
     console.warn('Failed to clear profile cache:', error);
   }
 };
 
-// API service functions for profile operations
+// API service functions
 export const getProfileAPI = async () => {
   const response = await get("/api/users/profile");
   return response?.data?.data?.user;
 };
 
+export const getPublicProfileAPI = async () => {
+  const response = await get("/api/public/business-profile");
+  return response?.data?.data?.user;
+};
+
 export const updateProfileAPI = async (profileData) => {
-  // If profileData contains an avatar file, send as FormData
   if (profileData.avatar instanceof File) {
     const formData = new FormData();
 
-    // Append all profile data to FormData
     Object.keys(profileData).forEach((key) => {
       if (key === "avatar") {
         formData.append("avatar", profileData.avatar);
@@ -77,29 +110,68 @@ export const updateProfileAPI = async (profileData) => {
     });
     return response.data;
   } else {
-    // Regular JSON update (no file)
     const response = await put("/api/users/updateProfile", profileData);
     return response.data;
   }
 };
 
-// Enhanced async thunk for fetching profile with caching
-export const fetchProfile = createAsyncThunk(
-  "profile/fetchProfile",
+// NEW: Public profile fetch thunk (for unauthenticated users)
+export const fetchPublicProfile = createAsyncThunk(
+  "profile/fetchPublicProfile",
   async (options = {}, { rejectWithValue }) => {
     try {
       const { forceRefresh = false, useCache = true } = options;
       
-      // Try to get cached data first (if not forcing refresh and cache is enabled)
+      // Try cached data first
       if (!forceRefresh && useCache) {
-        const cachedData = getCachedProfileData();
+        const cachedData = getCachedPublicProfileData();
         if (cachedData) {
-          console.log('Using cached profile data');
+          console.log('Using cached public profile data');
           return cachedData;
         }
       }
       
-      console.log('Fetching fresh profile data from API');
+      console.log('Fetching fresh public profile data from API');
+      const data = await getPublicProfileAPI();
+      
+      // Cache the fresh data
+      if (data) {
+        cachePublicProfileData(data);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Public profile fetch error:', error);
+      
+      // Fallback to cached data if API fails
+      const cachedData = getCachedPublicProfileData();
+      if (cachedData) {
+        console.log('API failed, using cached public profile data as fallback');
+        return cachedData;
+      }
+      
+      return rejectWithValue(error.message || "Failed to fetch public profile");
+    }
+  }
+);
+
+// Enhanced fetchProfile thunk with public fallback
+export const fetchProfile = createAsyncThunk(
+  "profile/fetchProfile",
+  async (options = {}, { rejectWithValue, dispatch }) => {
+    try {
+      const { forceRefresh = false, useCache = true, fallbackToPublic = true } = options;
+      
+      // Try to get cached authenticated data first
+      if (!forceRefresh && useCache) {
+        const cachedData = getCachedProfileData();
+        if (cachedData) {
+          console.log('Using cached authenticated profile data');
+          return { data: cachedData, isPublic: false };
+        }
+      }
+      
+      console.log('Fetching fresh authenticated profile data from API');
       const data = await getProfileAPI();
       
       // Cache the fresh data
@@ -107,15 +179,31 @@ export const fetchProfile = createAsyncThunk(
         cacheProfileData(data);
       }
       
-      return data;
+      return { data, isPublic: false };
     } catch (error) {
-      console.error('Profile fetch error:', error);
+      console.error('Authenticated profile fetch error:', error);
       
-      // If API fails, try to fallback to cached data
-      const cachedData = getCachedProfileData();
-      if (cachedData) {
-        console.log('API failed, using cached profile data as fallback');
-        return cachedData;
+      // If authenticated fetch fails and fallbackToPublic is true, try public endpoint
+      if (fallbackToPublic) {
+        console.log('Falling back to public profile data');
+        try {
+          const publicProfileResult = await dispatch(fetchPublicProfile({ useCache })).unwrap();
+          return { data: publicProfileResult, isPublic: true };
+        } catch (publicError) {
+          console.error('Public profile fallback also failed:', publicError);
+        }
+      }
+      
+      // If we have any cached data as final fallback
+      const cachedPrivateData = getCachedProfileData();
+      const cachedPublicData = getCachedPublicProfileData();
+      
+      if (cachedPrivateData) {
+        console.log('Using cached private data as final fallback');
+        return { data: cachedPrivateData, isPublic: false };
+      } else if (cachedPublicData) {
+        console.log('Using cached public data as final fallback');
+        return { data: cachedPublicData, isPublic: true };
       }
       
       return rejectWithValue(error.message || "Failed to fetch profile");
@@ -131,9 +219,7 @@ export const saveProfile = createAsyncThunk(
       const state = getState();
       const profileData = { ...state.profile.editData };
       
-      // If there's a selected avatar file, add it to the profile data
       if (avatarFile && avatarFile instanceof File) {
-        // Validate file before upload
         const maxSize = 5 * 1024 * 1024; // 5MB
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         
@@ -154,49 +240,41 @@ export const saveProfile = createAsyncThunk(
       // Clear old cache and cache the new data
       clearProfileCache();
       cacheProfileData(updatedUser);
+      cachePublicProfileData(updatedUser); // Also update public cache
       
       console.log("Profile saved and cached:", updatedUser);
       
-      return updatedUser;
+      return { data: updatedUser, isPublic: false };
     } catch (error) {
       return rejectWithValue(error.message || "Failed to save profile");
     }
   }
 );
 
-// Optional: Async thunk for updating specific profile fields
+// Update profile field thunk
 export const updateProfileField = createAsyncThunk(
   "profile/updateProfileField",
   async (fieldData, { rejectWithValue }) => {
     try {
       const data = await updateProfileAPI(fieldData);
       
-      // Update cache with new field data
-      const cachedData = getCachedProfileData();
-      if (cachedData) {
-        const updatedData = { ...cachedData, ...data };
-        cacheProfileData(updatedData);
+      // Update both caches with new field data
+      const cachedPrivateData = getCachedProfileData();
+      const cachedPublicData = getCachedPublicProfileData();
+      
+      if (cachedPrivateData) {
+        const updatedPrivateData = { ...cachedPrivateData, ...data };
+        cacheProfileData(updatedPrivateData);
+      }
+      
+      if (cachedPublicData) {
+        const updatedPublicData = { ...cachedPublicData, ...data };
+        cachePublicProfileData(updatedPublicData);
       }
       
       return data;
     } catch (error) {
       return rejectWithValue(error.message || "Failed to update profile field");
-    }
-  }
-);
-
-// Action to load profile from cache
-export const loadProfileFromCache = createAsyncThunk(
-  "profile/loadProfileFromCache",
-  async (_, { rejectWithValue }) => {
-    try {
-      const cachedData = getCachedProfileData();
-      if (cachedData) {
-        return cachedData;
-      }
-      return rejectWithValue("No cached data available");
-    } catch (error) {
-      return rejectWithValue("Failed to load cached profile");
     }
   }
 );
@@ -229,8 +307,9 @@ const initialState = {
   error: null,
   saving: false,
   selectedAvatarFile: null,
-  lastFetched: null, // Track when data was last fetched
-  isFromCache: false, // Track if current data is from cache
+  lastFetched: null,
+  isFromCache: false,
+  isPublicData: false, // Track if current data is from public endpoint
 };
 
 const profileSlice = createSlice({
@@ -278,12 +357,10 @@ const profileSlice = createSlice({
       state.loading = false;
       state.saving = false;
     },
-    // Action to clear profile cache manually
     clearCache: (state) => {
       clearProfileCache();
       state.isFromCache = false;
     },
-    // Action to force refresh profile data
     forceRefresh: (state) => {
       clearProfileCache();
       state.isFromCache = false;
@@ -297,63 +374,77 @@ const profileSlice = createSlice({
       state.userData.categories = categories;
       state.editData.categories = categories;
       
-      // Update cache with new categories
-      const cachedData = getCachedProfileData();
-      if (cachedData) {
-        cacheProfileData({ ...cachedData, categories });
+      // Update both caches with new categories
+      const cachedPrivateData = getCachedProfileData();
+      const cachedPublicData = getCachedPublicProfileData();
+      
+      if (cachedPrivateData) {
+        cacheProfileData({ ...cachedPrivateData, categories });
+      }
+      
+      if (cachedPublicData) {
+        cachePublicProfileData({ ...cachedPublicData, categories });
       }
     },
   },
   extraReducers: (builder) => {
     builder
-      // Load profile from cache cases
-      .addCase(loadProfileFromCache.fulfilled, (state, action) => {
-        state.userData = action.payload;
-        state.editData = { ...action.payload };
-        state.isFromCache = true;
-        state.loading = false;
+      // Handle public profile fetch
+      .addCase(fetchPublicProfile.pending, (state) => {
+        state.loading = true;
         state.error = null;
       })
-      .addCase(loadProfileFromCache.rejected, (state) => {
+      .addCase(fetchPublicProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userData = action.payload;
+        state.editData = { ...action.payload };
+        state.lastFetched = Date.now();
         state.isFromCache = false;
+        state.isPublicData = true;
+        state.error = null;
       })
-      // Fetch profile cases (enhanced with cache handling)
+      .addCase(fetchPublicProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Enhanced fetchProfile cases
       .addCase(fetchProfile.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.userData = action.payload;
-        state.editData = { ...action.payload };
+        state.userData = action.payload.data;
+        state.editData = { ...action.payload.data };
         state.lastFetched = Date.now();
-        state.isFromCache = false; // This is fresh data
+        state.isFromCache = false;
+        state.isPublicData = action.payload.isPublic;
         state.error = null;
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        // Don't clear userData if we have cached data as fallback
       })
-      // Save profile cases (enhanced with cache updates)
+      // Save profile cases
       .addCase(saveProfile.pending, (state) => {
         state.saving = true;
         state.error = null;
       })
       .addCase(saveProfile.fulfilled, (state, action) => {
         state.saving = false;
-        state.userData = action.payload;
-        state.editData = { ...action.payload };
+        state.userData = action.payload.data;
+        state.editData = { ...action.payload.data };
         state.isEditing = false;
         state.selectedAvatarFile = null;
         state.lastFetched = Date.now();
         state.isFromCache = false;
+        state.isPublicData = action.payload.isPublic;
       })
       .addCase(saveProfile.rejected, (state, action) => {
         state.saving = false;
         state.error = action.payload;
       })
-      // Update profile field cases (enhanced with cache updates)
+      // Update profile field cases
       .addCase(updateProfileField.pending, (state) => {
         state.saving = true;
         state.error = null;
@@ -368,7 +459,7 @@ const profileSlice = createSlice({
         state.saving = false;
         state.error = action.payload;
       })
-      // Listen to category slice changes (enhanced with cache updates)
+      // Listen to category slice changes
       .addCase("categories/fetchCategories/fulfilled", (state, action) => {
         const categories = action.payload.map((cat) => ({
           id: cat.id,
@@ -380,10 +471,16 @@ const profileSlice = createSlice({
           state.editData.categories = categories;
         }
         
-        // Update cache with new categories
-        const cachedData = getCachedProfileData();
-        if (cachedData) {
-          cacheProfileData({ ...cachedData, categories });
+        // Update both caches with new categories
+        const cachedPrivateData = getCachedProfileData();
+        const cachedPublicData = getCachedPublicProfileData();
+        
+        if (cachedPrivateData) {
+          cacheProfileData({ ...cachedPrivateData, categories });
+        }
+        
+        if (cachedPublicData) {
+          cachePublicProfileData({ ...cachedPublicData, categories });
         }
       })
       .addCase("categories/createCategory/fulfilled", (state, action) => {
@@ -406,11 +503,18 @@ const profileSlice = createSlice({
           state.editData.categories.push(newCategory);
         }
         
-        // Update cache
-        const cachedData = getCachedProfileData();
-        if (cachedData) {
-          const updatedCategories = [...(cachedData.categories || []), newCategory];
-          cacheProfileData({ ...cachedData, categories: updatedCategories });
+        // Update both caches
+        const cachedPrivateData = getCachedProfileData();
+        const cachedPublicData = getCachedPublicProfileData();
+        
+        if (cachedPrivateData) {
+          const updatedCategories = [...(cachedPrivateData.categories || []), newCategory];
+          cacheProfileData({ ...cachedPrivateData, categories: updatedCategories });
+        }
+        
+        if (cachedPublicData) {
+          const updatedCategories = [...(cachedPublicData.categories || []), newCategory];
+          cachePublicProfileData({ ...cachedPublicData, categories: updatedCategories });
         }
       })
       .addCase("categories/updateCategory/fulfilled", (state, action) => {
@@ -430,15 +534,27 @@ const profileSlice = createSlice({
           state.editData.categories[editDataIndex].name = updatedCategory.name;
         }
         
-        // Update cache
-        const cachedData = getCachedProfileData();
-        if (cachedData && cachedData.categories) {
-          const categoryIndex = cachedData.categories.findIndex(
+        // Update both caches
+        const cachedPrivateData = getCachedProfileData();
+        const cachedPublicData = getCachedPublicProfileData();
+        
+        if (cachedPrivateData && cachedPrivateData.categories) {
+          const categoryIndex = cachedPrivateData.categories.findIndex(
             (cat) => cat.id === updatedCategory.id
           );
           if (categoryIndex !== -1) {
-            cachedData.categories[categoryIndex].name = updatedCategory.name;
-            cacheProfileData(cachedData);
+            cachedPrivateData.categories[categoryIndex].name = updatedCategory.name;
+            cacheProfileData(cachedPrivateData);
+          }
+        }
+        
+        if (cachedPublicData && cachedPublicData.categories) {
+          const categoryIndex = cachedPublicData.categories.findIndex(
+            (cat) => cat.id === updatedCategory.id
+          );
+          if (categoryIndex !== -1) {
+            cachedPublicData.categories[categoryIndex].name = updatedCategory.name;
+            cachePublicProfileData(cachedPublicData);
           }
         }
       })
@@ -452,13 +568,22 @@ const profileSlice = createSlice({
           (cat) => cat.id !== deletedCategoryId
         );
         
-        // Update cache
-        const cachedData = getCachedProfileData();
-        if (cachedData && cachedData.categories) {
-          const updatedCategories = cachedData.categories.filter(
+        // Update both caches
+        const cachedPrivateData = getCachedProfileData();
+        const cachedPublicData = getCachedPublicProfileData();
+        
+        if (cachedPrivateData && cachedPrivateData.categories) {
+          const updatedCategories = cachedPrivateData.categories.filter(
             (cat) => cat.id !== deletedCategoryId
           );
-          cacheProfileData({ ...cachedData, categories: updatedCategories });
+          cacheProfileData({ ...cachedPrivateData, categories: updatedCategories });
+        }
+        
+        if (cachedPublicData && cachedPublicData.categories) {
+          const updatedCategories = cachedPublicData.categories.filter(
+            (cat) => cat.id !== deletedCategoryId
+          );
+          cachePublicProfileData({ ...cachedPublicData, categories: updatedCategories });
         }
       });
   },
@@ -486,16 +611,7 @@ export const selectProfileData = (state) => state.profile.userData;
 export const selectIsProfileLoading = (state) => state.profile.loading;
 export const selectProfileError = (state) => state.profile.error;
 export const selectIsFromCache = (state) => state.profile.isFromCache;
+export const selectIsPublicData = (state) => state.profile.isPublicData;
 export const selectLastFetched = (state) => state.profile.lastFetched;
-
-// Helper function to check if profile data needs refresh
-export const shouldRefreshProfile = (state) => {
-  const lastFetched = selectLastFetched(state);
-  if (!lastFetched) return true;
-  
-  // Refresh if data is older than 5 minutes
-  const fiveMinutes = 5 * 60 * 1000;
-  return Date.now() - lastFetched > fiveMinutes;
-};
 
 export default profileSlice.reducer;

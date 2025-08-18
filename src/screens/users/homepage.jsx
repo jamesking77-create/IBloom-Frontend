@@ -13,7 +13,7 @@ import {
   Award,
   Sparkles,
 } from "lucide-react";
-import { fetchProfile } from "../../store/slices/profile-slice";
+import { fetchProfile, fetchPublicProfile } from "../../store/slices/profile-slice";
 import { fetchCategories } from "../../store/slices/categoriesSlice";
 import FloatingChatBox from "../../UI/floatingChatBox";
 import QuickActionsSection from "../../components/users/quickActionSection";
@@ -167,19 +167,36 @@ const HomePage = () => {
   const { isVisible, observe } = useIntersectionObserver();
 
   // Redux state
-  const { userData, loading: profileLoading } = useSelector((state) => state.profile);
+  const { userData, loading: profileLoading, isPublicData } = useSelector((state) => state.profile);
   const { categories, isLoading: categoriesLoading } = useSelector((state) => state.categories);
 
-  // Load profile data on component mount and update local state
+  // Load profile data on component mount
   useEffect(() => {
     const loadProfileData = async () => {
       try {
-        // Always fetch fresh profile data when HomePage mounts
-        await dispatch(fetchProfile()).unwrap();
+        console.log('HomePage: Loading profile data...');
+        
+        // Try authenticated profile first, with automatic public fallback
+        await dispatch(fetchProfile({ 
+          fallbackToPublic: true,
+          useCache: true 
+        })).unwrap();
+        
+        // Also fetch categories
         await dispatch(fetchCategories()).unwrap();
+        
+        console.log('HomePage: Profile data loaded successfully');
       } catch (error) {
-        console.warn("Failed to fetch profile data:", error);
-        // Keep using fallback data if fetch fails
+        console.warn("HomePage: Profile fetch failed, trying public profile directly:", error);
+        
+        // If the automatic fallback didn't work, try public profile directly
+        try {
+          await dispatch(fetchPublicProfile({ useCache: true })).unwrap();
+          console.log('HomePage: Public profile loaded successfully');
+        } catch (publicError) {
+          console.warn("HomePage: Public profile fetch also failed:", publicError);
+          // Will use fallback data from useState
+        }
       }
     };
 
@@ -189,6 +206,7 @@ const HomePage = () => {
   // Update local profile state whenever Redux userData changes
   useEffect(() => {
     if (userData && Object.keys(userData).length > 0) {
+      console.log('HomePage: Updating local profile state with:', userData);
       setProfileData(prevData => ({
         ...prevData,
         name: userData.name || prevData.name,

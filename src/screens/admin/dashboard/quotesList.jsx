@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { 
   Eye, 
   Search, 
@@ -33,84 +34,63 @@ import {
   Send,
   Save,
   Menu,
-  AlertTriangle
+  AlertTriangle,
+  DollarSign
 } from 'lucide-react';
 
+// Redux imports
+import {
+  fetchQuotes,
+  deleteQuote,
+  updateQuoteStatus,
+  markQuoteAsViewed,
+  createQuoteResponse,
+  updateQuoteResponse,
+  sendQuoteResponse,
+  setFilters,
+  clearFilters,
+  clearError,
+  clearSuccess,
+  // WebSocket action handlers
+  handleNewQuoteNotification,
+  handleQuoteStatusUpdate,
+  handleQuoteDeletion,
+  handleQuoteResponseCreated,
+  setWebSocketConnected,
+  setWebSocketError,
+  // Selectors
+  selectQuotes,
+  selectQuotesLoading,
+  selectQuotesDeleting,
+  selectQuotesResponding,
+  selectQuotesSending,
+  selectQuotesUpdating,
+  selectQuotesError,
+  selectQuotesFilters,
+  selectQuotesSummary,
+  selectWebSocketConnected,
+  selectWebSocketError,
+  selectFilteredQuotes
+} from '../../../store/slices/quote-slice';
+
+// WebSocket hook
+import useRealTimeQuotes from '../../../utils/hooks/useRealTimeQuotes';
+
 export const QuotesList = () => {
-  // Mock data for demonstration
-  const [quotes, setQuotes] = useState([
-    {
-      _id: '1',
-      quoteId: 'QT-2024-001',
-      customer: {
-        name: 'John Smith',
-        email: 'john.smith@email.com',
-        phone: '+234 803 123 4567',
-        eventType: 'Wedding',
-        eventDate: '2024-09-15',
-        eventLocation: 'Victoria Island, Lagos',
-        guestCount: 150,
-        specialRequests: 'Need vegetarian options and outdoor setup'
-      },
-      categoryName: 'Catering',
-      items: [
-        { name: 'Wedding Cake', description: '3-tier vanilla cake', quantity: 1, unitPrice: 75000 },
-        { name: 'Appetizers', description: 'Mixed appetizer platter', quantity: 5, unitPrice: 15000 }
-      ],
-      status: 'pending',
-      viewedByAdmin: false,
-      createdAt: '2024-08-15T10:30:00Z',
-      updatedAt: '2024-08-15T10:30:00Z',
-      response: null
-    },
-    {
-      _id: '2',
-      quoteId: 'QT-2024-002',
-      customer: {
-        name: 'Sarah Johnson',
-        email: 'sarah.j@company.com',
-        phone: '+234 901 987 6543',
-        eventType: 'Corporate Event',
-        eventDate: '2024-09-20',
-        eventLocation: 'Ikeja GRA, Lagos',
-        guestCount: 80
-      },
-      categoryName: 'Audio/Visual',
-      items: [
-        { name: 'Sound System', description: 'Professional PA system', quantity: 1, unitPrice: 50000 },
-        { name: 'Lighting', description: 'LED stage lighting', quantity: 1, unitPrice: 35000 }
-      ],
-      status: 'responded',
-      viewedByAdmin: true,
-      createdAt: '2024-08-14T14:20:00Z',
-      updatedAt: '2024-08-16T09:15:00Z',
-      response: {
-        finalTotal: 95000,
-        validUntil: '2024-09-15',
-        message: 'Thank you for your inquiry. Please find our quote below.'
-      }
-    },
-    {
-      _id: '3',
-      quoteId: 'QT-2024-003',
-      customer: {
-        name: 'Michael Brown',
-        email: 'mike.brown@gmail.com',
-        phone: '+234 705 555 1234',
-        eventType: 'Birthday Party',
-        eventDate: '2024-08-25',
-        eventLocation: 'Lekki Phase 1, Lagos'
-      },
-      categoryName: 'Decoration',
-      items: [
-        { name: 'Balloon Arch', description: 'Custom balloon decoration', quantity: 2, unitPrice: 25000 }
-      ],
-      status: 'accepted',
-      viewedByAdmin: true,
-      createdAt: '2024-08-13T16:45:00Z',
-      updatedAt: '2024-08-17T11:30:00Z'
-    }
-  ]);
+  const dispatch = useDispatch();
+  
+  // Redux state
+  const quotes = useSelector(selectFilteredQuotes);
+  const loading = useSelector(selectQuotesLoading);
+  const deleting = useSelector(selectQuotesDeleting);
+  const responding = useSelector(selectQuotesResponding);
+  const sending = useSelector(selectQuotesSending);
+  const updating = useSelector(selectQuotesUpdating);
+  const error = useSelector(selectQuotesError);
+  const filters = useSelector(selectQuotesFilters);
+  const summary = useSelector(selectQuotesSummary);
+  const wsConnected = useSelector(selectWebSocketConnected);
+  const wsError = useSelector(selectWebSocketError);
 
   // Local state
   const [selectedQuote, setSelectedQuote] = useState(null);
@@ -126,91 +106,153 @@ export const QuotesList = () => {
   const [notifications, setNotifications] = useState([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [filters, setFilters] = useState({
-    search: '',
-    status: 'all',
-    dateFrom: '',
-    dateTo: ''
+
+  // WebSocket handlers
+  const handleNewQuote = useCallback((message) => {
+    console.log('New quote received via WebSocket:', message.data);
+    dispatch(handleNewQuoteNotification(message.data));
+    
+    // Show notification
+    addNotification({
+      type: 'success',
+      title: 'New Quote Request',
+      message: `Quote request from ${message.data.customer?.name || 'Anonymous'} received`,
+      timestamp: new Date()
+    });
+  }, [dispatch]);
+
+  const handleQuoteStatusUpdated = useCallback((message) => {
+    console.log('Quote status updated via WebSocket:', message.data);
+    dispatch(handleQuoteStatusUpdate({
+      quoteId: message.data.quoteId || message.data._id,
+      oldStatus: message.data.oldStatus,
+      newStatus: message.data.newStatus || message.data.status
+    }));
+  }, [dispatch]);
+
+  const handleQuoteDeleted = useCallback((message) => {
+    console.log('Quote deleted via WebSocket:', message.data);
+    dispatch(handleQuoteDeletion(message.data.quoteId || message.data._id));
+    
+    // Show notification
+    addNotification({
+      type: 'info',
+      title: 'Quote Deleted',
+      message: `Quote #${message.data.quoteId} has been deleted`,
+      timestamp: new Date()
+    });
+  }, [dispatch]);
+
+  const handleQuoteResponseCreated = useCallback((message) => {
+    console.log('Quote response created via WebSocket:', message.data);
+    dispatch(handleQuoteResponseCreated({
+      quoteId: message.data.quoteId || message.data._id,
+      response: message.data.response
+    }));
+  }, [dispatch]);
+
+  const handleWebSocketConnected = useCallback(() => {
+    console.log('WebSocket connected for quotes');
+    dispatch(setWebSocketConnected(true));
+  }, [dispatch]);
+
+  const handleWebSocketDisconnected = useCallback(() => {
+    console.log('WebSocket disconnected for quotes');
+    dispatch(setWebSocketConnected(false));
+  }, [dispatch]);
+
+  const handleWebSocketError = useCallback((error) => {
+    console.error('WebSocket error for quotes:', error);
+    dispatch(setWebSocketError(error.message));
+  }, [dispatch]);
+
+  // Initialize WebSocket
+  const {
+    isConnected,
+    connectionState,
+    reconnect
+  } = useRealTimeQuotes({
+    enabled: true,
+    onNewQuote: handleNewQuote,
+    onQuoteStatusUpdate: handleQuoteStatusUpdated,
+    onQuoteDeleted: handleQuoteDeleted,
+    onQuoteResponseCreated: handleQuoteResponseCreated,
+    onConnected: handleWebSocketConnected,
+    onDisconnected: handleWebSocketDisconnected,
+    onError: handleWebSocketError
   });
 
-  // Mock state values
-  const [loading] = useState(false);
-  const [error] = useState(null);
-  const [updating] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [responding] = useState(false);
-  const [sending] = useState(false);
-  const [wsConnected] = useState(true);
-  const [wsError] = useState(null);
-
-  // Summary calculations
-  const summary = {
-    total: quotes.length,
-    pending: quotes.filter(q => q.status === 'pending').length,
-    reviewed: quotes.filter(q => q.status === 'reviewed').length,
-    responded: quotes.filter(q => q.status === 'responded').length,
-    accepted: quotes.filter(q => q.status === 'accepted').length,
-    unviewed: quotes.filter(q => !q.viewedByAdmin).length
+  // Notification helper
+  const addNotification = (notification) => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { ...notification, id }]);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
   };
 
-  // Filter quotes based on current filters
-  const filteredQuotes = quotes.filter(quote => {
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      if (!quote.customer?.name?.toLowerCase().includes(search) &&
-          !quote.customer?.email?.toLowerCase().includes(search) &&
-          !quote.quoteId?.toLowerCase().includes(search) &&
-          !quote.categoryName?.toLowerCase().includes(search)) {
-        return false;
-      }
-    }
-    
-    if (filters.status !== 'all' && quote.status !== filters.status) {
-      return false;
-    }
-    
-    return true;
-  });
+  // Fetch quotes on component mount
+  useEffect(() => {
+    dispatch(fetchQuotes(filters));
+  }, [dispatch]);
+
+  // Refetch when filters change
+  useEffect(() => {
+    dispatch(fetchQuotes(filters));
+  }, [dispatch, filters]);
 
   // Event handlers
   const handleViewQuote = (quote) => {
     setSelectedQuote(quote);
     setShowDetails(true);
+    
+    // Mark as viewed if not already
+    if (!quote.viewedByAdmin) {
+      dispatch(markQuoteAsViewed(quote.quoteId || quote._id));
+    }
   };
 
   const handleCreateResponse = (quote) => {
     setResponseQuote(quote);
-    setEditingResponse({
-      message: '',
-      items: quote.items?.map(item => ({
+    
+    // Calculate item totals including prices (admin view)
+    const itemsWithPricing = quote.items?.map(item => {
+      const unitPrice = item.unitPrice || item.estimatedPrice || 0;
+      return {
         ...item,
-        unitPrice: item.unitPrice || 0,
-        totalPrice: (item.unitPrice || 0) * (item.quantity || 1)
-      })) || [],
-      subtotal: 0,
-      discount: 0,
-      tax: 0,
-      deliveryFee: 0,
-      setupFee: 0,
-      finalTotal: 0,
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      terms: 'Payment terms: 50% deposit required, balance due on delivery.'
+        unitPrice: unitPrice,
+        totalPrice: unitPrice * (item.quantity || 1)
+      };
+    }) || [];
+
+    const subtotal = itemsWithPricing.reduce((sum, item) => sum + item.totalPrice, 0);
+    
+    setEditingResponse({
+      message: quote.response?.message || '',
+      items: itemsWithPricing,
+      subtotal: subtotal,
+      discount: quote.response?.discount || 0,
+      tax: quote.response?.tax || 0,
+      deliveryFee: quote.response?.deliveryFee || 0,
+      setupFee: quote.response?.setupFee || 0,
+      finalTotal: quote.response?.finalTotal || subtotal,
+      validUntil: quote.response?.validUntil || 
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      terms: quote.response?.terms || 'Payment terms: 50% deposit required, balance due on delivery.'
     });
+    
     setShowResponseModal(true);
     setShowActionMenu(null);
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    dispatch(setFilters({ [key]: value }));
   };
 
   const handleClearFilters = () => {
-    setFilters({
-      search: '',
-      status: 'all',
-      dateFrom: '',
-      dateTo: ''
-    });
+    dispatch(clearFilters());
     setShowMobileFilters(false);
   };
 
@@ -223,37 +265,23 @@ export const QuotesList = () => {
   const confirmDeleteQuote = async () => {
     if (!quoteToDelete) return;
     
-    setDeleting(true);
     try {
-      // Mock delete operation - replace with actual API call
-      console.log('Deleting quote:', quoteToDelete.quoteId || quoteToDelete._id);
+      await dispatch(deleteQuote(quoteToDelete.quoteId || quoteToDelete._id)).unwrap();
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Here you would dispatch your actual delete action:
-      // await dispatch(deleteQuote(quoteToDelete.quoteId || quoteToDelete._id)).unwrap();
-      
-      // For demo purposes, remove from local state
-      setQuotes(prevQuotes => prevQuotes.filter(quote => 
-        (quote.quoteId || quote._id) !== (quoteToDelete.quoteId || quoteToDelete._id)
-      ));
-      
-      // Mock success notification
-      console.log('Quote deleted successfully');
-      
-      // You could add a notification here:
-      // addNotification({
-      //   type: 'success',
-      //   title: 'Quote Deleted',
-      //   message: 'Quote has been deleted successfully.',
-      //   timestamp: new Date()
-      // });
+      addNotification({
+        type: 'success',
+        title: 'Quote Deleted',
+        message: 'Quote has been deleted successfully.',
+        timestamp: new Date()
+      });
     } catch (error) {
-      console.error('Failed to delete quote:', error);
-      // Handle error notification
+      addNotification({
+        type: 'error',
+        title: 'Delete Failed',
+        message: error.message || 'Failed to delete quote.',
+        timestamp: new Date()
+      });
     } finally {
-      setDeleting(false);
       setShowDeleteModal(false);
       setQuoteToDelete(null);
     }
@@ -266,6 +294,79 @@ export const QuotesList = () => {
 
   const toggleExpanded = (quoteId) => {
     setExpandedQuote(expandedQuote === quoteId ? null : quoteId);
+  };
+
+  const handleSaveResponse = async () => {
+    if (!responseQuote) return;
+    
+    try {
+      const responseData = {
+        ...editingResponse,
+        finalTotal: calculateFinalTotal()
+      };
+
+      if (responseQuote.response) {
+        await dispatch(updateQuoteResponse({
+          quoteId: responseQuote.quoteId || responseQuote._id,
+          responseData
+        })).unwrap();
+      } else {
+        await dispatch(createQuoteResponse({
+          quoteId: responseQuote.quoteId || responseQuote._id,
+          responseData
+        })).unwrap();
+      }
+
+      addNotification({
+        type: 'success',
+        title: 'Response Saved',
+        message: 'Quote response has been saved successfully.',
+        timestamp: new Date()
+      });
+      
+      setShowResponseModal(false);
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Save Failed',
+        message: error.message || 'Failed to save response.',
+        timestamp: new Date()
+      });
+    }
+  };
+
+  const handleSendResponse = async (quoteId) => {
+    try {
+      await dispatch(sendQuoteResponse({ quoteId })).unwrap();
+      
+      addNotification({
+        type: 'success',
+        title: 'Response Sent',
+        message: 'Quote response has been sent to the customer.',
+        timestamp: new Date()
+      });
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Send Failed',
+        message: error.message || 'Failed to send response.',
+        timestamp: new Date()
+      });
+    }
+  };
+
+  const calculateFinalTotal = () => {
+    const subtotal = editingResponse.subtotal || 0;
+    const discount = editingResponse.discount || 0;
+    const tax = editingResponse.tax || 0;
+    const deliveryFee = editingResponse.deliveryFee || 0;
+    const setupFee = editingResponse.setupFee || 0;
+    
+    return Math.max(0, subtotal - discount + tax + deliveryFee + setupFee);
+  };
+
+  const handleRefresh = () => {
+    dispatch(fetchQuotes(filters));
   };
 
   // Helper functions
@@ -291,6 +392,16 @@ export const QuotesList = () => {
       case 'expired': return <AlertCircle size={14} />;
       default: return <FileText size={14} />;
     }
+  };
+
+  // Calculate item total with admin pricing visibility
+  const calculateItemTotal = (items) => {
+    if (!items || !Array.isArray(items)) return 0;
+    return items.reduce((total, item) => {
+      const price = item.unitPrice || item.estimatedPrice || 0;
+      const quantity = item.quantity || 1;
+      return total + (price * quantity);
+    }, 0);
   };
 
   // Components
@@ -328,7 +439,7 @@ export const QuotesList = () => {
           
           {hasResponse && (
             <button
-              onClick={() => console.log('Send response')}
+              onClick={() => handleSendResponse(quote.quoteId || quote._id)}
               className="flex items-center justify-center gap-2 p-3 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
               disabled={sending}
             >
@@ -380,7 +491,7 @@ export const QuotesList = () => {
               
               {hasResponse && (
                 <button
-                  onClick={() => { console.log('Send response'); setShowActionMenu(null); }}
+                  onClick={() => { handleSendResponse(quote.quoteId || quote._id); setShowActionMenu(null); }}
                   className="w-full px-4 py-2 text-left text-sm hover:bg-blue-50 text-blue-600 flex items-center gap-3"
                   disabled={sending}
                 >
@@ -413,6 +524,7 @@ export const QuotesList = () => {
   const QuoteCard = ({ quote }) => {
     const isExpanded = expandedQuote === (quote.quoteId || quote._id);
     const hasResponse = !!quote.response;
+    const itemsTotal = calculateItemTotal(quote.items);
     
     return (
       <div className={`bg-white rounded-xl shadow-sm border transition-all duration-200 hover:shadow-md ${
@@ -473,6 +585,17 @@ export const QuotesList = () => {
               <span>{quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : 'N/A'}</span>
             </div>
           </div>
+
+          {/* Admin-only pricing info */}
+          {itemsTotal > 0 && (
+            <div className="flex items-center gap-2 text-sm">
+              <DollarSign size={16} className="text-gray-400 flex-shrink-0" />
+              <span className="font-medium text-gray-700">
+                Estimated: ₦{itemsTotal.toLocaleString()}
+              </span>
+              <span className="text-xs text-gray-500">(Admin view)</span>
+            </div>
+          )}
 
           {/* Event Details */}
           {quote.customer?.eventType && (
@@ -538,6 +661,35 @@ export const QuotesList = () => {
                       <span className="text-gray-700">{quote.customer.specialRequests}</span>
                     </div>
                   )}
+                  
+                  {/* Admin-only: Item details with pricing */}
+                  {quote.items && quote.items.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-gray-200">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Items & Pricing (Admin)</h5>
+                      <div className="space-y-2">
+                        {quote.items.map((item, index) => {
+                          const unitPrice = item.unitPrice || item.estimatedPrice || 0;
+                          const totalPrice = unitPrice * (item.quantity || 1);
+                          
+                          return (
+                            <div key={index} className="flex justify-between items-start text-xs">
+                              <div className="flex-1">
+                                <span className="font-medium">{item.name}</span>
+                                {item.description && (
+                                  <span className="text-gray-500 block">{item.description}</span>
+                                )}
+                                <span className="text-gray-500">Qty: {item.quantity || 1}</span>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium">₦{totalPrice.toLocaleString()}</div>
+                                <div className="text-gray-500">₦{unitPrice.toLocaleString()} each</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -581,7 +733,7 @@ export const QuotesList = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => console.log('Send response')}
+                    onClick={() => handleSendResponse(quote.quoteId || quote._id)}
                     className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                     disabled={sending}
                   >
@@ -607,13 +759,44 @@ export const QuotesList = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`p-4 rounded-lg shadow-lg border-l-4 ${
+                notification.type === 'success' 
+                  ? 'bg-green-50 border-green-400 text-green-800' 
+                  : notification.type === 'error'
+                  ? 'bg-red-50 border-red-400 text-red-800'
+                  : 'bg-blue-50 border-blue-400 text-blue-800'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">{notification.title}</h4>
+                  <p className="text-sm mt-1">{notification.message}</p>
+                </div>
+                <button
+                  onClick={() => setNotifications(prev => prev.filter(n => n.id !== notification.id))}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Mobile Header */}
       <div className="lg:hidden sticky top-0 bg-white border-b border-gray-200 z-40">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-gray-900">Quotes</h1>
             <div className="flex items-center gap-1">
-              {wsConnected ? (
+              {isConnected ? (
                 <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded-full">
                   <Wifi size={12} className="text-green-600" />
                   <span className="text-xs text-green-700 font-medium">Live</span>
@@ -621,7 +804,9 @@ export const QuotesList = () => {
               ) : (
                 <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded-full">
                   <WifiOff size={12} className="text-red-600" />
-                  <span className="text-xs text-red-700 font-medium">Offline</span>
+                  <span className="text-xs text-red-700 font-medium">
+                    {connectionState === 'connecting' ? 'Connecting...' : 'Offline'}
+                  </span>
                 </div>
               )}
             </div>
@@ -732,7 +917,7 @@ export const QuotesList = () => {
               
               {/* WebSocket Status */}
               <div className="flex items-center gap-2">
-                {wsConnected ? (
+                {isConnected ? (
                   <div className="flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full border border-green-200">
                     <Wifi size={16} className="text-green-600" />
                     <span className="text-sm text-green-700 font-medium">Live Updates</span>
@@ -740,8 +925,18 @@ export const QuotesList = () => {
                 ) : (
                   <div className="flex items-center gap-2 px-3 py-1 bg-red-50 rounded-full border border-red-200">
                     <WifiOff size={16} className="text-red-600" />
-                    <span className="text-sm text-red-700 font-medium">Offline</span>
+                    <span className="text-sm text-red-700 font-medium">
+                      {connectionState === 'connecting' ? 'Connecting...' : 'Offline'}
+                    </span>
                   </div>
+                )}
+                {!isConnected && connectionState !== 'connecting' && (
+                  <button
+                    onClick={reconnect}
+                    className="text-xs text-blue-600 hover:text-blue-700 underline"
+                  >
+                    Reconnect
+                  </button>
                 )}
               </div>
             </div>
@@ -749,7 +944,7 @@ export const QuotesList = () => {
           
           <div className="flex items-center gap-3">
             <button
-              onClick={() => console.log('Refresh')}
+              onClick={handleRefresh}
               disabled={loading}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
@@ -941,7 +1136,7 @@ export const QuotesList = () => {
         )}
 
         {/* Error State */}
-        {error && !loading && filteredQuotes.length === 0 && (
+        {error && !loading && quotes.length === 0 && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
@@ -971,12 +1166,12 @@ export const QuotesList = () => {
         )}
 
         {/* Content */}
-        {!loading && filteredQuotes.length > 0 && (
+        {!loading && quotes.length > 0 && (
           <>
             {/* Mobile: Always show cards */}
             <div className="lg:hidden">
               <div className="space-y-4">
-                {filteredQuotes.map((quote) => (
+                {quotes.map((quote) => (
                   <QuoteCard key={quote._id || quote.id || quote.quoteId} quote={quote} />
                 ))}
               </div>
@@ -986,7 +1181,7 @@ export const QuotesList = () => {
             <div className="hidden lg:block">
               {viewMode === 'cards' ? (
                 <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
-                  {filteredQuotes.map((quote) => (
+                  {quotes.map((quote) => (
                     <QuoteCard key={quote._id || quote.id || quote.quoteId} quote={quote} />
                   ))}
                 </div>
@@ -1006,6 +1201,9 @@ export const QuotesList = () => {
                             Category
                           </th>
                           <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Pricing
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Status
                           </th>
                           <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -1017,94 +1215,112 @@ export const QuotesList = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredQuotes.map((quote) => (
-                          <tr key={quote._id || quote.id || quote.quoteId} className={`hover:bg-gray-50 transition-colors ${
-                            !quote.viewedByAdmin ? 'bg-emerald-50' : ''
-                          }`}>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                                  <Hash className="w-5 h-5 text-white" />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <div className="font-semibold text-gray-900">
-                                      #{quote.quoteId || 'N/A'}
+                        {quotes.map((quote) => {
+                          const itemsTotal = calculateItemTotal(quote.items);
+                          return (
+                            <tr key={quote._id || quote.id || quote.quoteId} className={`hover:bg-gray-50 transition-colors ${
+                              !quote.viewedByAdmin ? 'bg-emerald-50' : ''
+                            }`}>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                                    <Hash className="w-5 h-5 text-white" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="font-semibold text-gray-900">
+                                        #{quote.quoteId || 'N/A'}
+                                      </div>
+                                      {!quote.viewedByAdmin && (
+                                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                                      )}
                                     </div>
-                                    {!quote.viewedByAdmin && (
-                                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                                    )}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    {quote.items?.length || 0} items
+                                    <div className="text-sm text-gray-500">
+                                      {quote.items?.length || 0} items
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div>
-                                <div className="font-medium text-gray-900">{quote.customer?.name || 'Anonymous'}</div>
-                                <div className="text-sm text-gray-500">{quote.customer?.email || 'N/A'}</div>
-                                <div className="text-sm text-gray-500">{quote.customer?.phone || 'N/A'}</div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="font-medium text-gray-900">{quote.categoryName}</div>
-                              {quote.customer?.eventType && (
-                                <div className="text-sm text-gray-500">{quote.customer.eventType}</div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4">
-                              <StatusBadge status={quote.status || 'pending'} />
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
-                              <div>{quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : 'N/A'}</div>
-                              {quote.customer?.eventDate && (
-                                <div className="text-xs">Event: {new Date(quote.customer.eventDate).toLocaleDateString()}</div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                {!quote.response ? (
-                                  <button
-                                    onClick={() => handleCreateResponse(quote)}
-                                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
-                                    disabled={quote.status === 'cancelled'}
-                                  >
-                                    <Edit size={14} />
-                                    Create
-                                  </button>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div>
+                                  <div className="font-medium text-gray-900">{quote.customer?.name || 'Anonymous'}</div>
+                                  <div className="text-sm text-gray-500">{quote.customer?.email || 'N/A'}</div>
+                                  <div className="text-sm text-gray-500">{quote.customer?.phone || 'N/A'}</div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="font-medium text-gray-900">{quote.categoryName}</div>
+                                {quote.customer?.eventType && (
+                                  <div className="text-sm text-gray-500">{quote.customer.eventType}</div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4">
+                                {itemsTotal > 0 ? (
+                                  <div>
+                                    <div className="font-medium text-gray-900">₦{itemsTotal.toLocaleString()}</div>
+                                    <div className="text-xs text-gray-500">Estimated</div>
+                                  </div>
                                 ) : (
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => handleCreateResponse(quote)}
-                                      className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
-                                    >
-                                      <Edit size={14} />
-                                      Edit
-                                    </button>
-                                    <button
-                                      onClick={() => console.log('Send response')}
-                                      className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-                                      disabled={sending}
-                                    >
-                                      <Send size={14} />
-                                      Send
-                                    </button>
+                                  <div className="text-sm text-gray-500">No pricing</div>
+                                )}
+                                {quote.response?.finalTotal && (
+                                  <div className="text-sm text-emerald-600 font-medium">
+                                    Final: ₦{quote.response.finalTotal.toLocaleString()}
                                   </div>
                                 )}
-                                
-                                <button
-                                  onClick={() => handleViewQuote(quote)}
-                                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-                                >
-                                  <Eye size={14} />
-                                  View
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td className="px-6 py-4">
+                                <StatusBadge status={quote.status || 'pending'} />
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500">
+                                <div>{quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : 'N/A'}</div>
+                                {quote.customer?.eventDate && (
+                                  <div className="text-xs">Event: {new Date(quote.customer.eventDate).toLocaleDateString()}</div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  {!quote.response ? (
+                                    <button
+                                      onClick={() => handleCreateResponse(quote)}
+                                      className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+                                      disabled={quote.status === 'cancelled'}
+                                    >
+                                      <Edit size={14} />
+                                      Create
+                                    </button>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => handleCreateResponse(quote)}
+                                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                                      >
+                                        <Edit size={14} />
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={() => handleSendResponse(quote.quoteId || quote._id)}
+                                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                                        disabled={sending}
+                                      >
+                                        <Send size={14} />
+                                        Send
+                                      </button>
+                                    </div>
+                                  )}
+                                  
+                                  <button
+                                    onClick={() => handleViewQuote(quote)}
+                                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                                  >
+                                    <Eye size={14} />
+                                    View
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1113,11 +1329,10 @@ export const QuotesList = () => {
             </div>
 
             {/* Results Summary */}
-            {filteredQuotes.length > 0 && (
+            {quotes.length > 0 && (
               <div className="mt-6 lg:mt-8 text-center">
                 <p className="text-sm text-gray-600">
-                  Showing <span className="font-semibold">{filteredQuotes.length}</span> of{' '}
-                  <span className="font-semibold">{quotes.length}</span> quotes
+                  Showing <span className="font-semibold">{quotes.length}</span> quotes
                   {filters.search && (
                     <span> matching "<span className="font-medium">{filters.search}</span>"</span>
                   )}
@@ -1131,7 +1346,7 @@ export const QuotesList = () => {
         )}
 
         {/* Empty State */}
-        {!loading && filteredQuotes.length === 0 && (
+        {!loading && quotes.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <div className="text-gray-400 mb-6">
               <FileText size={64} className="mx-auto" />
@@ -1267,22 +1482,47 @@ export const QuotesList = () => {
                 />
               </div>
 
-              {/* Items Preview */}
+              {/* Items Summary with Admin Pricing */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Items Summary</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Items & Pricing</h3>
                 <div className="space-y-3">
-                  {responseQuote.items?.map((item, index) => (
+                  {editingResponse.items?.map((item, index) => (
                     <div key={index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                      <div>
+                      <div className="flex-1">
                         <h4 className="font-medium text-gray-900">{item.name}</h4>
                         {item.description && (
                           <p className="text-sm text-gray-600">{item.description}</p>
                         )}
                         <p className="text-sm text-gray-500">Quantity: {item.quantity || 1}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">₦{(item.unitPrice || 0).toLocaleString()}</p>
-                        <p className="text-sm text-gray-500">per item</p>
+                      <div className="text-right min-w-[120px]">
+                        <div className="mb-2">
+                          <label className="block text-xs text-gray-500 mb-1">Unit Price</label>
+                          <input
+                            type="number"
+                            value={item.unitPrice || 0}
+                            onChange={(e) => {
+                              const newItems = [...editingResponse.items];
+                              const newPrice = parseFloat(e.target.value) || 0;
+                              newItems[index] = { 
+                                ...newItems[index], 
+                                unitPrice: newPrice,
+                                totalPrice: newPrice * (item.quantity || 1)
+                              };
+                              const newSubtotal = newItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+                              setEditingResponse({ 
+                                ...editingResponse, 
+                                items: newItems, 
+                                subtotal: newSubtotal,
+                                finalTotal: calculateFinalTotal()
+                              });
+                            }}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </div>
+                        <div className="font-semibold text-gray-900">
+                          Total: ₦{(item.totalPrice || 0).toLocaleString()}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1292,23 +1532,64 @@ export const QuotesList = () => {
               {/* Pricing Summary */}
               <div className="bg-gray-50 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing Summary</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">₦{(editingResponse.subtotal || 0).toLocaleString()}</span>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Discount</label>
+                      <input
+                        type="number"
+                        value={editingResponse.discount || 0}
+                        onChange={(e) => setEditingResponse({ ...editingResponse, discount: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tax</label>
+                      <input
+                        type="number"
+                        value={editingResponse.tax || 0}
+                        onChange={(e) => setEditingResponse({ ...editingResponse, tax: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Fee</label>
+                      <input
+                        type="number"
+                        value={editingResponse.deliveryFee || 0}
+                        onChange={(e) => setEditingResponse({ ...editingResponse, deliveryFee: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Setup Fee</label>
+                      <input
+                        type="number"
+                        value={editingResponse.setupFee || 0}
+                        onChange={(e) => setEditingResponse({ ...editingResponse, setupFee: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                      />
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tax & Fees:</span>
-                    <span className="font-medium">₦{((editingResponse.tax || 0) + (editingResponse.deliveryFee || 0) + (editingResponse.setupFee || 0)).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Discount:</span>
-                    <span className="font-medium text-red-600">-₦{(editingResponse.discount || 0).toLocaleString()}</span>
-                  </div>
-                  <hr className="border-gray-300" />
-                  <div className="flex justify-between text-lg">
-                    <span className="font-semibold text-gray-900">Total:</span>
-                    <span className="font-bold text-emerald-600">₦{(editingResponse.finalTotal || 0).toLocaleString()}</span>
+                  
+                  <div className="space-y-3 pt-4 border-t border-gray-300">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Subtotal:</span>
+                      <span className="font-medium">₦{(editingResponse.subtotal || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Discount:</span>
+                      <span className="font-medium text-red-600">-₦{(editingResponse.discount || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tax & Fees:</span>
+                      <span className="font-medium">₦{((editingResponse.tax || 0) + (editingResponse.deliveryFee || 0) + (editingResponse.setupFee || 0)).toLocaleString()}</span>
+                    </div>
+                    <hr className="border-gray-300" />
+                    <div className="flex justify-between text-lg">
+                      <span className="font-semibold text-gray-900">Final Total:</span>
+                      <span className="font-bold text-emerald-600">₦{calculateFinalTotal().toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1350,10 +1631,7 @@ export const QuotesList = () => {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  console.log('Save response');
-                  setShowResponseModal(false);
-                }}
+                onClick={handleSaveResponse}
                 disabled={responding}
                 className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 font-medium"
               >

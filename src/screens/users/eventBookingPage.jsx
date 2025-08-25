@@ -143,14 +143,14 @@ const EventBookingPage = () => {
       // ENHANCED: Comprehensive cart clearing before navigation
       const finalClearCart = async () => {
         console.log("🗑️ Final cart clearing before navigation...");
-        
+
         try {
           // Clear Redux state first
           dispatch(forceResetCart());
-          
+
           // Wait for Redux state to update
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
           // Clear ALL cart-related storage items
           const cartKeys = [
             "eventPlatform_cart",
@@ -158,10 +158,10 @@ const EventBookingPage = () => {
             "cartData",
             "booking_cart",
             "event_cart",
-            "redux-persist"
+            "redux-persist",
           ];
-          
-          cartKeys.forEach(key => {
+
+          cartKeys.forEach((key) => {
             try {
               localStorage.removeItem(key);
               sessionStorage.removeItem(key);
@@ -169,34 +169,35 @@ const EventBookingPage = () => {
               console.warn(`Failed to remove ${key}:`, error);
             }
           });
-          
+
           // Clear any keys that contain 'cart' (case insensitive)
           for (let i = localStorage.length - 1; i >= 0; i--) {
             const key = localStorage.key(i);
-            if (key && key.toLowerCase().includes('cart')) {
-              console.log('🗑️ Removing cart-related key:', key);
+            if (key && key.toLowerCase().includes("cart")) {
+              console.log("🗑️ Removing cart-related key:", key);
               localStorage.removeItem(key);
             }
           }
-          
+
           // Also check sessionStorage
           for (let i = sessionStorage.length - 1; i >= 0; i--) {
             const key = sessionStorage.key(i);
-            if (key && key.toLowerCase().includes('cart')) {
-              console.log('🗑️ Removing cart-related sessionStorage key:', key);
+            if (key && key.toLowerCase().includes("cart")) {
+              console.log("🗑️ Removing cart-related sessionStorage key:", key);
               sessionStorage.removeItem(key);
             }
           }
-          
+
           console.log("✅ Final cart clearing completed");
-          
+
           // Verify clearing
-          const remainingCart = localStorage.getItem('eventPlatform_cart');
+          const remainingCart = localStorage.getItem("eventPlatform_cart");
           if (remainingCart) {
-            console.warn("⚠️ Cart still exists after clearing, forcing removal");
+            console.warn(
+              "⚠️ Cart still exists after clearing, forcing removal"
+            );
             localStorage.clear(); // Nuclear option
           }
-          
         } catch (error) {
           console.error("❌ Error in final cart clearing:", error);
           // Nuclear option - clear all localStorage
@@ -232,15 +233,14 @@ const EventBookingPage = () => {
         console.log("🚀 Navigating to home page...");
         navigate("/", {
           replace: true,
-          state: { 
+          state: {
             fromBookingSuccess: true,
             clearCart: true,
-            timestamp: Date.now() // Add timestamp to ensure fresh state
+            timestamp: Date.now(), // Add timestamp to ensure fresh state
           },
         });
         console.log("✅ Navigation completed successfully");
       }, 200);
-
     } catch (error) {
       console.error("❌ Error during navigation:", error);
       // Fallback to force reload which will definitely clear everything
@@ -317,62 +317,61 @@ const EventBookingPage = () => {
     if (bookingCreated && lastCreatedBookingId && !showSuccessAnimation) {
       console.log("✅ Booking created successfully:", lastCreatedBookingId);
       console.log("🎉 Starting success animation sequence...");
-      
+
       // CRITICAL FIX: Reset booking state IMMEDIATELY to prevent multiple runs
       dispatch(resetBookingCreation());
-      
+
       // ENHANCED: Async cart clearing with proper error handling
       const clearCartAsync = async () => {
         try {
           console.log("🗑️ Starting async cart clearing...");
-          
+
           // Clear Redux state first
           dispatch(forceResetCart());
-          
+
           // Wait for Redux to update
-          await new Promise(resolve => setTimeout(resolve, 150));
-          
+          await new Promise((resolve) => setTimeout(resolve, 150));
+
           // Clear localStorage with comprehensive approach
           const cartKeys = [
             "eventPlatform_cart",
             "cart",
-            "cartData", 
+            "cartData",
             "booking_cart",
-            "event_cart"
+            "event_cart",
           ];
-          
-          cartKeys.forEach(key => {
+
+          cartKeys.forEach((key) => {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
           });
-          
+
           // Also clear any other cart-related keys
           for (let i = localStorage.length - 1; i >= 0; i--) {
             const key = localStorage.key(i);
-            if (key && key.toLowerCase().includes('cart')) {
+            if (key && key.toLowerCase().includes("cart")) {
               localStorage.removeItem(key);
             }
           }
-          
+
           console.log("✅ Cart and localStorage cleared successfully");
-          
+
           // Verify the cart is actually cleared
-          const checkCart = localStorage.getItem('eventPlatform_cart');
+          const checkCart = localStorage.getItem("eventPlatform_cart");
           if (checkCart) {
             console.warn("⚠️ Cart still exists, performing nuclear clear");
             localStorage.clear();
           }
-          
+
           // Now show success animation
           setShowSuccessAnimation(true);
-          
         } catch (error) {
           console.error("❌ Error clearing cart:", error);
           // Still show success animation even if clearing fails
           setShowSuccessAnimation(true);
         }
       };
-      
+
       // Clear any existing timeouts
       clearAllTimeouts();
 
@@ -386,13 +385,13 @@ const EventBookingPage = () => {
 
       // Create a timeout for navigation
       redirectTimeoutRef.current = setTimeout(() => {
-        console.log('🚀 3 seconds elapsed, navigating to home...');
+        console.log("🚀 3 seconds elapsed, navigating to home...");
         navigateToHome();
       }, 3000);
 
       // Safety timeout - force navigation after 5 seconds
       safetyTimeoutRef.current = setTimeout(() => {
-        console.log('⚠️ Safety timeout: forcing navigation after 5 seconds');
+        console.log("⚠️ Safety timeout: forcing navigation after 5 seconds");
         navigateToHome();
       }, 5000);
     }
@@ -430,12 +429,12 @@ const EventBookingPage = () => {
 
   // Debug cart state changes
   useEffect(() => {
-    console.log('🛒 Cart state debug:', {
+    console.log("🛒 Cart state debug:", {
       items: cartItems?.length || 0,
       total: cartTotal,
       step: currentStep,
       showingSuccess: showSuccessAnimation,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }, [cartItems, cartTotal, currentStep, showSuccessAnimation]);
 
@@ -768,35 +767,33 @@ const EventBookingPage = () => {
           {/* Success Message */}
           <div className="space-y-4">
             <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              Booking Completed! 🎉
+              Booking Sent 🎉
             </h2>
             <p className="text-gray-600 text-lg sm:text-xl leading-relaxed">
-              Your event booking has been sent successfully!
+              Your event booking has been sent successfully! We will reach out
+              to you via email within 24 hours.
             </p>
-            
-           
 
             {/* Enhanced manual continue button with comprehensive clearing */}
             <div className="mt-6 space-y-3">
               <button
                 onClick={() => {
                   console.log("🖱️ Manual continue button clicked");
-                  
+
                   // COMPREHENSIVE: Clear everything immediately
                   try {
                     // Clear Redux state
                     dispatch(forceResetCart());
                     dispatch(resetBookingCreation());
-                    
+
                     // Clear all storage with nuclear approach
                     localStorage.clear();
                     sessionStorage.clear();
-                    
+
                     // Small delay then navigate
                     setTimeout(() => {
                       window.location.replace("/");
                     }, 100);
-                    
                   } catch (error) {
                     console.error("Error in manual continue:", error);
                     // Fallback to direct navigation
@@ -807,7 +804,7 @@ const EventBookingPage = () => {
               >
                 Continue to Home
               </button>
-              
+
               {/* Emergency fallback button */}
               <div>
                 <button

@@ -106,20 +106,20 @@ const OrdersManagement = () => {
         position: 'bottom-right'
       });
     },
-    onDisconnected: () => {
-      console.log("Disconnected from Orders WebSocket");
-      toast.warn("Real-time updates disconnected", {
-        duration: 2000,
-        position: "bottom-right",
-      });
-    },
-    onError: (error) => {
-      console.error("Orders WebSocket error:", error);
-      toast.error("WebSocket connection error", {
-        duration: 3000,
-        position: "bottom-right",
-      });
-    },
+    // onDisconnected: () => {
+    //   console.log("Disconnected from Orders WebSocket");
+    //   toast.warn("Real-time updates disconnected", {
+    //     duration: 2000,
+    //     position: "bottom-right",
+    //   });
+    // },
+    // onError: (error) => {
+    //   console.error("Orders WebSocket error:", error);
+    //   toast.error("WebSocket connection error", {
+    //     duration: 3000,
+    //     position: "bottom-right",
+    //   });
+    // },
   });
 
   useEffect(() => {

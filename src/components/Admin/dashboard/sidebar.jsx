@@ -1,3 +1,4 @@
+// screens/admin/dashboard/components/Sidebar.js - Updated with notification badges
 import React, { useState, useEffect } from "react";
 import {
   User,
@@ -20,6 +21,9 @@ import { logoutUser } from "../../../store/slices/auth-slice";
 import { useNavigate } from "react-router-dom";
 import { fetchProfile } from "../../../store/slices/profile-slice";
 
+// ADD: Import global notification context
+import { useGlobalNotificationContext } from '../../../components/globalNotificationProvider';
+
 const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
   const location = useLocation();
   const dispatch = useDispatch();
@@ -29,6 +33,9 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const { userData, loading } = useSelector((state) => state.profile);
+
+  // ADD: Get notification counts
+  const { unreadCounts, isConnected } = useGlobalNotificationContext();
 
   useEffect(() => {
     if (!userData?.name) {
@@ -47,41 +54,49 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
     }
   }, [isOpen, isMobile]);
 
+  // UPDATED: Add notification counts to menu items
   const menuItems = [
     {
       icon: <Home size={20} />,
       label: "Home",
       path: "home",
+      count: 0 // Home doesn't have notifications
     },
     {
       icon: <User size={20} />,
       label: "Profile",
       path: "profile",
+      count: 0 // Profile doesn't have notifications
     },
     {
       icon: <Calendar size={20} />,
       label: "Bookings",
       path: "bookings",
+      count: unreadCounts.bookings || 0
     },
     {
       icon: <ShoppingCart size={20} />,
       label: "Orders",
       path: "orders",
+      count: unreadCounts.orders || 0
     },
     {
       icon: <Mail size={20} />,
       label: "Mailer",
       path: "mailer",
+      count: 0 // Mailer doesn't have notifications
     },
     {
       icon: <Layers size={20} />,
       label: "Categories",
       path: "categories",
+      count: 0 // Categories doesn't have notifications
     },
     {
       icon: <Quote size={20} />,
       label: "Quotes",
       path: "quotes",
+      count: unreadCounts.quotes || 0
     },
   ];
 
@@ -207,7 +222,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
             `}>
               <div className={`
                 rounded-full overflow-hidden border-3 border-emerald-500/20 shadow-lg
-                transition-all duration-300 transform hover:scale-105
+                transition-all duration-300 transform hover:scale-105 relative
                 ${isCollapsed && !isMobile ? 'h-10 w-10' : 'h-16 w-16'}
               `}>
                 <img
@@ -219,6 +234,11 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                     e.target.src = logoimg;
                   }}
                 />
+                
+                {/* ADD: Connection status indicator */}
+                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
+                  isConnected ? 'bg-green-500' : 'bg-red-500'
+                }`} />
               </div>
               
               {(!isCollapsed || isMobile) && (
@@ -230,15 +250,20 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                     {loading ? "Loading..." : userData?.name || "User"}
                   </h2>
                   <p className="text-xs text-emerald-600 font-medium">Admin</p>
+                  {/* ADD: Connection status text */}
+                  <p className={`text-xs font-medium ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                    {isConnected ? 'Live Updates' : 'Offline'}
+                  </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Enhanced Navigation with staggered animations */}
+          {/* Enhanced Navigation with staggered animations and notification badges */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             {menuItems.map((item, index) => {
               const isActive = location.pathname.includes(item.path);
+              const hasNotifications = item.count > 0;
 
               return (
                 <Link
@@ -246,7 +271,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                   to={item.path}
                   onClick={handleMenuClick}
                   className={`
-                    group flex items-center px-3 py-3 rounded-xl 
+                    group flex items-center px-3 py-3 rounded-xl relative
                     transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
                     ${isActive
                       ? "bg-emerald-500/10 text-emerald-700 shadow-sm scale-[1.02]"
@@ -262,24 +287,40 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                 >
                   <span
                     className={`
-                      flex-shrink-0 transition-all duration-300
+                      flex-shrink-0 transition-all duration-300 relative
                       ${isActive ? "text-emerald-600 scale-110" : "text-gray-500 group-hover:text-gray-700 group-hover:scale-110"}
                       ${isCollapsed && !isMobile ? '' : 'mr-3'}
                     `}
                   >
                     {item.icon}
+                    
+                    {/* ADD: Notification badge on icon */}
+                    {hasNotifications && (
+                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium animate-pulse">
+                        {item.count > 99 ? '99+' : item.count}
+                      </div>
+                    )}
                   </span>
                   
                   {(!isCollapsed || isMobile) && (
-                    <span className={`
-                      font-medium text-sm transition-all duration-300
-                      ${isCollapsed && !isMobile ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}
-                    `}>
-                      {item.label}
-                    </span>
+                    <div className="flex items-center justify-between flex-1">
+                      <span className={`
+                        font-medium text-sm transition-all duration-300
+                        ${isCollapsed && !isMobile ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}
+                      `}>
+                        {item.label}
+                      </span>
+                      
+                      {/* ADD: Notification badge next to label */}
+                      {hasNotifications && (
+                        <div className="bg-red-500 text-white text-xs rounded-full px-2 py-1 font-medium animate-pulse">
+                          {item.count}
+                        </div>
+                      )}
+                    </div>
                   )}
                   
-                  {isActive && (!isCollapsed || isMobile) && (
+                  {isActive && (!isCollapsed || isMobile) && !hasNotifications && (
                     <div className="ml-auto w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                   )}
                 </Link>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
-  Bell, 
+  Activity,  // Changed from Bell to Activity
   Search, 
   Menu, 
   X, 
@@ -17,7 +17,8 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
-  Package
+  Package,
+  Bell
 } from 'lucide-react';
 import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png";
 import { logoutUser } from '../../../store/slices/auth-slice';
@@ -29,7 +30,10 @@ import {
   selectUnreadNotificationCount,
   markNotificationAsRead,
   clearNotifications 
-} from '../../../store/slices/booking-slice'; // Adjust import path as needed
+} from '../../../store/slices/booking-slice';
+
+// Import global notification context
+import { useGlobalNotificationContext } from '../../../components/globalNotificationProvider';
 
 const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
   const dispatch = useDispatch();
@@ -39,6 +43,9 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
   const bookings = useSelector(selectBookings);
   const newBookingNotifications = useSelector(selectNewBookingNotifications);
   const unreadNotificationCount = useSelector(selectUnreadNotificationCount);
+  
+  // Get global notification context for clear all functionality
+  const { clearAllNotifications: clearGlobalNotifications } = useGlobalNotificationContext();
   
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -162,7 +169,9 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
   };
 
   const handleClearAll = () => {
+    // Clear both local notifications and global notifications
     dispatch(clearNotifications());
+    clearGlobalNotifications();
   };
 
   const handleLogout = () => {
@@ -235,14 +244,15 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
             <Search size={20} className="text-gray-600" />
           </button>
           
-          {/* Notifications - ENHANCED WITH REAL DATA */}
+          {/* Notifications - Changed icon and fixed positioning */}
           <div ref={notificationRef} className="relative">
             <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
               className="relative p-2 rounded-xl text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200"
-              aria-label="Notifications"
+              aria-label="Activity Monitor"
+              title="Live Activity Monitor"
             >
-              <Bell size={20} />
+              <Activity size={20} />
               {totalUnreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-red-500 border-2 border-white flex items-center justify-center">
                   <span className="text-xs font-bold text-white">
@@ -253,25 +263,19 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
               )}
             </button>
             
-            {/* CENTERED NOTIFICATION DROPDOWN */}
+            {/* FIXED NOTIFICATION DROPDOWN - Better positioning to prevent cutoff */}
             {isNotificationsOpen && (
               <>
                 {/* Backdrop for mobile */}
                 <div className="fixed inset-0 z-40 md:hidden" onClick={() => setIsNotificationsOpen(false)}></div>
                 
-                {/* Notification Panel - CENTERED */}
-                <div className={`
-                  absolute z-50 mt-2 w-80 sm:w-96 rounded-2xl shadow-2xl bg-white border border-gray-200 overflow-hidden
-                  ${isMobile 
-                    ? 'left-1/2 transform -translate-x-1/2 -translate-x-32' 
-                    : 'right-0 transform -translate-x-1/2 translate-x-1/2'
-                  }
-                `}>
+                {/* Notification Panel - FIXED: Move dropdown more to the right */}
+                <div className="absolute right-0 z-50 mt-2 w-80 sm:w-96 rounded-2xl shadow-2xl bg-white border border-gray-200 overflow-hidden transform translate-x-8">
                   {/* Header */}
                   <div className="py-3 px-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                        <h3 className="text-sm font-semibold text-gray-900">Live Activity</h3>
                         {totalUnreadCount > 0 && (
                           <span className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">
                             {totalUnreadCount} new
@@ -293,8 +297,8 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
                   <div className="max-h-80 overflow-y-auto">
                     {allNotifications.length === 0 ? (
                       <div className="py-8 px-4 text-center">
-                        <Bell size={32} className="mx-auto text-gray-300 mb-3" />
-                        <p className="text-sm font-medium text-gray-500 mb-1">No notifications yet</p>
+                        <Activity size={32} className="mx-auto text-gray-300 mb-3" />
+                        <p className="text-sm font-medium text-gray-500 mb-1">No activity yet</p>
                         <p className="text-xs text-gray-400">You'll see booking updates and system alerts here</p>
                       </div>
                     ) : (
@@ -346,7 +350,7 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
                     <div className="py-2 px-4 border-t border-gray-200 bg-gray-50">
                       <div className="flex items-center justify-between">
                         <button className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors">
-                          View all notifications
+                          View all activity
                         </button>
                         <span className="text-xs text-gray-500">
                           {allNotifications.length} total

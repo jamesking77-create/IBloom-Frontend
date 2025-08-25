@@ -1,3 +1,4 @@
+// App.js - Updated with Global Notification System (keep all your existing code)
 import { useState, useEffect } from "react";
 import "./App.css";
 import Login from "./screens/admin/auth/login";
@@ -32,6 +33,10 @@ import QuoteSuccessScreen from "./screens/users/quoteSuccessScreen";
 import CustomerInfoForm from "./components/users/customerInfoForm";
 import { get } from "./utils/api";
 import { WebSocketProvider } from './utils/hooks/webSocketContext';
+
+// ADD THESE NEW IMPORTS
+import { GlobalNotificationProvider } from './components/globalNotificationProvider';
+import GlobalNotificationDisplay from './components/globalNotificationDisplay';
 
 const useKeepAlive = () => {
   useEffect(() => {
@@ -310,64 +315,74 @@ const AppWrapper = () => {
 };
 
 function AppContent() {
+  // ADD: Check if user is authenticated to enable notifications only for dashboard
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
   return (
     <>
       <WebSocketProvider>
-        <Routes>
-          {/* Auth Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgotPassword" element={<ForgotPassword />} />
-          <Route path="/resetPassword/:token" element={<ResetPassword />} />
+        {/* ADD: Global Notification Provider - Only enable for authenticated users */}
+        <GlobalNotificationProvider enabled={isAuthenticated}>
+          {/* ADD: Global Notification Display - Always present when enabled */}
+          
+          
+          <Routes>
+            {/* Auth Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgotPassword" element={<ForgotPassword />} />
+            <Route path="/resetPassword/:token" element={<ResetPassword />} />
 
-          {/* Admin Dashboard Routes - WITH Enhanced Security and Inactivity Tracking */}
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <DashboardWrapper>
-                  <DashboardLayout />
-                </DashboardWrapper>
-              </PrivateRoute>
-            }
-          >
-            <Route index element={<DashboardHome />} />
-            <Route path="home" element={<DashboardHome />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="bookings" element={<Bookings />} />
-            <Route path="orders" element={<OrdersManagement />} />
-            <Route path="mailer" element={<MailerScreen />} />
-            <Route path="categories" element={<CategoriesScreen />} />
-            <Route path="quotes" element={<QuotesList />} />
-          </Route>
-
-          {/* User/Public Routes - NO Authentication Required */}
-          <Route path="/" element={<UserLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="about" element={<AboutPage />} />
-            <Route path="faq" element={<FaqPage />} />
-            <Route path="gallery" element={<GalleryPage />} />
-            <Route path="contact" element={<ContactPage />} />
-            <Route path="category/:categoryId" element={<CategoriesPage />} />
-            <Route path="eventbooking" element={<EventBookingPage />} />
-            <Route path="warehouseinfo" element={<WarehouseInfoPage />} />
-            <Route path="orderprocess" element={<OrderProcessPage />} />
-            <Route path="smartcategory" element={<SmartCategoriesScreen />} />
-
-            {/* Quote System Routes - More Specific Paths */}
-            <Route path="request-quote" element={<QuoteCategoriesScreen />} />
+            {/* Admin Dashboard Routes - WITH Enhanced Security and Inactivity Tracking */}
             <Route
-              path="request-quote/category/:categoryId"
-              element={<QuoteCategoryItemsScreen />}
-            />
-            <Route
-              path="quote-submission-success"
-              element={<QuoteSuccessScreen />}
-            />
-            <Route path="quote-customer-info" element={<CustomerInfoForm />} />
-          </Route>
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <DashboardWrapper>
+                    <GlobalNotificationDisplay />
+                    <DashboardLayout />
+                  </DashboardWrapper>
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<DashboardHome />} />
+              <Route path="home" element={<DashboardHome />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="bookings" element={<Bookings />} />
+              <Route path="orders" element={<OrdersManagement />} />
+              <Route path="mailer" element={<MailerScreen />} />
+              <Route path="categories" element={<CategoriesScreen />} />
+              <Route path="quotes" element={<QuotesList />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* User/Public Routes - NO Authentication Required */}
+            <Route path="/" element={<UserLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="about" element={<AboutPage />} />
+              <Route path="faq" element={<FaqPage />} />
+              <Route path="gallery" element={<GalleryPage />} />
+              <Route path="contact" element={<ContactPage />} />
+              <Route path="category/:categoryId" element={<CategoriesPage />} />
+              <Route path="eventbooking" element={<EventBookingPage />} />
+              <Route path="warehouseinfo" element={<WarehouseInfoPage />} />
+              <Route path="orderprocess" element={<OrderProcessPage />} />
+              <Route path="smartcategory" element={<SmartCategoriesScreen />} />
+
+              {/* Quote System Routes - More Specific Paths */}
+              <Route path="request-quote" element={<QuoteCategoriesScreen />} />
+              <Route
+                path="request-quote/category/:categoryId"
+                element={<QuoteCategoryItemsScreen />}
+              />
+              <Route
+                path="quote-submission-success"
+                element={<QuoteSuccessScreen />}
+              />
+              <Route path="quote-customer-info" element={<CustomerInfoForm />} />
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </GlobalNotificationProvider>
       </WebSocketProvider>
     </>
   );

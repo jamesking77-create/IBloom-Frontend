@@ -1,4 +1,4 @@
-// components/users/OrderPreviewStep.jsx
+// components/users/OrderPreviewStep.jsx - FIXED TO MATCH BACKEND
 import React, { useState, useCallback, useMemo } from "react";
 import {
   Calendar,
@@ -24,6 +24,7 @@ import {
   Truck,
   Settings,
   MessagesSquare,
+  Hash,
 } from "lucide-react";
 
 const OrderPreviewStep = ({
@@ -43,32 +44,32 @@ const OrderPreviewStep = ({
   // Local state for UI interactions
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Memoized calculations to prevent unnecessary re-renders
+  // Helper function to safely get numeric price
+  const getNumericPrice = (price) => {
+    if (typeof price === 'string') {
+      return parseFloat(price.replace(/[₦\s,]/g, '')) || 0;
+    }
+    return parseFloat(price) || 0;
+  };
+
+  // Memoized calculations for quantity-based pricing
   const calculations = useMemo(() => {
-    const dailySubtotal = cartItems?.reduce((total, item) => {
-      const itemPrice = parseFloat(item.price) || 0;
+    const itemsSubtotal = cartItems?.reduce((total, item) => {
+      const itemPrice = getNumericPrice(item.price);
       const quantity = parseInt(item.quantity) || 1;
       return total + (itemPrice * quantity);
     }, 0) || 0;
 
-    // Calculate rental duration
-    const startDate = new Date(selectedDates?.startDate);
-    const endDate = new Date(selectedDates?.endDate);
-    const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
-    const subtotal = dailySubtotal * duration;
-    const tax = subtotal * 0.075; // 7.5% tax
-    const finalTotal = subtotal + tax;
+    const tax = itemsSubtotal * 0.075; // 7.5% tax
+    const finalTotal = itemsSubtotal + tax;
 
     return {
-      dailyRate: dailySubtotal,
-      duration,
-      subtotal,
-      tax,
+      subtotal: itemsSubtotal,
+      tax: tax,
       total: finalTotal,
       itemCount: cartItems?.reduce((count, item) => count + (parseInt(item.quantity) || 1), 0) || 0
     };
-  }, [cartItems, selectedDates]);
+  }, [cartItems]);
 
   // Improved date formatting with error handling
   const formatDate = useCallback((dateString) => {
@@ -99,78 +100,96 @@ const OrderPreviewStep = ({
     }
   }, []);
 
-  // Order confirmation handler
+  // FIXED: Order confirmation handler that matches backend expectations
   const handleConfirmOrder = useCallback(async () => {
     if (isSubmitting || loading) {
-      console.log("⚠️ Already submitting or loading, ignoring click");
+      console.log("Already submitting or loading, ignoring click");
       return;
     }
 
-    console.log('🚀 Starting order confirmation...');
+    console.log('Starting order confirmation...');
     
     // Final validation before submission
     if (!cartItems || cartItems.length === 0) {
-      console.error("❌ No items in cart");
+      console.error("No items in cart");
       return;
     }
     
     if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
-      console.error("❌ Missing customer information");
+      console.error("Missing customer information");
       return;
     }
     
     if (!selectedDates?.startDate || !selectedDates?.endDate) {
-      console.error("❌ Missing date information");
+      console.error("Missing date information");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Create the order data in the format expected by your orders slice
-      const orderData = {
-        orderId: "ORD" + Date.now().toString().slice(-6),
-        orderDate: new Date().toISOString(),
-        status: "pending_confirmation",
-        orderMode: "daily",
+      // Calculate order duration
+      const startDate = new Date(selectedDates.startDate);
+      const endDate = new Date(selectedDates.endDate);
+      const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
-        // Customer information matching your dummy order structure
+      // FIXED: Create the order data that exactly matches backend expectations
+      const orderData = {
+        // Order identification
+        orderId: "ORD" + Date.now().toString().slice(-6),
+        
+        // FIXED: Use correct status value from backend enum
+        status: "pending_confirmation", // This matches the backend enum
+        orderMode: "quantity", // Fixed to match backend enum
+
+        // Customer information matching backend schema exactly
         customerInfo: {
           name: customerInfo?.name || "",
           email: customerInfo?.email || "",
           phone: customerInfo?.phone || "",
         },
         
+        // Delivery information matching backend schema
         deliveryInfo: {
           type: customerInfo?.delivery === "yes" ? "delivery" : "warehouse_pickup",
-          address: customerInfo?.delivery === "yes" ? customerInfo?.location || "" : warehouseInfo?.address || "Main Warehouse",
+          address: customerInfo?.delivery === "yes" 
+            ? (customerInfo?.location || "Address to be provided") 
+            : (warehouseInfo?.address || "Main Warehouse"),
           instructions: customerInfo?.specialRequests || "",
         },
 
+        // Date information matching backend schema
         dateInfo: {
           orderDate: new Date().toISOString(),
           startDate: selectedDates?.startDate || "",
           endDate: selectedDates?.endDate || "",
-          duration: `${calculations.duration} days`,
-          rentalPeriod: calculations.duration,
+          duration: `${duration} days`,
+          orderPeriod: duration,
         },
 
-        items: cartItems.map((item, index) => ({
-          id: item.cartId || item.id || index + 1,
-          name: item.itemName || item.name || "Unknown Item",
-          category: item.category || "General",
-          quantity: item.quantity || 1,
-          pricePerDay: item.price || 0,
-          totalPrice: (item.price || 0) * (item.quantity || 1) * calculations.duration,
-          image: item.image || item.imageUrl || "/api/placeholder/100/100",
-        })),
+        // FIXED: Items with correct field names for backend
+        items: cartItems.map((item, index) => {
+          const itemPrice = getNumericPrice(item.price);
+          const quantity = parseInt(item.quantity) || 1;
+          
+          return {
+            id: index + 1, // Simple numeric ID
+            name: item.itemName || item.name || "Unknown Item",
+            category: item.category || "General",
+            quantity: quantity,
+            // FIXED: Use pricePerUnit as the backend expects this field
+            pricePerUnit: itemPrice,
+            totalPrice: itemPrice * quantity,
+            image: item.image || item.imageUrl || "/api/placeholder/100/100",
+            description: `${item.itemName || item.name || 'Item'} - Quantity: ${quantity}`
+          };
+        }),
 
+        // Pricing information matching backend schema
         pricing: {
-          dailyRate: calculations.dailyRate,
-          duration: calculations.duration,
           subtotal: calculations.subtotal,
           tax: calculations.tax,
-          deliveryFee: customerInfo?.delivery === "yes" ? 0 : 0, // Will be calculated later
+          deliveryFee: 0, // Will be calculated by backend if needed
           total: calculations.total,
         },
 
@@ -182,8 +201,13 @@ const OrderPreviewStep = ({
         installation: customerInfo?.installation === "yes",
         specialRequests: customerInfo?.specialRequests || "",
         
+        // Terms and metadata
         termsAccepted: true,
-        notes: `Order by date rental - ${calculations.duration} day(s)`,
+        notes: `Quantity-based order - Total ${calculations.itemCount} items`,
+        source: "web",
+        priority: "normal",
+        
+        // Timestamps
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
 
@@ -191,14 +215,14 @@ const OrderPreviewStep = ({
         warehouseInfo: warehouseInfo || {},
       };
 
-      console.log("📝 Order data prepared:", orderData);
+      console.log("Order data prepared for backend:", JSON.stringify(orderData, null, 2));
 
       const result = await onSubmit(orderData);
       
-      console.log("✅ Order created successfully:", result);
+      console.log("Order created successfully:", result);
       
     } catch (err) {
-      console.error("❌ Error confirming order:", err);
+      console.error("Error confirming order:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -210,8 +234,20 @@ const OrderPreviewStep = ({
     selectedDates,
     calculations,
     warehouseInfo,
-    onSubmit
+    onSubmit,
+    getNumericPrice
   ]);
+
+  // Calculate duration for display
+  const calculateDuration = useCallback(() => {
+    if (!selectedDates?.startDate || !selectedDates?.endDate) return 0;
+    
+    const start = new Date(selectedDates.startDate);
+    const end = new Date(selectedDates.endDate);
+    return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+  }, [selectedDates]);
+
+  const duration = calculateDuration();
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn px-2 sm:px-0">
@@ -221,7 +257,7 @@ const OrderPreviewStep = ({
           Order Preview
         </h1>
         <p className="text-gray-600 text-base sm:text-lg px-4 sm:px-0">
-          Please review your rental order details before confirming below
+          Please review your order details before confirming below
         </p>
       </div>
 
@@ -230,29 +266,29 @@ const OrderPreviewStep = ({
         <div className="flex items-center mb-4 sm:mb-6">
           <AlertCircleIcon className="w-5 h-5 sm:w-7 sm:h-7 text-amber-600 mr-2 sm:mr-3" />
           <h2 className="text-lg sm:text-2xl font-bold text-amber-800">
-            Rental Terms & Conditions
+            Order Terms & Conditions
           </h2>
         </div>
 
         <div className="space-y-4 sm:space-y-6">
-          {/* Daily Rental Policy */}
+          {/* Quantity-Based Pricing Policy */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-amber-100">
             <h3 className="text-base sm:text-lg font-semibold text-amber-800 mb-3 sm:mb-4 flex items-center">
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Daily Rental Policy
+              <Hash className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              Quantity-Based Pricing Policy
             </h3>
             <div className="space-y-2 sm:space-y-3 text-gray-700 text-sm sm:text-base">
               <p>
-                • Rental period is calculated on a daily basis from pickup date to return date.
+                • Pricing is calculated based on the quantity of items ordered, not duration.
               </p>
               <p>
-                • Items must be returned by the end of the final rental day to avoid additional charges.
-              </p>
-              <p>
-                • Late returns will incur additional daily charges at the standard rate.
+                • Each item is priced per unit, with total cost = unit price × quantity.
               </p>
               <p>
                 • All items are subject to availability and quality inspection before release.
+              </p>
+              <p>
+                • Minimum order quantities may apply for certain items.
               </p>
             </div>
           </div>
@@ -287,10 +323,10 @@ const OrderPreviewStep = ({
             </h3>
             <div className="space-y-2 sm:space-y-3 text-gray-700 text-sm sm:text-base">
               <p>
-                • A refundable security deposit is required for all rental items.
+                • A refundable security deposit is required for all orders.
               </p>
               <p>
-                • Deposit amount varies based on the total value and type of items rented.
+                • Deposit amount varies based on the total value and type of items ordered.
               </p>
               <p>
                 • Full deposit is refunded upon return of items in original condition.
@@ -308,7 +344,7 @@ const OrderPreviewStep = ({
               Pricing & Tax Information
             </h3>
             <p className="text-gray-700 text-sm sm:text-base">
-              A 7.5% tax will be added to your rental total. Final pricing may vary based on actual rental duration and additional services requested.
+              A 7.5% tax will be added to your order total. Final pricing may vary based on additional services requested.
             </p>
           </div>
         </div>
@@ -323,7 +359,7 @@ const OrderPreviewStep = ({
           </h2>
           <div className="flex flex-wrap items-center gap-2 sm:gap-2">
             <div className="bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
-              {calculations.duration} Day{calculations.duration !== 1 ? "s" : ""}
+              {duration} Day{duration !== 1 ? "s" : ""} Period
             </div>
             <div className="bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
               {calculations.itemCount} Item{calculations.itemCount !== 1 ? "s" : ""}
@@ -368,12 +404,12 @@ const OrderPreviewStep = ({
             </div>
           </div>
 
-          {/* Rental Period */}
+          {/* Order Period */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center mb-3 sm:mb-4">
               <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 mr-2 sm:mr-3" />
               <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
-                Rental Period
+                Order Period
               </h3>
             </div>
             <div className="space-y-2 sm:space-y-3">
@@ -398,7 +434,7 @@ const OrderPreviewStep = ({
                   Duration:
                 </span>
                 <p className="font-medium text-gray-800 text-sm sm:text-base">
-                  {calculations.duration} day{calculations.duration !== 1 ? "s" : ""}
+                  {duration} day{duration !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
@@ -468,7 +504,7 @@ const OrderPreviewStep = ({
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <h2 className="text-lg sm:text-2xl font-bold text-gray-800 flex items-center">
             <ShoppingCart className="w-5 h-5 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-green-600" />
-            <span className="hidden sm:inline">Rental Items</span>
+            <span className="hidden sm:inline">Order Items</span>
             <span className="sm:hidden">Items</span>
           </h2>
           <button
@@ -486,14 +522,13 @@ const OrderPreviewStep = ({
             cartItems.map((item, index) => {
               const cartId = item.cartId || item.id || `cart-${index}`;
               const itemName = item.itemName || item.name || "Unknown Item";
-              const itemPrice = item.price || 0;
+              const itemPrice = getNumericPrice(item.price);
               const itemQuantity = item.quantity || 1;
               const itemImage =
                 item.image ||
                 item.imageUrl ||
                 "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
-              const dailyTotal = itemPrice * itemQuantity;
-              const totalForDuration = dailyTotal * calculations.duration;
+              const totalForQuantity = itemPrice * itemQuantity;
 
               return (
                 <div
@@ -523,20 +558,20 @@ const OrderPreviewStep = ({
                         </h3>
                         <div className="flex items-center space-x-3 mt-1 text-xs text-gray-600">
                           <span className="flex items-center">
-                            <Timer className="w-3 h-3 mr-1" />
-                            {calculations.duration} day{calculations.duration !== 1 ? "s" : ""}
+                            <Hash className="w-3 h-3 mr-1" />
+                            Qty: {itemQuantity}
                           </span>
-                          <span>Qty: {itemQuantity}</span>
+                          <span>{formatPrice(itemPrice)} each</span>
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">
-                        {formatPrice(itemPrice)} × {itemQuantity} × {calculations.duration} days
+                        {formatPrice(itemPrice)} × {itemQuantity}
                       </span>
                       <div className="text-right">
                         <div className="text-lg font-bold text-gray-800">
-                          {formatPrice(totalForDuration)}
+                          {formatPrice(totalForQuantity)}
                         </div>
                         <div className="text-xs text-gray-500">Total</div>
                       </div>
@@ -566,24 +601,21 @@ const OrderPreviewStep = ({
                         </h3>
                         <div className="flex items-center space-x-4 mt-1">
                           <span className="text-sm text-gray-600">
-                            <Timer className="w-4 h-4 inline mr-1" />
-                            {calculations.duration} day{calculations.duration !== 1 ? "s" : ""}
-                          </span>
-                          <span className="text-sm text-gray-600">
+                            <Hash className="w-4 h-4 inline mr-1" />
                             Qty: {itemQuantity}
                           </span>
                           <span className="text-sm text-gray-600">
-                            {formatPrice(itemPrice)} per day
+                            {formatPrice(itemPrice)} per unit
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xl font-bold text-gray-800">
-                        {formatPrice(totalForDuration)}
+                        {formatPrice(totalForQuantity)}
                       </div>
                       <div className="text-sm text-gray-500">
-                        Total for {calculations.duration} day{calculations.duration !== 1 ? "s" : ""}
+                        Total for {itemQuantity} unit{itemQuantity !== 1 ? "s" : ""}
                       </div>
                     </div>
                   </div>
@@ -607,23 +639,7 @@ const OrderPreviewStep = ({
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-base sm:text-lg font-medium text-gray-700">
-                    Daily Rate:
-                  </span>
-                  <span className="text-lg sm:text-xl font-semibold text-gray-800">
-                    {formatPrice(calculations.dailyRate)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-base sm:text-lg font-medium text-gray-700">
-                    Duration ({calculations.duration} day{calculations.duration !== 1 ? "s" : ""}):
-                  </span>
-                  <span className="text-lg sm:text-xl font-semibold text-gray-800">
-                    × {calculations.duration}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-base sm:text-lg font-medium text-gray-700">
-                    Subtotal:
+                    Items Subtotal:
                   </span>
                   <span className="text-lg sm:text-xl font-semibold text-gray-800">
                     {formatPrice(calculations.subtotal)}

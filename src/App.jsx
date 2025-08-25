@@ -1,48 +1,53 @@
-import { useState, useEffect } from 'react';
-import './App.css';
-import Login from './screens/admin/auth/login';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import ForgotPassword from './screens/admin/auth/forgotPassword';
-import ResetPassword from './screens/admin/auth/resetPassword';
-import DashboardLayout from './screens/admin/dashboard/dashboardLayout';
-import Profile from './screens/admin/dashboard/profile';
-import { Provider } from 'react-redux';
-import store from './store';
-import { useSelector, useDispatch } from 'react-redux';
-import DashboardHome from './screens/admin/dashboard/dashboardHome';
-import Bookings from './screens/admin/dashboard/bookings';
-import OrdersManagement from './screens/admin/dashboard/orderManagement';
-import MailerScreen from './screens/admin/dashboard/mailer';
-import CategoriesScreen from './screens/admin/dashboard/categoriesScreen';
-import UserLayout from './screens/users/userLayout';
-import HomePage from './screens/users/homepage';
-import { QuotesList } from './screens/admin/dashboard/quotesList';
-import CategoriesPage from './screens/users/categoriesPage';
-import EventBookingPage from './screens/users/eventBookingPage';
-import AboutPage from './components/users/aboutUsPage';
-import GalleryPage from './components/users/galleryPage';
-import ContactPage from './components/users/contactPage';
-import FaqPage from './components/users/faqPage';
-import OrderProcessPage from './screens/users/orderProcessPage';
-import WarehouseInfoPage from './screens/users/warehouseInfoPage';
-import SmartCategoriesScreen from './screens/users/smartCategoryScreen';
-import QuoteCategoriesScreen from './screens/users/quoteCategoriesScreen';
-import QuoteCategoryItemsScreen from './screens/users/quoteCategoryItemsScreen';
-import QuoteSuccessScreen from './screens/users/quoteSuccessScreen';
-import CustomerInfoForm from './components/users/customerInfoForm';
-import { get } from './utils/api';
+import { useState, useEffect } from "react";
+import "./App.css";
+import Login from "./screens/admin/auth/login";
+import { Routes, Route, Navigate } from "react-router-dom";
+import ForgotPassword from "./screens/admin/auth/forgotPassword";
+import ResetPassword from "./screens/admin/auth/resetPassword";
+import DashboardLayout from "./screens/admin/dashboard/dashboardLayout";
+import Profile from "./screens/admin/dashboard/profile";
+import { Provider } from "react-redux";
+import store from "./store";
+import { useSelector, useDispatch } from "react-redux";
+import DashboardHome from "./screens/admin/dashboard/dashboardHome";
+import Bookings from "./screens/admin/dashboard/bookings";
+import OrdersManagement from "./screens/admin/dashboard/orderManagement";
+import MailerScreen from "./screens/admin/dashboard/mailer";
+import CategoriesScreen from "./screens/admin/dashboard/categoriesScreen";
+import UserLayout from "./screens/users/userLayout";
+import HomePage from "./screens/users/homepage";
+import { QuotesList } from "./screens/admin/dashboard/quotesList";
+import CategoriesPage from "./screens/users/categoriesPage";
+import EventBookingPage from "./screens/users/eventBookingPage";
+import AboutPage from "./components/users/aboutUsPage";
+import GalleryPage from "./components/users/galleryPage";
+import ContactPage from "./components/users/contactPage";
+import FaqPage from "./components/users/faqPage";
+import OrderProcessPage from "./screens/users/orderProcessPage";
+import WarehouseInfoPage from "./screens/users/warehouseInfoPage";
+import SmartCategoriesScreen from "./screens/users/smartCategoryScreen";
+import QuoteCategoriesScreen from "./screens/users/quoteCategoriesScreen";
+import QuoteCategoryItemsScreen from "./screens/users/quoteCategoryItemsScreen";
+import QuoteSuccessScreen from "./screens/users/quoteSuccessScreen";
+import CustomerInfoForm from "./components/users/customerInfoForm";
+import { get } from "./utils/api";
+import { WebSocketProvider } from './utils/hooks/webSocketContext';
 
 const useKeepAlive = () => {
   useEffect(() => {
     const keepAlive = async () => {
       try {
-        console.log('🏓 Sending keep-alive ping...');
-        const response = await get('/api/keep-alive');
-        console.log('✅ Keep-alive response:', response.data.message);
-        console.log('📊 Server uptime:', Math.floor(response.data.uptime / 60), 'minutes');
-        console.log('🕐 Timestamp:', response.data.timestamp);
+        console.log("🏓 Sending keep-alive ping...");
+        const response = await get("/api/keep-alive");
+        console.log("✅ Keep-alive response:", response.data.message);
+        console.log(
+          "📊 Server uptime:",
+          Math.floor(response.data.uptime / 60),
+          "minutes"
+        );
+        console.log("🕐 Timestamp:", response.data.timestamp);
       } catch (error) {
-        console.error('❌ Keep-alive ping failed:', error.message);
+        console.error("❌ Keep-alive ping failed:", error.message);
       }
     };
 
@@ -52,17 +57,15 @@ const useKeepAlive = () => {
     // Set up interval to ping every 5 minutes (300,000 milliseconds)
     const interval = setInterval(keepAlive, 5 * 60 * 1000);
 
-    console.log('🎯 Keep-alive system initialized - pinging every 5 minutes');
+    console.log("🎯 Keep-alive system initialized - pinging every 5 minutes");
 
     // Cleanup interval on component unmount
     return () => {
       clearInterval(interval);
-      console.log('🛑 Keep-alive interval cleared');
+      console.log("🛑 Keep-alive interval cleared");
     };
   }, []);
 };
-
-
 
 // Inactivity Modal Component
 const InactivityModal = ({ isOpen, countdown, onStayLoggedIn, onLogout }) => {
@@ -79,7 +82,8 @@ const InactivityModal = ({ isOpen, countdown, onStayLoggedIn, onLogout }) => {
             You have been inactive for a while. You will be logged out in:
           </p>
           <div className="text-3xl font-bold text-red-500 mb-6">
-            {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
+            {Math.floor(countdown / 60)}:
+            {(countdown % 60).toString().padStart(2, "0")}
           </div>
           <div className="flex space-x-4 justify-center">
             <button
@@ -104,7 +108,7 @@ const InactivityModal = ({ isOpen, countdown, onStayLoggedIn, onLogout }) => {
 // Enhanced Private Route Component
 const PrivateRoute = ({ children }) => {
   const dispatch = useDispatch();
-  const { isAuthenticated, user, token } = useSelector(state => state.auth);
+  const { isAuthenticated, user, token } = useSelector((state) => state.auth);
   const [isValidating, setIsValidating] = useState(true);
   const [isValid, setIsValid] = useState(false);
 
@@ -119,28 +123,28 @@ const PrivateRoute = ({ children }) => {
         }
 
         // Validate token with backend
-        const response = await fetch('/api/auth/validate', {
-          method: 'GET',
+        const response = await fetch("/api/auth/validate", {
+          method: "GET",
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
 
         if (response.ok) {
           const userData = await response.json();
           // Update user data if needed
           if (!user || user.id !== userData.id) {
-            dispatch({ type: 'AUTH_UPDATE_USER', payload: userData });
+            dispatch({ type: "AUTH_UPDATE_USER", payload: userData });
           }
           setIsValid(true);
         } else {
           // Token is invalid, clear auth state
-          dispatch({ type: 'AUTH_LOGOUT' });
+          dispatch({ type: "AUTH_LOGOUT" });
           setIsValid(false);
         }
       } catch (error) {
-        console.error('Auth validation error:', error);
+        console.error("Auth validation error:", error);
         // On network error, if we have a token, assume valid for offline use
         // But in production, you might want to be more strict
         setIsValid(isAuthenticated && token);
@@ -167,10 +171,10 @@ const PrivateRoute = ({ children }) => {
 // Inactivity Tracker Hook - Only for Dashboard
 const useInactivityTracker = (isDashboard = false) => {
   const dispatch = useDispatch();
-  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const [showModal, setShowModal] = useState(false);
   const [countdown, setCountdown] = useState(120); // 2 minutes countdown
-  
+
   const INACTIVITY_TIME = 10 * 60 * 1000; // 10 minutes in milliseconds
   const WARNING_TIME = 2 * 60 * 1000; // 2 minutes warning in milliseconds
 
@@ -187,14 +191,14 @@ const useInactivityTracker = (isDashboard = false) => {
       if (inactivityTimer) clearTimeout(inactivityTimer);
       if (warningTimer) clearTimeout(warningTimer);
       if (countdownTimer) clearInterval(countdownTimer);
-      
+
       // Hide modal if it's showing
       setShowModal(false);
-      
+
       // Set new timers
       inactivityTimer = setTimeout(() => {
         // Force logout after total inactivity time + warning time
-        dispatch({ type: 'AUTH_LOGOUT' });
+        dispatch({ type: "AUTH_LOGOUT" });
         setShowModal(false);
       }, INACTIVITY_TIME + WARNING_TIME);
 
@@ -202,12 +206,12 @@ const useInactivityTracker = (isDashboard = false) => {
         // Show warning modal
         setShowModal(true);
         setCountdown(120); // Reset countdown to 2 minutes
-        
+
         // Start countdown
         countdownTimer = setInterval(() => {
-          setCountdown(prev => {
+          setCountdown((prev) => {
             if (prev <= 1) {
-              dispatch({ type: 'AUTH_LOGOUT' });
+              dispatch({ type: "AUTH_LOGOUT" });
               setShowModal(false);
               return 0;
             }
@@ -228,15 +232,22 @@ const useInactivityTracker = (isDashboard = false) => {
     };
 
     const handleLogout = () => {
-      dispatch({ type: 'AUTH_LOGOUT' });
+      dispatch({ type: "AUTH_LOGOUT" });
       setShowModal(false);
     };
 
     // Activity events to track
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    
+    const events = [
+      "mousedown",
+      "mousemove",
+      "keypress",
+      "scroll",
+      "touchstart",
+      "click",
+    ];
+
     // Add event listeners
-    events.forEach(event => {
+    events.forEach((event) => {
       document.addEventListener(event, handleActivity, true);
     });
 
@@ -245,7 +256,7 @@ const useInactivityTracker = (isDashboard = false) => {
 
     // Cleanup function
     return () => {
-      events.forEach(event => {
+      events.forEach((event) => {
         document.removeEventListener(event, handleActivity, true);
       });
       if (inactivityTimer) clearTimeout(inactivityTimer);
@@ -260,7 +271,7 @@ const useInactivityTracker = (isDashboard = false) => {
   };
 
   const handleLogout = () => {
-    dispatch({ type: 'AUTH_LOGOUT' });
+    dispatch({ type: "AUTH_LOGOUT" });
     setShowModal(false);
   };
 
@@ -268,7 +279,7 @@ const useInactivityTracker = (isDashboard = false) => {
     showModal,
     countdown,
     handleStayLoggedIn,
-    handleLogout
+    handleLogout,
   };
 };
 
@@ -301,55 +312,63 @@ const AppWrapper = () => {
 function AppContent() {
   return (
     <>
-      <Routes>
-        {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgotPassword" element={<ForgotPassword />} />
-        <Route path="/resetPassword/:token" element={<ResetPassword />} />
-        
-        {/* Admin Dashboard Routes - WITH Enhanced Security and Inactivity Tracking */}
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <DashboardWrapper>
-                <DashboardLayout />
-              </DashboardWrapper>
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<DashboardHome />} />
-          <Route path="home" element={<DashboardHome />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="bookings" element={<Bookings />} />
-          <Route path="orders" element={<OrdersManagement />} />
-          <Route path="mailer" element={<MailerScreen />} />
-          <Route path="categories" element={<CategoriesScreen />} />
-          <Route path="quotes" element={<QuotesList />} />
-        </Route>
-        
-        {/* User/Public Routes - NO Authentication Required */}
-        <Route path="/" element={<UserLayout/>}>
-          <Route index element={<HomePage />} />
-          <Route path="about" element={<AboutPage />} />
-          <Route path="faq" element={<FaqPage />} />
-          <Route path="gallery" element={<GalleryPage />} />
-          <Route path="contact" element={<ContactPage />} />
-          <Route path="category/:categoryId" element={<CategoriesPage />} />
-          <Route path="eventbooking" element={<EventBookingPage />} />
-          <Route path="warehouseinfo" element={<WarehouseInfoPage />} />
-          <Route path="orderprocess" element={<OrderProcessPage />} />
-          <Route path="smartcategory" element={<SmartCategoriesScreen/>} />
-          
-          {/* Quote System Routes - More Specific Paths */}
-          <Route path="request-quote" element={<QuoteCategoriesScreen />} />
-          <Route path="request-quote/category/:categoryId" element={<QuoteCategoryItemsScreen />} />
-          <Route path="quote-submission-success" element={<QuoteSuccessScreen />} />
-          <Route path="quote-customer-info" element={<CustomerInfoForm />} />
-        </Route>
-        
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <WebSocketProvider>
+        <Routes>
+          {/* Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgotPassword" element={<ForgotPassword />} />
+          <Route path="/resetPassword/:token" element={<ResetPassword />} />
+
+          {/* Admin Dashboard Routes - WITH Enhanced Security and Inactivity Tracking */}
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <DashboardWrapper>
+                  <DashboardLayout />
+                </DashboardWrapper>
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<DashboardHome />} />
+            <Route path="home" element={<DashboardHome />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="bookings" element={<Bookings />} />
+            <Route path="orders" element={<OrdersManagement />} />
+            <Route path="mailer" element={<MailerScreen />} />
+            <Route path="categories" element={<CategoriesScreen />} />
+            <Route path="quotes" element={<QuotesList />} />
+          </Route>
+
+          {/* User/Public Routes - NO Authentication Required */}
+          <Route path="/" element={<UserLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="faq" element={<FaqPage />} />
+            <Route path="gallery" element={<GalleryPage />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="category/:categoryId" element={<CategoriesPage />} />
+            <Route path="eventbooking" element={<EventBookingPage />} />
+            <Route path="warehouseinfo" element={<WarehouseInfoPage />} />
+            <Route path="orderprocess" element={<OrderProcessPage />} />
+            <Route path="smartcategory" element={<SmartCategoriesScreen />} />
+
+            {/* Quote System Routes - More Specific Paths */}
+            <Route path="request-quote" element={<QuoteCategoriesScreen />} />
+            <Route
+              path="request-quote/category/:categoryId"
+              element={<QuoteCategoryItemsScreen />}
+            />
+            <Route
+              path="quote-submission-success"
+              element={<QuoteSuccessScreen />}
+            />
+            <Route path="quote-customer-info" element={<CustomerInfoForm />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </WebSocketProvider>
     </>
   );
 }

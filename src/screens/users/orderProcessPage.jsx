@@ -1,4 +1,4 @@
-// screens/user/OrderProcessPage.jsx
+// screens/user/OrderProcessPage.jsx - FIXED ORDER SUBMISSION
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -38,9 +38,16 @@ import {
   setOrderMode,
   formatPrice,
 } from "../../store/slices/cart-slice";
+
+// IMPORT THE ORDER ACTIONS
+import {
+  createOrder,
+  selectOrdersLoading,
+  selectOrdersError
+} from "../../store/slices/order-slice";
+
 import OrderDateCustomerStep from "../../components/users/orderDateCustomerStep";
 import OrderPreviewStep from "../../components/users/orderPreviewStep";
-
 
 const OrderProcessPage = () => {
   const location = useLocation();
@@ -58,6 +65,10 @@ const OrderProcessPage = () => {
   const cartLoading = useSelector(selectCartLoading);
   const cartError = useSelector(selectCartError);
   const cartItemCount = useSelector(selectCartItemCount);
+
+  // ADD ORDER SELECTORS
+  const orderLoading = useSelector(selectOrdersLoading);
+  const orderError = useSelector(selectOrdersError);
 
   // Local state
   const [localError, setLocalError] = useState("");
@@ -87,6 +98,26 @@ const OrderProcessPage = () => {
     },
   ];
 
+  // Helper function to calculate totals with quantity-based pricing
+  const calculateQuantityBasedTotals = useCallback(() => {
+    const subtotal = cartItems.reduce((total, item) => {
+      const itemPrice = parseFloat(item.price?.toString().replace(/[₦\s,]/g, '') || '0');
+      const quantity = parseInt(item.quantity) || 1;
+      return total + (itemPrice * quantity);
+    }, 0);
+
+    const tax = subtotal * 0.075; // 7.5% tax
+    const total = subtotal + tax;
+
+    return {
+      subtotal,
+      tax,
+      total
+    };
+  }, [cartItems]);
+
+  const totals = calculateQuantityBasedTotals();
+
   // Smooth scroll to top
   const scrollToTop = useCallback(() => {
     window.scrollTo({
@@ -109,7 +140,7 @@ const OrderProcessPage = () => {
 
   // Navigate to home function
   const navigateToHome = useCallback(() => {
-    console.log("🏠 Starting navigation to home...");
+    console.log("Starting navigation to home...");
 
     try {
       clearAllTimeouts();
@@ -155,7 +186,7 @@ const OrderProcessPage = () => {
       }, 200);
 
     } catch (error) {
-      console.error("❌ Error during navigation:", error);
+      console.error("Error during navigation:", error);
       localStorage.clear();
       sessionStorage.clear();
       window.location.replace("/");
@@ -166,19 +197,19 @@ const OrderProcessPage = () => {
   useEffect(() => {
     if (initialized) return;
 
-    console.log("🔄 OrderProcessPage initializing...");
+    console.log("OrderProcessPage initializing...");
     console.log("selectedItem:", selectedItem);
     console.log("fromWarehouse:", fromWarehouse);
 
-    // Set order mode to "daily" for order by date
-    dispatch(setOrderMode("daily"));
+    // Set order mode to "quantity" for quantity-based pricing
+    dispatch(setOrderMode("quantity"));
 
     // Reset to step 1 for order process
     dispatch(setStep(1));
 
     // Add selected item if we have one
     if (selectedItem && !cartItems.find(item => item.id === selectedItem.id)) {
-      console.log("✅ Adding selectedItem to cart");
+      console.log("Adding selectedItem to cart");
       dispatch(
         addToCart({
           item: selectedItem,
@@ -189,7 +220,7 @@ const OrderProcessPage = () => {
     }
 
     setInitialized(true);
-    console.log("✅ OrderProcessPage initialized");
+    console.log("OrderProcessPage initialized");
   }, [selectedItem, fromWarehouse, initialized, dispatch, selectedDates, cartItems]);
 
   // Step change handling
@@ -203,7 +234,7 @@ const OrderProcessPage = () => {
     return () => clearTimeout(scrollTimeout);
   }, [currentStep, initialized, scrollToTop]);
 
-  // Order success handling (similar to booking but for orders)
+  // Order success handling
   useEffect(() => {
     if (showSuccessAnimation) {
       scrollToTop();
@@ -211,12 +242,12 @@ const OrderProcessPage = () => {
       clearAllTimeouts();
 
       redirectTimeoutRef.current = setTimeout(() => {
-        console.log('🚀 3 seconds elapsed, navigating to home...');
+        console.log('3 seconds elapsed, navigating to home...');
         navigateToHome();
       }, 3000);
 
       safetyTimeoutRef.current = setTimeout(() => {
-        console.log('⚠️ Safety timeout: forcing navigation after 5 seconds');
+        console.log('Safety timeout: forcing navigation after 5 seconds');
         navigateToHome();
       }, 5000);
     }
@@ -231,7 +262,7 @@ const OrderProcessPage = () => {
   // Component unmount cleanup
   useEffect(() => {
     return () => {
-      console.log("🧹 Component unmounting...");
+      console.log("Component unmounting...");
       clearAllTimeouts();
     };
   }, [clearAllTimeouts]);
@@ -239,7 +270,7 @@ const OrderProcessPage = () => {
   // Handlers
   const handleDateChange = useCallback(
     (dateData) => {
-      console.log("📅 Date changed:", dateData);
+      console.log("Date changed:", dateData);
       dispatch(setSelectedDates(dateData));
       setLocalError("");
     },
@@ -248,7 +279,7 @@ const OrderProcessPage = () => {
 
   const handleCustomerInfoChange = useCallback(
     (data) => {
-      console.log("👤 Customer info changed:", data);
+      console.log("Customer info changed:", data);
       dispatch(setCustomerInfo(data));
       setLocalError("");
     },
@@ -258,7 +289,7 @@ const OrderProcessPage = () => {
   const handleNext = useCallback(() => {
     if (isNavigating) return;
 
-    console.log("=== 🚀 OrderProcessPage handleNext called ===");
+    console.log("=== OrderProcessPage handleNext called ===");
     console.log("Current step:", currentStep);
 
     setIsNavigating(true);
@@ -267,14 +298,13 @@ const OrderProcessPage = () => {
     try {
       // For orders, we have combined validation in step 1
       if (currentStep === 1) {
-        console.log("🔍 Validating step 1 (combined)...");
+        console.log("Validating step 1 (combined)...");
 
         if (!cartItems || cartItems.length === 0) {
           setLocalError("Add at least one item to your cart");
           setIsNavigating(false);
           return;
         }
-
 
         if (!customerInfo?.name?.trim()) {
           setLocalError("Please provide your name");
@@ -300,18 +330,18 @@ const OrderProcessPage = () => {
           return;
         }
 
-        console.log("✅ Step 1 validation passed");
+        console.log("Step 1 validation passed");
       }
 
-      console.log("✅ All validations passed, moving to next step...");
+      console.log("All validations passed, moving to next step...");
 
       setTimeout(() => {
         dispatch(nextStep());
         setIsNavigating(false);
-        console.log("✅ nextStep() dispatched successfully");
+        console.log("nextStep() dispatched successfully");
       }, 100);
     } catch (error) {
-      console.error("❌ Error in handleNext:", error);
+      console.error("Error in handleNext:", error);
       setLocalError("An error occurred. Please try again.");
       setIsNavigating(false);
     }
@@ -373,33 +403,43 @@ const OrderProcessPage = () => {
     [dispatch]
   );
 
-  // Order submission handler (different from booking)
+  // FIXED: Order submission handler for quantity-based pricing
   const handleSubmitOrder = useCallback(
     async (orderData) => {
-      console.log("🚀 handleSubmitOrder called with:", orderData);
+      console.log("handleSubmitOrder called with:", orderData);
 
       try {
         clearAllTimeouts();
         scrollToTop();
         setLocalError("");
 
-        // Here you would dispatch an action to create the order
-        // For now, we'll simulate success
-        console.log("📝 Order creation simulated - would call order API");
+        // Dispatch the createOrder action to send to backend
+        console.log("Dispatching createOrder action...");
+        const result = await dispatch(createOrder(orderData)).unwrap();
         
-        // Simulate order success
-        setTimeout(() => {
-          setShowSuccessAnimation(true);
-        }, 1000);
+        console.log("Order created successfully:", result);
+        
+        // Show success animation after successful order creation
+        setShowSuccessAnimation(true);
 
-        return { success: true };
+        return { success: true, order: result };
+        
       } catch (error) {
-        console.error("❌ Error in handleSubmitOrder:", error);
-        setLocalError("Failed to create order. Please try again.");
+        console.error("Error in handleSubmitOrder:", error);
+        
+        // Handle different types of errors
+        if (error.message) {
+          setLocalError(`Failed to create order: ${error.message}`);
+        } else if (typeof error === 'string') {
+          setLocalError(`Failed to create order: ${error}`);
+        } else {
+          setLocalError("Failed to create order. Please check your connection and try again.");
+        }
+        
         throw error;
       }
     },
-    [scrollToTop, clearAllTimeouts]
+    [scrollToTop, clearAllTimeouts, dispatch]
   );
 
   // Render step content
@@ -419,7 +459,7 @@ const OrderProcessPage = () => {
               onIncrementQuantity={handleIncrementQuantity}
               onDecrementQuantity={handleDecrementQuantity}
               cartItems={cartItems}
-              cartTotal={cartTotal}
+              cartTotal={totals.total} // Use calculated total
               error={localError}
               warehouseInfo={warehouseInfo}
             />
@@ -430,15 +470,15 @@ const OrderProcessPage = () => {
               cartItems={cartItems}
               selectedDates={selectedDates}
               customerInfo={customerInfo}
-              total={cartTotal}
+              total={totals.total} // Use calculated total
               onSubmit={handleSubmitOrder}
               onPrevious={handlePrevious}
               onAddMoreItems={handleAddMoreItems}
               onRemoveItem={handleRemoveItem}
               onIncrementQuantity={handleIncrementQuantity}
               onDecrementQuantity={handleDecrementQuantity}
-              loading={cartLoading}
-              error={localError || cartError}
+              loading={orderLoading || cartLoading} // Include order loading
+              error={localError || cartError || orderError} // Include order error
               onEditDates={() => dispatch(setStep(1))}
               onEditCustomerInfo={() => dispatch(setStep(1))}
               warehouseInfo={warehouseInfo}
@@ -448,7 +488,7 @@ const OrderProcessPage = () => {
           return null;
       }
     } catch (error) {
-      console.error("❌ Error rendering step:", error);
+      console.error("Error rendering step:", error);
       return (
         <div className="text-center py-8">
           <p className="text-red-600">
@@ -469,13 +509,15 @@ const OrderProcessPage = () => {
     handleIncrementQuantity,
     handleDecrementQuantity,
     cartItems,
-    cartTotal,
+    totals.total,
     localError,
     warehouseInfo,
     handleSubmitOrder,
     handlePrevious,
+    orderLoading,
     cartLoading,
     cartError,
+    orderError,
     dispatch,
   ]);
 
@@ -516,10 +558,10 @@ const OrderProcessPage = () => {
           {/* Success Message */}
           <div className="space-y-4">
             <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              Order Completed! 🎉
+              Order Completed!
             </h2>
             <p className="text-gray-600 text-lg sm:text-xl leading-relaxed">
-              Your rental order has been sent successfully!
+              Your order has been sent successfully!
             </p>
             <p className="text-gray-500 text-sm sm:text-base">
               You will receive confirmation details via email shortly.
@@ -529,7 +571,7 @@ const OrderProcessPage = () => {
             <div className="mt-6 space-y-3">
               <button
                 onClick={() => {
-                  console.log("🖱️ Manual continue button clicked");
+                  console.log("Manual continue button clicked");
                   
                   try {
                     dispatch(forceResetCart());
@@ -583,8 +625,6 @@ const OrderProcessPage = () => {
     );
   }
 
-
-
   return (
     <div
       className={`min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 transition-opacity duration-500 ${
@@ -605,17 +645,17 @@ const OrderProcessPage = () => {
               </button>
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Order by Date
+                  Order Items
                 </h1>
                 <p className="text-gray-600 text-sm lg:text-base">
-                  Create your rental order
+                  Create your quantity-based order
                 </p>
               </div>
             </div>
             <div className="text-right">
               <div className="text-sm text-gray-500 mb-1">Total Price</div>
               <div className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                {formatPrice(cartTotal)}
+                {formatPrice(totals.total)}
               </div>
               <div className="text-sm text-gray-500 flex items-center justify-end mt-1">
                 <ShoppingCart className="w-4 h-4 mr-1" />
@@ -635,17 +675,17 @@ const OrderProcessPage = () => {
               </button>
               <div className="flex-1 min-w-0">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
-                  Order by Date
+                  Order Items
                 </h1>
                 <p className="text-gray-600 text-sm truncate">
-                  Create your rental order
+                  Create your quantity-based order
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <div className="text-right">
                 <div className="text-lg font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                  {formatPrice(cartTotal)}
+                  {formatPrice(totals.total)}
                 </div>
                 <div className="text-xs text-gray-500 flex items-center justify-end">
                   <ShoppingCart className="w-3 h-3 mr-1" />
@@ -771,7 +811,7 @@ const OrderProcessPage = () => {
       </div>
 
       {/* Loading Overlay */}
-      {cartLoading && (
+      {(cartLoading || orderLoading) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center max-w-sm mx-auto w-full">
             <div className="animate-spin h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 rounded-full mx-auto mb-4" />
@@ -786,10 +826,10 @@ const OrderProcessPage = () => {
       )}
 
       {/* Error Toast */}
-      {(cartError || localError) && (
+      {(cartError || localError || orderError) && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto bg-red-500 text-white px-4 sm:px-6 py-3 rounded-lg shadow-lg z-50">
           <p className="font-medium text-sm sm:text-base">
-            {cartError || localError}
+            {cartError || localError || orderError}
           </p>
         </div>
       )}

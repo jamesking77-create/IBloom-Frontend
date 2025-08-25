@@ -1,182 +1,55 @@
+// store/slices/order-slice.js - CORRECTED ORDER SLICE
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import { get, put, post, del } from "../../utils/api";
 
-
-// // Async thunk for fetching orders
+// Async thunks for order operations
 export const fetchOrders = createAsyncThunk(
   'orders/fetchOrders',
   async () => {
-    const response = await get('/api/orders'); 
-    return response?.data;
+    const response = await get('/api/orders');
+    return response?.data || response;
   }
 );
 
-// export const fetchOrders = createAsyncThunk(
-//   'orders/fetchOrders',
-//   async (params = {}) => {
-//     // Replace with your actual API call 
-//     // const response = await fetch('/api/orders', { method: 'GET' });
-//     // return response.json();
-    
-//     // Dummy data for now
-//     return new Promise((resolve) => {
-//       setTimeout(() => {
-//         resolve(dummyOrders);
-//       }, 500);
-//     });
-//   }
-// );
-
-// Dummy data structure
-const dummyOrders = [
-  {
-    id: 1,
-    orderNumber: 'Order #41489',
-    customerInfo: {
-      name: 'John Doe',
-      email: 'john.doe@email.com',
-      phone: '+1 234-567-8900'
-    },
-    deliveryInfo: {
-      type: 'delivery', 
-      address: '123 Main St, City, State 12345',
-      instructions: 'Leave at front door'
-    },
-    dateInfo: {
-      orderDate: '2024-05-27T10:30:00Z',
-      startDate: '2024-05-28T09:00:00Z',
-      endDate: '2024-05-28T18:00:00Z',
-      isMultiDay: false,
-      duration: '9 hours'
-    },
-    items: [
-      {
-        id: 101,
-        name: 'Professional Camera Set',
-        category: 'Photography',
-        quantity: 2,
-        pricePerDay: 150,
-        totalPrice: 300,
-        image: '/api/placeholder/100/100'
-      },
-      {
-        id: 102,
-        name: 'Lighting Kit',
-        category: 'Photography',
-        quantity: 1,
-        pricePerDay: 75,
-        totalPrice: 75,
-        image: '/api/placeholder/100/100'
-      }
-    ],
-    pricing: {
-      subtotal: 375,
-      tax: 37.5,
-      deliveryFee: 25,
-      total: 437.5
-    },
-    status: 'confirmed', // 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled'
-    termsAccepted: true,
-    notes: 'Customer requested early delivery if possible',
-    createdAt: '2024-05-27T10:30:00Z',
-    updatedAt: '2024-05-27T10:30:00Z'
-  },
-  {
-    id: 2,
-    orderNumber: 'Order #41490',
-    customerInfo: {
-      name: 'Jane Smith',
-      email: 'jane.smith@email.com',
-      phone: '+1 234-567-8901'
-    },
-    deliveryInfo: {
-      type: 'warehouse_pickup',
-      address: 'Main Warehouse - 456 Industrial Blvd',
-      instructions: 'Call upon arrival'
-    },
-    dateInfo: {
-      orderDate: '2024-05-27T14:15:00Z',
-      startDate: '2024-05-29T08:00:00Z',
-      endDate: '2024-05-31T20:00:00Z',
-      isMultiDay: true,
-      duration: '3 days'
-    },
-    items: [
-      {
-        id: 103,
-        name: 'Event Sound System',
-        category: 'Audio',
-        quantity: 1,
-        pricePerDay: 200,
-        totalPrice: 600,
-        image: '/api/placeholder/100/100'
-      },
-      {
-        id: 104,
-        name: 'Wireless Microphones (Set of 4)',
-        category: 'Audio',
-        quantity: 1,
-        pricePerDay: 100,
-        totalPrice: 300,
-        image: 'https://irukka.com/wp-content/uploads/2020/03/Wireless-Microphone-%E2%80%93-Wharfedale-Aerovocals-1.jpg'
-      }
-    ],
-    pricing: {
-      subtotal: 900,
-      tax: 90,
-      deliveryFee: 0,
-      total: 990
-    },
-    status: 'pending',
-    termsAccepted: true,
-    notes: '',
-    createdAt: '2024-05-27T14:15:00Z',
-    updatedAt: '2024-05-27T14:15:00Z'
-  },
-  {
-    id: 3,
-    orderNumber: 'Order #41491',
-    customerInfo: {
-      name: 'Mike Johnson',
-      email: 'mike.j@email.com',
-      phone: '+1 234-567-8902'
-    },
-    deliveryInfo: {
-      type: 'delivery',
-      address: '789 Oak Avenue, Downtown, State 54321',
-      instructions: 'Business address - ask for Mike at reception'
-    },
-    dateInfo: {
-      orderDate: '2024-05-26T16:45:00Z',
-      startDate: '2024-05-27T12:00:00Z',
-      endDate: '2024-05-27T22:00:00Z',
-      isMultiDay: false,
-      duration: '10 hours'
-    },
-    items: [
-      {
-        id: 105,
-        name: 'DJ Equipment Package',
-        category: 'Audio',
-        quantity: 1,
-        pricePerDay: 300,
-        totalPrice: 300,
-        image: '/api/placeholder/100/100'
-      }
-    ],
-    pricing: {
-      subtotal: 300,
-      tax: 30,
-      deliveryFee: 20,
-      total: 350
-    },
-    status: 'in_progress',
-    termsAccepted: true,
-    notes: 'Corporate event - handle with extra care',
-    createdAt: '2024-05-26T16:45:00Z',
-    updatedAt: '2024-05-27T08:00:00Z'
+export const createOrder = createAsyncThunk(
+  'orders/createOrder',
+  async (orderData) => {
+    const response = await post('/api/orders', orderData);
+    return response?.data || response;
   }
-];
+);
+
+export const updateOrder = createAsyncThunk(
+  'orders/updateOrder',
+  async ({ orderId, orderData }) => {
+    const response = await put(`/api/orders/${orderId}`, orderData);
+    return response?.data || response;
+  }
+);
+
+export const updateOrderStatus = createAsyncThunk(
+  'orders/updateOrderStatus',
+  async ({ orderId, status }) => {
+    const response = await put(`/api/orders/${orderId}/status`, { status });
+    return { orderId, status };
+  }
+);
+
+export const deleteOrder = createAsyncThunk(
+  'orders/deleteOrder',
+  async (orderId) => {
+    await del(`/api/orders/${orderId}`);
+    return orderId;
+  }
+);
+
+export const sendOrderInvoice = createAsyncThunk(
+  'orders/sendOrderInvoice',
+  async (invoiceData) => {
+    const response = await post('/api/orders/send-invoice', invoiceData);
+    return response?.data || response;
+  }
+);
 
 const initialState = {
   orders: [],
@@ -193,6 +66,16 @@ const initialState = {
     totalPages: 1,
     totalOrders: 0,
     ordersPerPage: 10
+  },
+  stats: {
+    thisWeek: 0,
+    thisMonth: 0,
+    totalRevenue: 0
+  },
+  realTimeUpdates: {
+    enabled: false,
+    connected: false,
+    lastUpdate: null
   }
 };
 
@@ -203,25 +86,15 @@ const ordersSlice = createSlice({
     setSelectedOrder: (state, action) => {
       state.selectedOrder = action.payload;
     },
+    
     clearSelectedOrder: (state) => {
       state.selectedOrder = null;
     },
-    updateOrderStatus: (state, action) => {
-      const { orderId, status } = action.payload;
-      const order = state.orders.find(order => order.id === orderId);
-      if (order) {
-        order.status = status;
-        order.updatedAt = new Date().toISOString();
-      }
-      // Also update selected order if it's the same order
-      if (state.selectedOrder && state.selectedOrder.id === orderId) {
-        state.selectedOrder.status = status;
-        state.selectedOrder.updatedAt = new Date().toISOString();
-      }
-    },
+    
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
     },
+    
     clearFilters: (state) => {
       state.filters = {
         status: 'all',
@@ -229,10 +102,88 @@ const ordersSlice = createSlice({
         searchTerm: ''
       };
     },
+    
     setPagination: (state, action) => {
       state.pagination = { ...state.pagination, ...action.payload };
+    },
+    
+    setRealTimeConnection: (state, action) => {
+      state.realTimeUpdates.connected = action.payload;
+      state.realTimeUpdates.lastUpdate = new Date().toISOString();
+    },
+    
+    enableRealTimeUpdates: (state) => {
+      state.realTimeUpdates.enabled = true;
+    },
+    
+    disableRealTimeUpdates: (state) => {
+      state.realTimeUpdates.enabled = false;
+      state.realTimeUpdates.connected = false;
+    },
+    
+    addNewOrderRealTime: (state, action) => {
+      const newOrder = action.payload;
+      state.orders.unshift(newOrder);
+      state.pagination.totalOrders += 1;
+      state.realTimeUpdates.lastUpdate = new Date().toISOString();
+    },
+    
+    updateOrderRealTime: (state, action) => {
+      const { orderId, updates } = action.payload;
+      const orderIndex = state.orders.findIndex(order => 
+        order._id === orderId || order.id === orderId
+      );
+      
+      if (orderIndex !== -1) {
+        state.orders[orderIndex] = { ...state.orders[orderIndex], ...updates };
+        
+        if (state.selectedOrder && 
+            (state.selectedOrder._id === orderId || state.selectedOrder.id === orderId)) {
+          state.selectedOrder = { ...state.selectedOrder, ...updates };
+        }
+      }
+      state.realTimeUpdates.lastUpdate = new Date().toISOString();
+    },
+    
+    updateOrderStatusRealTime: (state, action) => {
+      const { orderId, status } = action.payload;
+      const orderIndex = state.orders.findIndex(order => 
+        order._id === orderId || order.id === orderId
+      );
+      
+      if (orderIndex !== -1) {
+        state.orders[orderIndex].status = status;
+        state.orders[orderIndex].updatedAt = new Date().toISOString();
+        
+        if (state.selectedOrder && 
+            (state.selectedOrder._id === orderId || state.selectedOrder.id === orderId)) {
+          state.selectedOrder.status = status;
+          state.selectedOrder.updatedAt = new Date().toISOString();
+        }
+      }
+      state.realTimeUpdates.lastUpdate = new Date().toISOString();
+    },
+    
+    deleteOrderRealTime: (state, action) => {
+      const orderId = action.payload;
+      state.orders = state.orders.filter(order => 
+        order._id !== orderId && order.id !== orderId
+      );
+      state.pagination.totalOrders = Math.max(0, state.pagination.totalOrders - 1);
+      
+      if (state.selectedOrder && 
+          (state.selectedOrder._id === orderId || state.selectedOrder.id === orderId)) {
+        state.selectedOrder = null;
+      }
+      state.realTimeUpdates.lastUpdate = new Date().toISOString();
+    },
+    
+    updateStatsRealTime: (state, action) => {
+      state.stats = { ...state.stats, ...action.payload };
+      state.realTimeUpdates.lastUpdate = new Date().toISOString();
     }
   },
+  
   extraReducers: (builder) => {
     builder
       .addCase(fetchOrders.pending, (state) => {
@@ -241,11 +192,106 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrders.fulfilled, (state, action) => {
         state.loading = false;
-        state.orders = action.payload;
-        state.pagination.totalOrders = action.payload.length;
-        state.pagination.totalPages = Math.ceil(action.payload.length / state.pagination.ordersPerPage);
+        
+        if (action.payload && typeof action.payload === 'object') {
+          if (action.payload.data && Array.isArray(action.payload.data)) {
+            state.orders = action.payload.data;
+            state.stats = action.payload.stats || state.stats;
+            state.pagination = action.payload.pagination || state.pagination;
+          } else if (Array.isArray(action.payload)) {
+            state.orders = action.payload;
+            state.pagination.totalOrders = action.payload.length;
+            state.pagination.totalPages = Math.ceil(action.payload.length / state.pagination.ordersPerPage);
+          }
+        } else if (Array.isArray(action.payload)) {
+          state.orders = action.payload;
+          state.pagination.totalOrders = action.payload.length;
+          state.pagination.totalPages = Math.ceil(action.payload.length / state.pagination.ordersPerPage);
+        }
       })
       .addCase(fetchOrders.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+      
+      .addCase(createOrder.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        state.orders.unshift(action.payload);
+        state.pagination.totalOrders += 1;
+      })
+      .addCase(createOrder.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+      
+      .addCase(updateOrder.fulfilled, (state, action) => {
+        const updatedOrder = action.payload.order || action.payload;
+        const orderIndex = state.orders.findIndex(order => 
+          order._id === updatedOrder._id || order.id === updatedOrder.id
+        );
+        
+        if (orderIndex !== -1) {
+          state.orders[orderIndex] = updatedOrder;
+        }
+        
+        if (state.selectedOrder && 
+            (state.selectedOrder._id === updatedOrder._id || state.selectedOrder.id === updatedOrder.id)) {
+          state.selectedOrder = updatedOrder;
+        }
+      })
+      
+      .addCase(updateOrderStatus.fulfilled, (state, action) => {
+        const { orderId, status } = action.payload;
+        const orderIndex = state.orders.findIndex(order => 
+          order._id === orderId || order.id === orderId
+        );
+        
+        if (orderIndex !== -1) {
+          state.orders[orderIndex].status = status;
+          state.orders[orderIndex].updatedAt = new Date().toISOString();
+        }
+        
+        if (state.selectedOrder && 
+            (state.selectedOrder._id === orderId || state.selectedOrder.id === orderId)) {
+          state.selectedOrder.status = status;
+          state.selectedOrder.updatedAt = new Date().toISOString();
+        }
+      })
+      
+      .addCase(deleteOrder.fulfilled, (state, action) => {
+        const orderId = action.payload;
+        state.orders = state.orders.filter(order => 
+          order._id !== orderId && order.id !== orderId
+        );
+        state.pagination.totalOrders = Math.max(0, state.pagination.totalOrders - 1);
+        
+        if (state.selectedOrder && 
+            (state.selectedOrder._id === orderId || state.selectedOrder.id === orderId)) {
+          state.selectedOrder = null;
+        }
+      })
+      
+      .addCase(sendOrderInvoice.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(sendOrderInvoice.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload && action.payload.orderId) {
+          const orderIndex = state.orders.findIndex(order => 
+            order._id === action.payload.orderId
+          );
+          if (orderIndex !== -1) {
+            state.orders[orderIndex].invoiceGenerated = true;
+            state.orders[orderIndex].invoiceSentAt = new Date().toISOString();
+          }
+        }
+      })
+      .addCase(sendOrderInvoice.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       });
@@ -255,23 +301,31 @@ const ordersSlice = createSlice({
 export const {
   setSelectedOrder,
   clearSelectedOrder,
-  updateOrderStatus,
   setFilters,
   clearFilters,
-  setPagination
+  setPagination,
+  setRealTimeConnection,
+  enableRealTimeUpdates,
+  disableRealTimeUpdates,
+  addNewOrderRealTime,
+  updateOrderRealTime,
+  updateOrderStatusRealTime,
+  deleteOrderRealTime,
+  updateStatsRealTime
 } = ordersSlice.actions;
 
 export default ordersSlice.reducer;
 
-// Basic selectors
+// Selectors - ONLY DEFINED ONCE
 export const selectAllOrders = (state) => state.orders?.orders || [];
 export const selectOrdersLoading = (state) => state.orders?.loading || false;
 export const selectOrdersError = (state) => state.orders?.error || null;
 export const selectSelectedOrder = (state) => state.orders?.selectedOrder || null;
 export const selectOrderFilters = (state) => state.orders?.filters || initialState.filters;
 export const selectOrderPagination = (state) => state.orders?.pagination || initialState.pagination;
+export const selectOrderStats = (state) => state.orders?.stats || initialState.stats;
+export const selectRealTimeUpdates = (state) => state.orders?.realTimeUpdates || initialState.realTimeUpdates;
 
-// Memoized filtered orders selector using createSelector
 export const selectFilteredOrders = createSelector(
   [selectAllOrders, selectOrderFilters],
   (orders, filters) => {
@@ -280,28 +334,25 @@ export const selectFilteredOrders = createSelector(
     }
 
     return orders.filter(order => {
-      // Status filter
       if (filters.status !== 'all' && order.status !== filters.status) {
         return false;
       }
       
-      // Search filter
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase();
         const matchesSearch = (
-          order.orderNumber.toLowerCase().includes(searchLower) ||
-          order.customerInfo.name.toLowerCase().includes(searchLower) ||
-          order.customerInfo.email.toLowerCase().includes(searchLower)
+          (order.orderNumber && order.orderNumber.toLowerCase().includes(searchLower)) ||
+          (order.customerInfo?.name && order.customerInfo.name.toLowerCase().includes(searchLower)) ||
+          (order.customerInfo?.email && order.customerInfo.email.toLowerCase().includes(searchLower))
         );
         if (!matchesSearch) {
           return false;
         }
       }
       
-      // Date range filter
       if (filters.dateRange !== 'all') {
         const now = new Date();
-        const orderDate = new Date(order.createdAt);
+        const orderDate = new Date(order.createdAt || order.dateInfo?.orderDate);
         
         switch (filters.dateRange) {
           case 'today':
@@ -329,6 +380,54 @@ export const selectFilteredOrders = createSelector(
       }
       
       return true;
+    });
+  }
+);
+
+export const selectOrdersByStatus = createSelector(
+  [selectAllOrders],
+  (orders) => {
+    const stats = {
+      pending: 0,
+      confirmed: 0,
+      in_progress: 0,
+      completed: 0,
+      cancelled: 0
+    };
+    
+    orders.forEach(order => {
+      if (stats.hasOwnProperty(order.status)) {
+        stats[order.status]++;
+      }
+    });
+    
+    return stats;
+  }
+);
+
+export const selectRecentOrders = createSelector(
+  [selectAllOrders],
+  (orders) => {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return orders.filter(order => 
+      new Date(order.createdAt || order.dateInfo?.orderDate) >= weekAgo
+    );
+  }
+);
+
+export const selectOrdersRequiringAttention = createSelector(
+  [selectAllOrders],
+  (orders) => {
+    const now = new Date();
+    return orders.filter(order => {
+      if (order.status === 'pending') return true;
+      
+      if (order.status === 'confirmed' && order.dateInfo?.startDate) {
+        const startDate = new Date(order.dateInfo.startDate);
+        return startDate < now;
+      }
+      
+      return false;
     });
   }
 );

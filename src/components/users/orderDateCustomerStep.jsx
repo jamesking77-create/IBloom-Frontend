@@ -72,7 +72,7 @@ const OrderDateCustomerStep = ({
   const [confirmModal, setConfirmModal] = useState(null);
   const [quantityInputs, setQuantityInputs] = useState({});
   
-  // NEW: Multi-day selection mode toggle
+  // Multi-day selection mode toggle
   const [isMultiDay, setIsMultiDay] = useState(true);
 
   // Local state for customer information
@@ -160,6 +160,26 @@ const OrderDateCustomerStep = ({
     return parseFloat(price) || 0;
   };
 
+  // Calculate cart totals with quantity-based pricing
+  const calculateTotals = useCallback(() => {
+    const itemsSubtotal = cartItems.reduce((total, item) => {
+      const itemPrice = getNumericPrice(item.price);
+      const quantity = parseInt(item.quantity) || 1;
+      return total + (itemPrice * quantity);
+    }, 0);
+
+    const tax = itemsSubtotal * 0.075; // 7.5% tax
+    const finalTotal = itemsSubtotal + tax;
+
+    return {
+      subtotal: itemsSubtotal,
+      tax: tax,
+      total: finalTotal
+    };
+  }, [cartItems]);
+
+  const totals = calculateTotals();
+
   // Date handling functions
   const handleMonthChange = (direction) => {
     setIsAnimating(true);
@@ -226,9 +246,9 @@ const OrderDateCustomerStep = ({
     return days;
   };
 
-  // NEW: Improved date click handler for both single and multi-day
+  // Improved date click handler for both single and multi-day
   const handleDateClick = (dateString) => {
-    console.log('📅 Date clicked:', dateString, 'Mode:', isMultiDay ? 'Multi-day' : 'Single-day');
+    console.log('Date clicked:', dateString, 'Mode:', isMultiDay ? 'Multi-day' : 'Single-day');
     
     if (isMultiDay) {
       // Multi-day selection logic
@@ -236,24 +256,24 @@ const OrderDateCustomerStep = ({
         // Starting fresh selection
         setStartDate(dateString);
         setEndDate("");
-        console.log('📅 Multi-day: Set start date:', dateString);
+        console.log('Multi-day: Set start date:', dateString);
       } else if (startDate && !endDate) {
         // Selecting end date
         if (new Date(dateString) >= new Date(startDate)) {
           setEndDate(dateString);
-          console.log('📅 Multi-day: Set end date:', dateString);
+          console.log('Multi-day: Set end date:', dateString);
         } else {
           // Selected date is before start date, so make it the new start date
           setStartDate(dateString);
           setEndDate("");
-          console.log('📅 Multi-day: Reset to new start date:', dateString);
+          console.log('Multi-day: Reset to new start date:', dateString);
         }
       }
     } else {
       // Single-day selection logic
       setStartDate(dateString);
       setEndDate(dateString); // Same as start date for single day
-      console.log('📅 Single-day: Set date:', dateString);
+      console.log('Single-day: Set date:', dateString);
     }
     
     // Clear date errors when user selects dates
@@ -267,7 +287,7 @@ const OrderDateCustomerStep = ({
     }
   };
 
-  // NEW: Toggle between single and multi-day mode
+  // Toggle between single and multi-day mode
   const handleModeToggle = () => {
     const newMode = !isMultiDay;
     setIsMultiDay(newMode);
@@ -280,7 +300,7 @@ const OrderDateCustomerStep = ({
       setEndDate(startDate);
     }
     
-    console.log('🔄 Mode switched to:', newMode ? 'Multi-day' : 'Single-day');
+    console.log('Mode switched to:', newMode ? 'Multi-day' : 'Single-day');
     
     // Clear any date-related errors
     setErrors(prev => ({
@@ -293,7 +313,7 @@ const OrderDateCustomerStep = ({
 
   // Customer info handling
   const handleInputChange = useCallback((field, value) => {
-    console.log(`📝 Field ${field} changed to:`, value);
+    console.log(`Field ${field} changed to:`, value);
 
     setFormData((prev) => {
       const updated = {
@@ -442,7 +462,7 @@ const OrderDateCustomerStep = ({
         multiDay: isMultiDay,
       };
       
-      console.log('📅 Dispatching date data:', dateData);
+      console.log('Dispatching date data:', dateData);
       onDateChange(dateData);
       
       onNext();
@@ -465,7 +485,7 @@ const OrderDateCustomerStep = ({
     }
   }, []);
 
-  // NEW: Calculate duration for display
+  // Calculate duration for display
   const calculateDuration = useCallback(() => {
     if (!startDate) return 0;
     
@@ -610,7 +630,7 @@ const OrderDateCustomerStep = ({
                           {item.description}
                         </p>
                         <p className="text-sm sm:text-base font-medium text-green-600 mt-2">
-                          {formatPrice(item.price)} per day
+                          {formatPrice(item.price)} per unit
                         </p>
                       </div>
 
@@ -658,7 +678,7 @@ const OrderDateCustomerStep = ({
                     <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-200">
                       <div className="flex justify-between items-center">
                         <span className="text-xs sm:text-sm text-gray-600">
-                          Subtotal ({item.quantity} item{item.quantity !== 1 ? 's' : ''}):
+                          Subtotal ({item.quantity} × {formatPrice(item.price)}):
                         </span>
                         <span className="text-sm sm:text-base font-semibold text-gray-800">
                           {formatPrice(getNumericPrice(item.price) * item.quantity)}
@@ -678,22 +698,30 @@ const OrderDateCustomerStep = ({
             <div className="space-y-2 sm:space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm sm:text-base md:text-lg font-medium text-gray-700">
-                  Subtotal (per day):
+                  Items Subtotal:
                 </span>
                 <span className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">
-                  {formatPrice(cartSubtotal)}
+                  {formatPrice(totals.subtotal)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
+                <span className="text-sm sm:text-base md:text-lg font-medium text-gray-700">
+                  Tax (7.5%):
+                </span>
                 <span className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">
-                  Daily Rate:
+                  {formatPrice(totals.tax)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-gray-300">
+                <span className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">
+                  Total:
                 </span>
                 <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                  {formatPrice(cartTotal)}
+                  {formatPrice(totals.total)}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-gray-500 mt-2">
-                Total items: {cartItemCount} • Final cost will depend on rental duration
+                Total items: {cartItemCount} • Quantity-based pricing
               </p>
             </div>
           </div>
@@ -715,10 +743,10 @@ const OrderDateCustomerStep = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 md:mb-8 space-y-3 sm:space-y-0">
             <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center">
               <Calendar className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 mr-2 sm:mr-3 text-blue-600" />
-              Rental Period
+              Order Date
             </h2>
             
-            {/* NEW: Single/Multi-day Toggle */}
+            {/* Single/Multi-day Toggle */}
             <div className="flex items-center space-x-3">
               <span className="text-sm font-medium text-gray-700">Single Day</span>
               <button
@@ -740,8 +768,8 @@ const OrderDateCustomerStep = ({
             <p className="text-sm text-blue-800 font-medium flex items-center">
               <Clock className="w-4 h-4 mr-2" />
               {isMultiDay 
-                ? "Multi-day rental mode: Select start and end dates for your rental period"
-                : "Single-day rental mode: Select one date for your rental"
+                ? "Multi-day order mode: Select start and end dates for your order period"
+                : "Single-day order mode: Select one date for your order"
               }
             </p>
           </div>
@@ -844,7 +872,7 @@ const OrderDateCustomerStep = ({
             <div className="mt-4 sm:mt-6 md:mt-8 p-3 sm:p-4 md:p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl sm:rounded-2xl border border-blue-200">
               <h3 className="text-sm sm:text-base md:text-lg font-semibold text-blue-800 mb-2 sm:mb-3 md:mb-4 flex items-center">
                 <BadgeInfo className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-pink-500" />
-                Selected Rental Period:
+                Selected Order Date:
               </h3>
               <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                 {isMultiDay ? (
@@ -864,7 +892,7 @@ const OrderDateCustomerStep = ({
                 ) : (
                   <>
                     <p className="text-blue-700">
-                      <span className="font-medium">Rental Date:</span> {formatDate(startDate)}
+                      <span className="font-medium">Order Date:</span> {formatDate(startDate)}
                     </p>
                     <p className="text-blue-700">
                       <span className="font-medium">Duration:</span> 1 day

@@ -1,4 +1,4 @@
-// Bookings.js - FIXED VERSION with WebSocket Integration
+// Bookings.js - UPDATED VERSION with Profile Integration for Invoice
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -49,15 +49,16 @@ import {
   selectBookingStats,
   updateBookingStatusOptimistic,
   getStatusInfo,
-  // FIXED: Add WebSocket action imports
+  // WebSocket action imports
   handleRealtimeNewBooking,
   handleRealtimeStatusUpdate,
   handleRealtimeBookingDeleted,
 } from "../../../store/slices/booking-slice";
+// ADDED: Import profile selector
+import { fetchProfile } from "../../../store/slices/profile-slice";
 import { formatCurrency } from "../../../utils/formatCcy";
 import { notifySuccess } from "../../../utils/toastify";
 import InvoiceHandler from "./invoiceHandler";
-// FIXED: Add WebSocket hook import
 import useRealtimeBooking from "../../../utils/hooks/useRealTimeBookings";
 
 // Helper function to get status styles (simplified - using getStatusInfo from slice)
@@ -80,8 +81,12 @@ const Bookings = () => {
   const pagination = useSelector(selectPagination);
   const selectedBooking = useSelector(selectSelectedBooking);
   const bookingStats = useSelector(selectBookingStats);
+  
+  // ADDED: Get profile data for company info
+  const profileData = useSelector(state => state.profile.userData);
+  const profileLoading = useSelector(state => state.profile.loading);
 
-  // FIXED: Add WebSocket connection for real-time updates
+  // WebSocket connection for real-time updates
   const {
     isConnected: wsConnected,
     connectionState: wsState,
@@ -94,17 +99,14 @@ const Bookings = () => {
     onNewBooking: (data) => {
       console.log("🔔 Admin received new booking:", data);
       dispatch(handleRealtimeNewBooking(data));
-      // Auto-refresh bookings list to get the complete data
       setTimeout(() => {
         dispatch(fetchBookings());
       }, 500);
-      // Show notification
       notifySuccess(`🎉 New booking from ${data.customerName}!`);
     },
     onBookingStatusUpdate: (data) => {
       console.log("🔄 Admin received status update:", data);
       dispatch(handleRealtimeStatusUpdate(data));
-      // Optionally refresh bookings to ensure data consistency
       setTimeout(() => {
         dispatch(fetchBookings());
       }, 500);
@@ -112,14 +114,12 @@ const Bookings = () => {
     onBookingDeleted: (data) => {
       console.log("🗑️ Admin received deletion notification:", data);
       dispatch(handleRealtimeBookingDeleted(data));
-      // Auto-refresh bookings list
       setTimeout(() => {
         dispatch(fetchBookings());
       }, 500);
     },
     onConnected: () => {
       console.log("✅ Admin WebSocket connected");
-      // Refresh bookings when WebSocket connects
       dispatch(fetchBookings());
     },
     onDisconnected: () => {
@@ -172,6 +172,30 @@ const Bookings = () => {
     }
   };
 
+  // ADDED: Helper function to get company info from profile with fallbacks
+  const getCompanyInfoFromProfile = () => {
+    const savedBankDetails = loadSavedBankDetails();
+    
+    return {
+      name: profileData?.name || "Your Event Company",
+      address: profileData?.location || "123 Business Street",
+      city: "Lagos", // You might want to extract this from location if it's structured
+      state: "Lagos State", // You might want to extract this from location if it's structured  
+      country: "Nigeria",
+      phone: profileData?.phone || profileData?.mobile || "+234 123 456 7890",
+      email: profileData?.email || "billing@youreventcompany.com",
+      website: "www.youreventcompany.com", // Add website field to profile if needed
+      // Bank details remain from localStorage
+      bankDetails: {
+        bankName: savedBankDetails.bankName,
+        accountName: savedBankDetails.accountName,
+        accountNumber: savedBankDetails.accountNumber,
+        sortCode: savedBankDetails.sortCode,
+        swiftCode: savedBankDetails.swiftCode,
+      },
+    };
+  };
+
   // Helper function to calculate totals from services only
   const calculateTotalsFromServices = (services, taxRate = 0.075) => {
     const subtotal = services.reduce(
@@ -185,7 +209,11 @@ const Bookings = () => {
 
   useEffect(() => {
     dispatch(fetchBookings());
-  }, [dispatch]);
+    // ADDED: Fetch profile data if not already loaded
+    if (!profileData?.name && !profileLoading) {
+      dispatch(fetchProfile());
+    }
+  }, [dispatch, profileData?.name, profileLoading]);
 
   // Clear error when component unmounts
   useEffect(() => {
@@ -203,25 +231,19 @@ const Bookings = () => {
 
       if (newBookingFlag === "true") {
         notifySuccess("🎉 New booking received!");
-        // Clear the flag
         localStorage.removeItem("newBookingCreated");
         localStorage.removeItem("newBookingId");
-        // Auto-refresh bookings
         dispatch(fetchBookings());
       }
     };
 
-    // Check immediately
     checkForNewBooking();
 
-    // Check when window gains focus (user switches back to admin tab)
     const handleFocus = () => {
       checkForNewBooking();
     };
 
     window.addEventListener("focus", handleFocus);
-
-    // Also check periodically while on the page (fallback for when WebSocket fails)
     const interval = setInterval(checkForNewBooking, 5000);
 
     return () => {
@@ -280,12 +302,13 @@ const Bookings = () => {
   const handleViewBooking = async (booking) => {
     setCurrentViewingBooking(booking);
     setShowViewModal(true);
-    setExpandedServices(false); // Reset expanded services when opening modal
+    setExpandedServices(false);
   };
 
+  // UPDATED: Invoice generation now uses profile data
   const handleGenerateInvoice = (booking) => {
-    // Load saved bank details
-    const savedBankDetails = loadSavedBankDetails();
+    // Get company info from profile with fallbacks
+    const companyInfo = getCompanyInfoFromProfile();
 
     // Calculate totals from services only
     const services =
@@ -314,25 +337,8 @@ const Bookings = () => {
         .toISOString()
         .split("T")[0], // 30 days from now
 
-      // Company details (editable)
-      company: {
-        name: "Your Event Company",
-        address: "123 Business Street",
-        city: "Lagos",
-        state: "Lagos State",
-        country: "Nigeria",
-        phone: "+234 123 456 7890",
-        email: "billing@youreventcompany.com",
-        website: "www.youreventcompany.com",
-        // Bank details with saved values
-        bankDetails: {
-          bankName: savedBankDetails.bankName,
-          accountName: savedBankDetails.accountName,
-          accountNumber: savedBankDetails.accountNumber,
-          sortCode: savedBankDetails.sortCode,
-          swiftCode: savedBankDetails.swiftCode,
-        },
-      },
+      // UPDATED: Company details from profile (editable)
+      company: companyInfo,
 
       // Customer details (from booking - NOT editable)
       customer: {
@@ -356,7 +362,7 @@ const Bookings = () => {
       // Services (NOT editable except descriptions)
       services,
 
-      // Additional services (delivery/installation) - NOW YES/NO ONLY
+      // Additional services (delivery/installation) - YES/NO ONLY
       additionalServices: [
         {
           id: "delivery",
@@ -394,6 +400,7 @@ const Bookings = () => {
     setShowInvoiceModal(true);
   };
 
+  // Rest of the component methods remain the same...
   const handleDeleteBooking = (booking) => {
     setBookingToDelete(booking);
     setShowDeleteModal(true);
@@ -422,18 +429,11 @@ const Bookings = () => {
       }
 
       const result = await response.json();
-
-      // Show success message
       notifySuccess(`Booking ${result.deletedBookingId} deleted successfully`);
-
-      // Refresh bookings list
       dispatch(fetchBookings());
-
-      // Close modal and clear state
       setShowDeleteModal(false);
       setBookingToDelete(null);
 
-      // Close view modal if the deleted booking was being viewed
       if (
         currentViewingBooking &&
         (currentViewingBooking._id === bookingId ||
@@ -458,7 +458,6 @@ const Bookings = () => {
   const handleSendInvoice = async () => {
     setSendingInvoice(true);
     try {
-      // Prepare the request body
       const requestBody = {
         invoiceData: {
           ...invoiceData,
@@ -471,7 +470,6 @@ const Bookings = () => {
 
       console.log("Sending invoice email request:", requestBody);
 
-      // Make API call to send invoice
       const response = await fetch(
         `${import.meta.env.VITE_SERVER_BASEURL}api/bookings/send-invoice`,
         {
@@ -526,7 +524,6 @@ const Bookings = () => {
         [field]: value,
       };
 
-      // Save to localStorage
       saveBankDetails(updatedBankDetails);
 
       return {
@@ -547,14 +544,12 @@ const Bookings = () => {
         [field]: value,
       };
 
-      // Recalculate totals if price or quantity changed
       if (field === "unitPrice" || field === "quantity") {
         updatedServices[serviceIndex].total =
           updatedServices[serviceIndex].unitPrice *
           updatedServices[serviceIndex].quantity;
       }
 
-      // Recalculate invoice totals (only from services, not additional services)
       const { subtotal, tax, total } = calculateTotalsFromServices(
         updatedServices,
         prev.taxRate
@@ -586,14 +581,11 @@ const Bookings = () => {
     });
   };
 
-  // Fixed status update function - using correct booking ID
   const handleStatusUpdate = async (bookingId, newStatus) => {
     setProcessingBookingId(bookingId);
     try {
-      // Optimistic update
       dispatch(updateBookingStatusOptimistic({ bookingId, status: newStatus }));
 
-      // Update the currently viewing booking if it's the same one
       if (
         currentViewingBooking &&
         (currentViewingBooking.bookingId === bookingId ||
@@ -602,7 +594,6 @@ const Bookings = () => {
         setCurrentViewingBooking((prev) => ({ ...prev, status: newStatus }));
       }
 
-      // Actual API call
       await dispatch(
         updateBookingStatus({ bookingId, status: newStatus })
       ).unwrap();

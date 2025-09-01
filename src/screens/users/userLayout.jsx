@@ -19,7 +19,9 @@ import {
   PhoneCall,
   ShoppingCart,
   Package,
-  Calendar
+  Calendar,
+  Smartphone,
+  MessageCircle
 } from "lucide-react";
 import logoimg from "../../assets/ibloomcut.png";
 import fullLogo from "../../assets/ibloomcut.png";
@@ -32,7 +34,6 @@ const UserLayout = () => {
   const [isRentalsDropdownOpen, setIsRentalsDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
 
   const { companyInfo, companyInfoLoading } = useSelector((state) => state.public);
 
@@ -859,38 +860,93 @@ const UserLayout = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4">Contact Info</h4>
               <div className="space-y-3 text-gray-400">
+                {/* Phone Number */}
                 {companyInfo.phone && (
                   <div className="flex items-center">
-                    <Phone className="w-5 h-5 mr-3" />
-                    <span>{companyInfo.phone}</span>
+                    <Phone className="w-5 h-5 mr-3 text-blue-400" />
+                    <span className="hover:text-white transition-colors duration-300">
+                      {companyInfo.phone}
+                    </span>
                   </div>
                 )}
+
+                {/* Mobile Number */}
+                {companyInfo.mobile && (
+                  <div className="flex items-center">
+                    <Smartphone className="w-5 h-5 mr-3 text-green-400" />
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500">Mobile</span>
+                      <span className="hover:text-white transition-colors duration-300">
+                        {companyInfo.mobile}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* WhatsApp Number */}
+                {companyInfo.whatsapp && (
+                  <div className="flex items-center">
+                    <MessageCircle className="w-5 h-5 mr-3 text-green-500" />
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500">WhatsApp</span>
+                      <a
+                        href={`https://wa.me/${companyInfo.whatsapp.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-white transition-colors duration-300 hover:underline"
+                      >
+                        {companyInfo.whatsapp}
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Email */}
                 {companyInfo.email && (
                   <div className="flex items-center">
-                    <Mail className="w-5 h-5 mr-3" />
-                    <span>{companyInfo.email}</span>
+                    <Mail className="w-5 h-5 mr-3 text-red-400" />
+                    <a
+                      href={`mailto:${companyInfo.email}`}
+                      className="hover:text-white transition-colors duration-300 hover:underline"
+                    >
+                      {companyInfo.email}
+                    </a>
                   </div>
                 )}
+
+                {/* Location */}
                 {companyInfo.location && (
                   <div className="flex items-center">
-                    <MapPin className="w-5 h-5 mr-3" />
-                    <span>{companyInfo.location}</span>
+                    <MapPin className="w-5 h-5 mr-3 text-yellow-400" />
+                    <span className="hover:text-white transition-colors duration-300">
+                      {companyInfo.location}
+                    </span>
                   </div>
                 )}
-                {!companyInfo.phone && !companyInfo.email && !companyInfo.location && (
+
+                {/* Fallback contact info if no data is available */}
+                {!companyInfo.phone && !companyInfo.mobile && !companyInfo.whatsapp && !companyInfo.email && !companyInfo.location && (
                   <>
                     <div className="flex items-center">
-                      <Phone className="w-5 h-5 mr-3" />
-                      <span>0817-225-8085</span>
+                      <Phone className="w-5 h-5 mr-3 text-blue-400" />
+                      <span className="hover:text-white transition-colors duration-300">
+                        0817-225-8085
+                      </span>
                     </div>
                     <div className="flex items-center">
-                      <Mail className="w-5 h-5 mr-3" />
-                      {/* <span>ibloomrentals@gmail.com</span> */}
-                      <span>adeoyemayopoelijah@gmail.com</span>
+                      <Mail className="w-5 h-5 mr-3 text-red-400" />
+                      <a
+                        href="mailto:adeoyemayopoelijah@gmail.com"
+                        className="hover:text-white transition-colors duration-300 hover:underline"
+                      >
+                        adeoyemayopoelijah@gmail.com
+                      </a>
                     </div>
                     <div className="flex items-center">
-                      <MapPin className="w-5 h-5 mr-3" />
-                      <span>85B, Lafiaji Way, Dolphin Estate</span>
+                      <MapPin className="w-5 h-5 mr-3 text-yellow-400" />
+                      <span className="hover:text-white transition-colors duration-300">
+                        85B, Lafiaji Way, Dolphin Estate
+                      </span>
                     </div>
                   </>
                 )}

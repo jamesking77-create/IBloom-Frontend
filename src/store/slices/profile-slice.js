@@ -49,9 +49,7 @@ export const fetchProfile = createAsyncThunk(
   }
 );
 
-// Only showing the key changes to your existing profile slice
-
-// Update the saveProfile thunk (replace your existing one)
+// Update the saveProfile thunk
 export const saveProfile = createAsyncThunk(
   "profile/saveProfile",
   async (avatarFile = null, { getState, rejectWithValue }) => {
@@ -104,9 +102,11 @@ const initialState = {
     name: "",
     email: "",
     phone: "",
+    mobile: "",
+    whatsapp: "",
     location: "",
     joinDate: "",
-    avatar: null, // Will store the avatar object from your backend
+    avatar: null,
     bio: "",
     specialize: [],
     categories: [],
@@ -115,9 +115,11 @@ const initialState = {
     name: "",
     email: "",
     phone: "",
+    mobile: "",
+    whatsapp: "",
     location: "",
     joinDate: "",
-    avatar: null, // Will store the avatar object from your backend
+    avatar: null,
     bio: "",
     specialize: [],
     categories: [],
@@ -126,7 +128,7 @@ const initialState = {
   loading: false,
   error: null,
   saving: false,
-  selectedAvatarFile: null, // NEW: Store the selected file before upload
+  selectedAvatarFile: null,
 };
 
 const profileSlice = createSlice({
@@ -152,7 +154,6 @@ const profileSlice = createSlice({
     updateAvatar: (state, action) => {
       state.editData.avatar = action.payload;
     },
-    // NEW: Set selected avatar file
     setSelectedAvatarFile: (state, action) => {
       state.selectedAvatarFile = action.payload;
     },
@@ -200,7 +201,7 @@ const profileSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Save profile cases (now handles both profile + avatar upload)
+      // Save profile cases
       .addCase(saveProfile.pending, (state) => {
         state.saving = true;
         state.error = null;
@@ -210,7 +211,7 @@ const profileSlice = createSlice({
         state.userData = action.payload;
         state.editData = { ...action.payload };
         state.isEditing = false;
-        state.selectedAvatarFile = null; // Clear selected file after save
+        state.selectedAvatarFile = null;
       })
       .addCase(saveProfile.rejected, (state, action) => {
         state.saving = false;
@@ -299,7 +300,7 @@ export const {
   resetEditData,
   updateEditDataField,
   updateAvatar,
-  setSelectedAvatarFile, // NEW
+  setSelectedAvatarFile,
   addSpecialization,
   removeSpecialization,
   clearProfileError,

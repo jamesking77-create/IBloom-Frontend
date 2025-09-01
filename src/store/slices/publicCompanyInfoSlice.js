@@ -27,6 +27,8 @@ export const fetchCompanyInfo = createAsyncThunk(
         console.log("🏢 name:", data.name);
         console.log("📧 email:", data.email);
         console.log("📱 phone:", data.phone);
+        console.log("📱 mobile:", data.mobile);
+        console.log("📱 whatsapp:", data.whatsapp);
         console.log("📍 location:", data.location);
         console.log("📝 bio:", data.bio);
         console.log("🎯 specialize:", data.specialize);
@@ -58,6 +60,8 @@ const initialState = {
     name: "",
     email: "",
     phone: "",
+    mobile: "",
+    whatsapp: "",
     location: "",
     joinDate: "",
     avatar: null,
@@ -112,7 +116,6 @@ const publicSlice = createSlice({
         state.loading = false;
         state.companyInfo = action.payload;
         state.lastFetched = new Date().toISOString();
-
       })
       .addCase(fetchCompanyInfo.rejected, (state, action) => {
         state.loading = false;

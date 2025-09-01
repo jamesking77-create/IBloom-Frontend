@@ -33,7 +33,9 @@ export default function Profile({ onProfileUpdate, profileData }) {
   // Validation state
   const [validationStatus, setValidationStatus] = useState({
     email: true,
-    phone: true
+    phone: true,
+    mobile: true,
+    whatsapp: true
   });
 
   const {
@@ -72,19 +74,27 @@ export default function Profile({ onProfileUpdate, profileData }) {
     // Reset validation status when entering edit mode
     setValidationStatus({
       email: true,
-      phone: true
+      phone: true,
+      mobile: true,
+      whatsapp: true
     });
   };
 
   const handleSave = async () => {
-    // Check if email and phone are valid before proceeding
-    if (!validationStatus.email || !validationStatus.phone) {
+    // Check if all fields are valid before proceeding
+    if (!validationStatus.email || !validationStatus.phone || !validationStatus.mobile || !validationStatus.whatsapp) {
       let errorMessage = 'Please fix the following errors:';
       if (!validationStatus.email) {
         errorMessage += '\n• Invalid email address';
       }
       if (!validationStatus.phone) {
         errorMessage += '\n• Invalid phone number';
+      }
+      if (!validationStatus.mobile) {
+        errorMessage += '\n• Invalid mobile number';
+      }
+      if (!validationStatus.whatsapp) {
+        errorMessage += '\n• Invalid WhatsApp number';
       }
       
       notifyError(errorMessage);
@@ -110,7 +120,9 @@ export default function Profile({ onProfileUpdate, profileData }) {
     // Reset validation status when canceling
     setValidationStatus({
       email: true,
-      phone: true
+      phone: true,
+      mobile: true,
+      whatsapp: true
     });
   };
 
@@ -149,7 +161,7 @@ export default function Profile({ onProfileUpdate, profileData }) {
   };
 
   // Check if form is valid for submission
-  const isFormValid = validationStatus.email && validationStatus.phone;
+  const isFormValid = validationStatus.email && validationStatus.phone && validationStatus.mobile && validationStatus.whatsapp;
   console.log("edit data", editData);
 
   return (

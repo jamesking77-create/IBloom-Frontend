@@ -199,7 +199,7 @@ const BookingsList = () => {
                 <div 
                   key={bookingId || index} 
                   className="group border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer"
-                  onClick={() => handleViewBooking(bookingId)}
+                  // onClick={() => handleViewBooking(bookingId)}
                 >
                   {/* Mobile Layout */}
                   {isMobile ? (

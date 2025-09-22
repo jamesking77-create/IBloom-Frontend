@@ -1,4 +1,4 @@
-// screens/user/components/DateSelectionStep.js - ENHANCED RESPONSIVE VERSION
+// screens/user/components/DateSelectionStep.js - ENHANCED WITH UNIVERSAL IMAGE SUPPORT
 // Optimized for all screen sizes: mobile (320px+), tablet, desktop, and large screens
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -79,12 +79,282 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
   const currentYear = today.getFullYear();
   const currentMonthIndex = today.getMonth();
 
+  // ENHANCED: Function to get all available images for an item
+  const getItemImages = (item) => {
+    const availableImages = [];
+    
+    console.log('🖼️ Getting images for item:', {
+      name: item.name || item.itemName,
+      hasImage: !!item.image,
+      hasImagesObject: !!(item.images && typeof item.images === 'object'),
+      hasImagesArray: !!(item.images && Array.isArray(item.images)),
+      hasImage1: !!item.image1,
+      itemImages: item.images
+    });
+    
+    // Priority 1: Handle new structure (item.images object) FIRST for new items
+    if (item.images && typeof item.images === 'object') {
+      if (item.images.image1) {
+        availableImages.push(item.images.image1);
+        console.log('✅ Added images.image1:', item.images.image1);
+      }
+      if (item.images.image2) {
+        availableImages.push(item.images.image2);
+        console.log('✅ Added images.image2:', item.images.image2);
+      }
+      if (item.images.image3) {
+        availableImages.push(item.images.image3);
+        console.log('✅ Added images.image3:', item.images.image3);
+      }
+    }
+    
+    // Priority 2: Handle old structure (direct image1, image2, image3 fields)
+    if (item.image1 && !availableImages.includes(item.image1)) {
+      availableImages.push(item.image1);
+      console.log('✅ Added image1:', item.image1);
+    }
+    if (item.image2 && !availableImages.includes(item.image2)) {
+      availableImages.push(item.image2);
+      console.log('✅ Added image2:', item.image2);
+    }
+    if (item.image3 && !availableImages.includes(item.image3)) {
+      availableImages.push(item.image3);
+      console.log('✅ Added image3:', item.image3);
+    }
+    
+    // Priority 3: Check single image (for backward compatibility with truly old items)
+    if (item.image && !availableImages.includes(item.image)) {
+      availableImages.push(item.image);
+      console.log('✅ Added single image:', item.image);
+    }
+    
+    // Priority 4: Handle array structure (item.images as array)
+    if (item.images && Array.isArray(item.images)) {
+      item.images.forEach((img, index) => {
+        if (img && !availableImages.includes(img)) {
+          availableImages.push(img);
+          console.log(`✅ Added array image ${index + 1}:`, img);
+        }
+      });
+    }
+    
+    // Priority 5: Check other legacy fields
+    if (item.imageUrl && !availableImages.includes(item.imageUrl)) {
+      availableImages.push(item.imageUrl);
+      console.log('✅ Added imageUrl:', item.imageUrl);
+    }
+    
+    // Return at least one image (fallback)
+    if (availableImages.length === 0) {
+      availableImages.push("https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop");
+      console.log('⚠️ Using fallback image');
+    }
+    
+    console.log('🖼️ Final images array:', availableImages);
+    return availableImages;
+  };
+
+  // Helper function to get primary image (for fallback compatibility)
+  const getItemImage = (item) => {
+    const images = getItemImages(item);
+    return images[0]; // Just return the first image from our comprehensive list
+  };
+
   // FIXED: Helper function to safely get numeric price
   const getNumericPrice = (price) => {
     if (typeof price === 'string') {
       return parseFloat(price.replace(/[₦\s,]/g, '')) || 0;
     }
     return parseFloat(price) || 0;
+  };
+
+  // ENHANCED: Cart Item Component with Image Carousel
+  const CartItemComponent = ({ item, index }) => {
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const cartId = item.cartId || item.id || `cart-${index}`;
+    const itemName = item.itemName || item.name || "Unknown Item";
+    const itemPrice = getNumericPrice(item.price);
+    const itemQuantity = item.quantity || 1;
+    const itemDuration = item.duration || 1;
+    const orderMode = item.orderMode || "booking";
+    
+    // Get all available images
+    const availableImages = getItemImages(item);
+    const hasMultipleImages = availableImages.length > 1;
+    
+    const nextImage = () => {
+      setCurrentImageIndex((prev) => (prev + 1) % availableImages.length);
+    };
+    
+    const prevImage = () => {
+      setCurrentImageIndex((prev) => (prev - 1 + availableImages.length) % availableImages.length);
+    };
+
+    console.log('🛒 Rendering cart item:', {
+      name: itemName,
+      originalPrice: item.price,
+      processedPrice: itemPrice,
+      quantity: itemQuantity,
+      imageCount: availableImages.length,
+      hasMultiple: hasMultipleImages
+    });
+
+    return (
+      <div className="group relative bg-gradient-to-r from-gray-50 to-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 transition-all duration-300 hover:shadow-lg border border-gray-100">
+        {/* Enhanced Mobile Cart Item Layout */}
+        <div className="flex items-start space-x-3">
+          
+          {/* Enhanced Item Image with Carousel */}
+          <div className="relative flex-shrink-0">
+            <img
+              src={availableImages[currentImageIndex]}
+              alt={`${itemName} - Image ${currentImageIndex + 1}`}
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-md transition-all duration-300"
+              onError={(e) => {
+                e.target.src = "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
+              }}
+            />
+            
+            {/* Image Navigation Arrows - Only show if multiple images */}
+            {hasMultipleImages && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/80"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/80"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </>
+            )}
+            
+            {/* Image Counter - Only show if multiple images */}
+            {hasMultipleImages && (
+              <div className="absolute bottom-0 right-0 transform translate-x-1 translate-y-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                {currentImageIndex + 1}
+              </div>
+            )}
+            
+            {/* Image Indicators - Show dots for multiple images */}
+            {hasMultipleImages && (
+              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                {availableImages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                      idx === currentImageIndex 
+                        ? 'bg-white shadow-lg' 
+                        : 'bg-white/60 hover:bg-white/80'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+            
+            {/* Star Badge */}
+            <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+              <Star className="w-2 h-2 sm:w-3 sm:h-3 text-white" />
+            </div>
+          </div>
+          
+          {/* Item Info and Controls Container */}
+          <div className="flex-1 min-w-0 space-y-3">
+            
+            {/* Item Details */}
+            <div className="flex justify-between items-start">
+              <div className="flex-1 min-w-0 pr-2">
+                <h3 className="font-semibold text-gray-800 text-sm sm:text-base md:text-lg mb-1 truncate">
+                  {itemName}
+                </h3>
+                {/* Show image count if multiple images */}
+                {hasMultipleImages && (
+                  <p className="text-blue-500 text-xs mb-1">
+                    {availableImages.length} images available
+                  </p>
+                )}
+                <p className="text-green-600 font-bold text-base sm:text-lg md:text-xl">
+                  {formatPrice(itemPrice)}
+                </p>
+                <p className="text-gray-500 text-xs sm:text-sm mt-1">
+                  Duration: {itemDuration} {orderMode === "booking" ? "hour(s)" : "day(s)"}
+                </p>
+              </div>
+              
+              {/* Remove Button - Top Right */}
+              <button
+                onClick={() => handleRemoveItem(cartId)}
+                className="flex-shrink-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200"
+                title="Remove from cart"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quantity Controls and Total - Better Mobile Layout */}
+            <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+              
+              {/* Quantity Controls */}
+              <div className="flex items-center justify-center sm:justify-start">
+                <button
+                  onClick={() => handleDecrementQuantity(cartId)}
+                  disabled={itemQuantity <= 1}
+                  className="w-8 h-8 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors duration-200"
+                >
+                  <Minus className="w-4 h-4 text-gray-600" />
+                </button>
+                
+                {/* Quantity Input */}
+                <input
+                  type="number"
+                  min="1"
+                  max="999"
+                  value={quantityInputs[cartId] !== undefined ? quantityInputs[cartId] : itemQuantity}
+                  onChange={(e) => handleQuantityInputChange(cartId, e.target.value)}
+                  onFocus={(e) => {
+                    handleQuantityInputFocus(cartId, itemQuantity);
+                    e.target.select();
+                  }}
+                  onBlur={() => handleQuantityInputBlur(cartId, itemQuantity)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.target.blur();
+                    }
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="mx-3 w-12 sm:w-14 text-center font-semibold text-gray-700 text-sm bg-white border border-gray-200 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 hover:border-gray-300 py-2"
+                  title="Click to edit quantity directly"
+                />
+                
+                <button
+                  onClick={() => handleIncrementQuantity(cartId)}
+                  className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Item Total - Better Responsive Display */}
+              <div className="text-center sm:text-right flex-shrink-0">
+                <div className="text-gray-600 text-sm font-medium">
+                  <span className="text-gray-500">Total: </span>
+                  <span className="text-green-600 font-semibold">
+                    {formatPrice(itemPrice * itemQuantity)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Handle cart operations using Redux actions
@@ -397,138 +667,13 @@ const handleNext = () => {
               </div>
             ) : (
               <div className="space-y-3 sm:space-y-4">
-                {cartItems.map((item, index) => {
-                  const cartId = item.cartId || item.id || `cart-${index}`;
-                  const itemName = item.itemName || item.name || "Unknown Item";
-                  
-                  // FIXED: Ensure proper price handling
-                  const itemPrice = getNumericPrice(item.price);
-                  const itemQuantity = item.quantity || 1;
-                  const itemImage =
-                    item.image ||
-                    item.imageUrl ||
-                    "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
-                  const itemDuration = item.duration || 1;
-                  const orderMode = item.orderMode || "booking";
-
-                  console.log('🛒 Rendering cart item:', {
-                    name: itemName,
-                    originalPrice: item.price,
-                    processedPrice: itemPrice,
-                    quantity: itemQuantity
-                  });
-
-                  return (
-                    <div
-                      key={cartId}
-                      className="group relative bg-gradient-to-r from-gray-50 to-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 transition-all duration-300 hover:shadow-lg border border-gray-100"
-                    >
-                      {/* FIXED: Better Mobile Cart Item Layout */}
-                      <div className="flex items-start space-x-3">
-                        
-                        {/* Item Image */}
-                        <div className="relative flex-shrink-0">
-                          <img
-                            src={itemImage}
-                            alt={itemName}
-                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-md"
-                            onError={(e) => {
-                              e.target.src =
-                                "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
-                            }}
-                          />
-                          <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                            <Star className="w-2 h-2 sm:w-3 sm:h-3 text-white" />
-                          </div>
-                        </div>
-                        
-                        {/* Item Info and Controls Container */}
-                        <div className="flex-1 min-w-0 space-y-3">
-                          
-                          {/* Item Details */}
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1 min-w-0 pr-2">
-                              <h3 className="font-semibold text-gray-800 text-sm sm:text-base md:text-lg mb-1 truncate">
-                                {itemName}
-                              </h3>
-                              <p className="text-green-600 font-bold text-base sm:text-lg md:text-xl">
-                                {formatPrice(itemPrice)}
-                              </p>
-                              <p className="text-gray-500 text-xs sm:text-sm mt-1">
-                                Duration: {itemDuration} {orderMode === "booking" ? "hour(s)" : "day(s)"}
-                              </p>
-                            </div>
-                            
-                            {/* Remove Button - Top Right */}
-                            <button
-                              onClick={() => handleRemoveItem(cartId)}
-                              className="flex-shrink-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200"
-                              title="Remove from cart"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-
-                          {/* Quantity Controls and Total - Better Mobile Layout */}
-                          <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-                            
-                            {/* Quantity Controls */}
-                            <div className="flex items-center justify-center sm:justify-start">
-                              <button
-                                onClick={() => handleDecrementQuantity(cartId)}
-                                disabled={itemQuantity <= 1}
-                                className="w-8 h-8 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors duration-200"
-                              >
-                                <Minus className="w-4 h-4 text-gray-600" />
-                              </button>
-                              
-                              {/* Quantity Input */}
-                              <input
-                                type="number"
-                                min="1"
-                                max="999"
-                                value={quantityInputs[cartId] !== undefined ? quantityInputs[cartId] : itemQuantity}
-                                onChange={(e) => handleQuantityInputChange(cartId, e.target.value)}
-                                onFocus={(e) => {
-                                  handleQuantityInputFocus(cartId, itemQuantity);
-                                  e.target.select();
-                                }}
-                                onBlur={() => handleQuantityInputBlur(cartId, itemQuantity)}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.target.blur();
-                                  }
-                                  if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
-                                    e.preventDefault();
-                                  }
-                                }}
-                                className="mx-3 w-12 sm:w-14 text-center font-semibold text-gray-700 text-sm bg-white border border-gray-200 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 hover:border-gray-300 py-2"
-                                title="Click to edit quantity directly"
-                              />
-                              
-                              <button
-                                onClick={() => handleIncrementQuantity(cartId)}
-                                className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            </div>
-
-                            {/* Item Total - Better Responsive Display */}
-                            <div className="text-center sm:text-right flex-shrink-0">
-                              <div className="text-gray-600 text-sm font-medium">
-                                <span className="text-gray-500">Total: </span>
-                                <span className="text-green-600 font-semibold">
-                                  {formatPrice(itemPrice * itemQuantity)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {cartItems.map((item, index) => (
+                  <CartItemComponent
+                    key={item.cartId || item.id || `cart-${index}`}
+                    item={item}
+                    index={index}
+                  />
+                ))}
               </div>
             )}
 

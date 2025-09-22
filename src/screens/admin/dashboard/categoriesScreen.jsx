@@ -107,92 +107,95 @@ const TagComponent = React.memo(
 );
 
 // Multiple Image Upload Component
-const MultipleImageUpload = React.memo(({ images, onImagesChange, maxImages = 3 }) => {
-  const fileRefs = useRef([]);
+const MultipleImageUpload = React.memo(
+  ({ images, onImagesChange, maxImages = 3 }) => {
+    const fileRefs = useRef([]);
 
-  const handleFileChange = (index, file) => {
-    if (file) {
+    const handleFileChange = (index, file) => {
+      if (file) {
+        const newImages = { ...images };
+        const imageKey = `image${index + 1}`;
+        newImages[imageKey] = file;
+        newImages[`${imageKey}Preview`] = URL.createObjectURL(file);
+        onImagesChange(newImages);
+      }
+    };
+
+    const removeImage = (index) => {
       const newImages = { ...images };
       const imageKey = `image${index + 1}`;
-      newImages[imageKey] = file;
-      newImages[`${imageKey}Preview`] = URL.createObjectURL(file);
+      const previewKey = `${imageKey}Preview`;
+
+      // Revoke object URL to prevent memory leaks
+      if (newImages[previewKey] && newImages[previewKey].startsWith("blob:")) {
+        URL.revokeObjectURL(newImages[previewKey]);
+      }
+
+      delete newImages[imageKey];
+      delete newImages[previewKey];
       onImagesChange(newImages);
-    }
-  };
+    };
 
-  const removeImage = (index) => {
-    const newImages = { ...images };
-    const imageKey = `image${index + 1}`;
-    const previewKey = `${imageKey}Preview`;
-    
-    // Revoke object URL to prevent memory leaks
-    if (newImages[previewKey] && newImages[previewKey].startsWith('blob:')) {
-      URL.revokeObjectURL(newImages[previewKey]);
-    }
-    
-    delete newImages[imageKey];
-    delete newImages[previewKey];
-    onImagesChange(newImages);
-  };
+    const getImagePreview = (index) => {
+      const imageKey = `image${index + 1}`;
+      const previewKey = `${imageKey}Preview`;
+      return images[previewKey] || images[imageKey];
+    };
 
-  const getImagePreview = (index) => {
-    const imageKey = `image${index + 1}`;
-    const previewKey = `${imageKey}Preview`;
-    return images[previewKey] || images[imageKey];
-  };
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          {Array.from({ length: maxImages }).map((_, index) => {
+            const hasImage = getImagePreview(index);
 
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-3">
-        {Array.from({ length: maxImages }).map((_, index) => {
-          const hasImage = getImagePreview(index);
-          
-          return (
-            <div key={index} className="relative">
-              <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg overflow-hidden hover:border-blue-400 transition-colors">
-                {hasImage ? (
-                  <>
-                    <img
-                      src={hasImage}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
+            return (
+              <div key={index} className="relative">
+                <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg overflow-hidden hover:border-blue-400 transition-colors">
+                  {hasImage ? (
+                    <>
+                      <img
+                        src={hasImage}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      onClick={() => fileRefs.current[index]?.click()}
+                      className="w-full h-full flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
                     >
-                      <X className="w-3 h-3" />
+                      <ImageIcon className="w-6 h-6 mb-1" />
+                      <span className="text-xs">Add Image</span>
                     </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileRefs.current[index]?.click()}
-                    className="w-full h-full flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
-                  >
-                    <ImageIcon className="w-6 h-6 mb-1" />
-                    <span className="text-xs">Add Image</span>
-                  </button>
-                )}
+                  )}
+                </div>
+                <input
+                  ref={(el) => (fileRefs.current[index] = el)}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(index, e.target.files[0])}
+                  className="hidden"
+                />
               </div>
-              <input
-                ref={(el) => (fileRefs.current[index] = el)}
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFileChange(index, e.target.files[0])}
-                className="hidden"
-              />
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        <p className="text-xs text-gray-500">
+          You can upload up to {maxImages} images. Images will be displayed in
+          the order uploaded.
+        </p>
       </div>
-      <p className="text-xs text-gray-500">
-        You can upload up to {maxImages} images. Images will be displayed in the order uploaded.
-      </p>
-    </div>
-  );
-});
+    );
+  }
+);
 
 // Category card component - Memoized to prevent unnecessary re-renders
 const CategoryCard = React.memo(
@@ -582,16 +585,16 @@ const CategoriesScreen = () => {
     [dispatch]
   );
 
-  // Item handlers
+  // Enhanced handleItemEdit function that supports both old and new image structures
   const handleItemEdit = useCallback(
     (item) => {
       dispatch(setEditingItem(item));
-      
-      // Prepare image data for editing - handle both old and new structure
+
+      // Enhanced image data preparation for editing - handles ALL image structures
       const images = {};
-      
-      // Handle new structure (item.images object)
-      if (item.images) {
+
+      // Priority 1: Handle new structure (item.images object)
+      if (item.images && typeof item.images === "object") {
         if (item.images.image1) {
           images.image1 = item.images.image1;
           images.image1Preview = item.images.image1;
@@ -604,32 +607,66 @@ const CategoriesScreen = () => {
           images.image3 = item.images.image3;
           images.image3Preview = item.images.image3;
         }
-      } else {
-        // Handle old structure (direct image1, image2, image3 fields)
-        if (item.image1) {
-          images.image1 = item.image1;
-          images.image1Preview = item.image1;
-        }
-        if (item.image2) {
-          images.image2 = item.image2;
-          images.image2Preview = item.image2;
-        }
-        if (item.image3) {
-          images.image3 = item.image3;
-          images.image3Preview = item.image3;
-        }
-        // Fallback to old single image field
-        if (item.image && !images.image1) {
-          images.image1 = item.image;
-          images.image1Preview = item.image;
-        }
       }
-      
+
+      // Priority 2: Handle old structure (direct image1, image2, image3 fields)
+      // Only add if not already present from images object
+      if (item.image1 && !images.image1) {
+        images.image1 = item.image1;
+        images.image1Preview = item.image1;
+      }
+      if (item.image2 && !images.image2) {
+        images.image2 = item.image2;
+        images.image2Preview = item.image2;
+      }
+      if (item.image3 && !images.image3) {
+        images.image3 = item.image3;
+        images.image3Preview = item.image3;
+      }
+
+      // Priority 3: Handle single image field (legacy support)
+      // Only add as image1 if no other images exist
+      if (item.image && Object.keys(images).length === 0) {
+        images.image1 = item.image;
+        images.image1Preview = item.image;
+      }
+
+      // Priority 4: Handle array structure (item.images as array)
+      if (item.images && Array.isArray(item.images)) {
+        item.images.forEach((img, index) => {
+          if (img && index < 3) {
+            // Limit to 3 images
+            const imageKey = `image${index + 1}`;
+            const previewKey = `${imageKey}Preview`;
+            if (!images[imageKey]) {
+              // Don't overwrite if already set
+              images[imageKey] = img;
+              images[previewKey] = img;
+            }
+          }
+        });
+      }
+
+      console.log("Edit item images prepared:", {
+        originalItem: {
+          name: item.name,
+          hasImages: !!item.images,
+          hasImage: !!item.image,
+          hasImage1: !!item.image1,
+          hasImage2: !!item.image2,
+          hasImage3: !!item.image3,
+        },
+        preparedImages: Object.keys(images),
+        imagesCount: Object.keys(images).filter(
+          (key) => !key.includes("Preview")
+        ).length,
+      });
+
       setItemForm({
         name: item.name,
         description: item.description,
         price: item.price || "",
-        images: images,
+        images: images, // This will now contain properly structured image data
         colors: item.colors || [],
         sizes: item.sizes || [],
         outOfStock: item.outOfStock || false,
@@ -637,6 +674,137 @@ const CategoriesScreen = () => {
       dispatch(openModal("itemModal"));
     },
     [dispatch]
+  );
+
+  // Enhanced MultipleImageUpload Component with better existing image handling
+  const MultipleImageUpload = React.memo(
+    ({ images, onImagesChange, maxImages = 3 }) => {
+      const fileRefs = useRef([]);
+
+      const handleFileChange = (index, file) => {
+        if (file) {
+          const newImages = { ...images };
+          const imageKey = `image${index + 1}`;
+          const previewKey = `${imageKey}Preview`;
+
+          // Clean up old blob URL if it exists
+          if (
+            newImages[previewKey] &&
+            newImages[previewKey].startsWith("blob:")
+          ) {
+            URL.revokeObjectURL(newImages[previewKey]);
+          }
+
+          newImages[imageKey] = file;
+          newImages[previewKey] = URL.createObjectURL(file);
+          onImagesChange(newImages);
+        }
+      };
+
+      const removeImage = (index) => {
+        const newImages = { ...images };
+        const imageKey = `image${index + 1}`;
+        const previewKey = `${imageKey}Preview`;
+
+        // Revoke object URL to prevent memory leaks (only for blob URLs)
+        if (
+          newImages[previewKey] &&
+          newImages[previewKey].startsWith("blob:")
+        ) {
+          URL.revokeObjectURL(newImages[previewKey]);
+        }
+
+        delete newImages[imageKey];
+        delete newImages[previewKey];
+        onImagesChange(newImages);
+      };
+
+      const getImagePreview = (index) => {
+        const imageKey = `image${index + 1}`;
+        const previewKey = `${imageKey}Preview`;
+
+        // Return preview first (for new uploads), then fallback to original image (for existing)
+        return images[previewKey] || images[imageKey];
+      };
+
+      const hasImage = (index) => {
+        const imageKey = `image${index + 1}`;
+        const previewKey = `${imageKey}Preview`;
+        return !!(images[imageKey] || images[previewKey]);
+      };
+
+      return (
+        <div className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            {Array.from({ length: maxImages }).map((_, index) => {
+              const imagePreview = getImagePreview(index);
+              const imageExists = hasImage(index);
+
+              return (
+                <div key={index} className="relative">
+                  <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg overflow-hidden hover:border-blue-400 transition-colors">
+                    {imageExists && imagePreview ? (
+                      <>
+                        <img
+                          src={imagePreview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error(
+                              `Failed to load image ${index + 1}:`,
+                              imagePreview
+                            );
+                            // Fallback to placeholder or remove the broken image
+                            e.target.src = "/api/placeholder/300/300";
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        {/* Image indicator */}
+                        <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1 rounded">
+                          {index + 1}
+                        </div>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => fileRefs.current[index]?.click()}
+                        className="w-full h-full flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
+                      >
+                        <ImageIcon className="w-6 h-6 mb-1" />
+                        <span className="text-xs">Add Image</span>
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={(el) => (fileRefs.current[index] = el)}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange(index, e.target.files[0])}
+                    className="hidden"
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-500">
+            You can upload up to {maxImages} images. Images will be displayed in
+            the order uploaded.
+            {Object.keys(images).filter((key) => !key.includes("Preview"))
+              .length > 0 &&
+              ` Currently: ${
+                Object.keys(images).filter((key) => !key.includes("Preview"))
+                  .length
+              } image(s)`}
+          </p>
+        </div>
+      );
+    }
   );
 
   const handleItemDelete = useCallback(
@@ -818,12 +986,15 @@ const CategoriesScreen = () => {
 
   const resetItemForm = useCallback(() => {
     // Clean up any blob URLs
-    Object.keys(itemForm.images).forEach(key => {
-      if (key.includes('Preview') && itemForm.images[key]?.startsWith('blob:')) {
+    Object.keys(itemForm.images).forEach((key) => {
+      if (
+        key.includes("Preview") &&
+        itemForm.images[key]?.startsWith("blob:")
+      ) {
         URL.revokeObjectURL(itemForm.images[key]);
       }
     });
-    
+
     setItemForm({
       name: "",
       description: "",
@@ -860,9 +1031,9 @@ const CategoriesScreen = () => {
   }, []);
 
   const handleItemImagesChange = useCallback((newImages) => {
-    setItemForm(prev => ({
+    setItemForm((prev) => ({
       ...prev,
-      images: newImages
+      images: newImages,
     }));
   }, []);
 
@@ -959,84 +1130,97 @@ const CategoriesScreen = () => {
     ]
   );
 
- // In CategoriesScreen.js - Add debugging to handleItemSubmit
-const handleItemSubmit = useCallback(
-  async (e) => {
-    e.preventDefault();
-    try {
-      console.log('=== FRONTEND CREATE ITEM DEBUG ===');
-      console.log('selectedCategory:', selectedCategory?.name, 'ID:', selectedCategory?.id);
-      console.log('selectedSubCategory:', selectedSubCategory?.name, 'ID:', selectedSubCategory?.id);
-      console.log('editingItem:', editingItem?.name);
-      
-      const submitData = {
-        name: itemForm.name,
-        description: itemForm.description,
-        price: itemForm.price,
-        colors: itemForm.colors,
-        sizes: itemForm.sizes,
-        outOfStock: itemForm.outOfStock,
-        images: {}
-      };
+  // In CategoriesScreen.js - Add debugging to handleItemSubmit
+  const handleItemSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      try {
+        console.log("=== FRONTEND CREATE ITEM DEBUG ===");
+        console.log(
+          "selectedCategory:",
+          selectedCategory?.name,
+          "ID:",
+          selectedCategory?.id
+        );
+        console.log(
+          "selectedSubCategory:",
+          selectedSubCategory?.name,
+          "ID:",
+          selectedSubCategory?.id
+        );
+        console.log("editingItem:", editingItem?.name);
 
-      // Handle multiple images
-      Object.keys(itemForm.images).forEach(key => {
-        if (key.startsWith('image') && !key.includes('Preview')) {
-          submitData.images[key] = itemForm.images[key];
+        const submitData = {
+          name: itemForm.name,
+          description: itemForm.description,
+          price: itemForm.price,
+          colors: itemForm.colors,
+          sizes: itemForm.sizes,
+          outOfStock: itemForm.outOfStock,
+          images: {},
+        };
+
+        // Handle multiple images
+        Object.keys(itemForm.images).forEach((key) => {
+          if (key.startsWith("image") && !key.includes("Preview")) {
+            submitData.images[key] = itemForm.images[key];
+          }
+        });
+
+        console.log("submitData:", {
+          name: submitData.name,
+          hasImages: Object.keys(submitData.images).length > 0,
+          targetSubCategory: selectedSubCategory?.id,
+        });
+
+        let result;
+        if (editingItem) {
+          console.log("UPDATING existing item");
+          result = await dispatch(
+            updateItem({
+              categoryId: selectedCategory.id,
+              itemId: editingItem.id,
+              itemData: submitData,
+              subCategoryId: selectedSubCategory?.id,
+            })
+          );
+        } else {
+          console.log(
+            "CREATING new item in subcategory:",
+            selectedSubCategory?.id || "main category"
+          );
+          result = await dispatch(
+            createItem({
+              categoryId: selectedCategory.id,
+              itemData: submitData,
+              subCategoryId: selectedSubCategory?.id,
+            })
+          );
         }
-      });
 
-      console.log('submitData:', {
-        name: submitData.name,
-        hasImages: Object.keys(submitData.images).length > 0,
-        targetSubCategory: selectedSubCategory?.id
-      });
+        console.log("Redux result type:", result.type);
+        console.log("=== END FRONTEND DEBUG ===");
 
-      let result;
-      if (editingItem) {
-        console.log('UPDATING existing item');
-        result = await dispatch(
-          updateItem({
-            categoryId: selectedCategory.id,
-            itemId: editingItem.id,
-            itemData: submitData,
-            subCategoryId: selectedSubCategory?.id,
-          })
-        );
-      } else {
-        console.log('CREATING new item in subcategory:', selectedSubCategory?.id || 'main category');
-        result = await dispatch(
-          createItem({
-            categoryId: selectedCategory.id,
-            itemData: submitData,
-            subCategoryId: selectedSubCategory?.id,
-          })
-        );
+        if (result.type.endsWith("/fulfilled")) {
+          resetItemForm();
+          dispatch(closeModal("itemModal"));
+          dispatch(setEditingItem(null));
+        } else {
+          console.error("Item creation/update failed:", result);
+        }
+      } catch (error) {
+        console.error("Error saving item:", error);
       }
-
-      console.log('Redux result type:', result.type);
-      console.log('=== END FRONTEND DEBUG ===');
-
-      if (result.type.endsWith("/fulfilled")) {
-        resetItemForm();
-        dispatch(closeModal("itemModal"));
-        dispatch(setEditingItem(null));
-      } else {
-        console.error('Item creation/update failed:', result);
-      }
-    } catch (error) {
-      console.error("Error saving item:", error);
-    }
-  },
-  [
-    itemForm,
-    editingItem,
-    selectedCategory,
-    selectedSubCategory,
-    dispatch,
-    resetItemForm,
-  ]
-);
+    },
+    [
+      itemForm,
+      editingItem,
+      selectedCategory,
+      selectedSubCategory,
+      dispatch,
+      resetItemForm,
+    ]
+  );
   // ==================== MODAL CLOSE HANDLERS ====================
   const handleCloseCategoryModal = useCallback(() => {
     if (
@@ -1064,8 +1248,11 @@ const handleItemSubmit = useCallback(
 
   const handleCloseItemModal = useCallback(() => {
     // Clean up any blob URLs from item images
-    Object.keys(itemForm.images).forEach(key => {
-      if (key.includes('Preview') && itemForm.images[key]?.startsWith('blob:')) {
+    Object.keys(itemForm.images).forEach((key) => {
+      if (
+        key.includes("Preview") &&
+        itemForm.images[key]?.startsWith("blob:")
+      ) {
         URL.revokeObjectURL(itemForm.images[key]);
       }
     });
@@ -1643,7 +1830,10 @@ const handleItemSubmit = useCallback(
                           </button>
                           <button
                             onClick={() =>
-                              handleSubCategoryDelete(subCategory.id, subCategory.name)
+                              handleSubCategoryDelete(
+                                subCategory.id,
+                                subCategory.name
+                              )
                             }
                             className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-sm"
                           >
@@ -1950,17 +2140,21 @@ const handleItemSubmit = useCallback(
                           {/* Display primary image - always prioritize image1 from images object */}
                           <img
                             src={
-                              item.images?.image1 || 
-                              item.image1 || 
-                              item.image || 
+                              item.images?.image1 ||
+                              item.image1 ||
+                              item.image ||
                               "/api/placeholder/300/200"
                             }
                             alt={item.name}
                             className="w-full h-32 sm:h-40 object-cover"
                           />
                           {/* Image indicators for multiple images */}
-                          {(item.images?.image1 || item.images?.image2 || item.images?.image3 || 
-                            item.image1 || item.image2 || item.image3) && (
+                          {(item.images?.image1 ||
+                            item.images?.image2 ||
+                            item.images?.image3 ||
+                            item.image1 ||
+                            item.image2 ||
+                            item.image3) && (
                             <div className="absolute bottom-2 left-2 flex gap-1">
                               {(item.images?.image1 || item.image1) && (
                                 <div className="w-2 h-2 bg-white rounded-full opacity-80"></div>
@@ -1986,7 +2180,9 @@ const handleItemSubmit = useCallback(
                               <Edit className="w-3.5 h-3.5 text-gray-700" />
                             </button>
                             <button
-                              onClick={() => handleItemDelete(item.id, item.name)}
+                              onClick={() =>
+                                handleItemDelete(item.id, item.name)
+                              }
                               className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-sm"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-red-600" />

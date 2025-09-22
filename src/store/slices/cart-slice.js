@@ -225,19 +225,48 @@ const utils = {
     return `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   },
 
+  // ENHANCED: normalizeItem with universal image support
   normalizeItem: (item) => {
     const id = item.id || item._id || utils.generateCartItemId();
     const name = item.name || item.itemName || "";
     const price = parseFloat(item.price) || 0;
+
+    // ENHANCED: Preserve all image structures
+    const imageData = {};
+    
+    // Preserve single image (legacy)
+    if (item.image) {
+      imageData.image = item.image;
+    }
+    
+    // Preserve multiple images object (new structure)
+    if (item.images && typeof item.images === 'object' && !Array.isArray(item.images)) {
+      imageData.images = { ...item.images };
+    }
+    
+    // Preserve direct image fields (old structure)
+    if (item.image1) imageData.image1 = item.image1;
+    if (item.image2) imageData.image2 = item.image2;
+    if (item.image3) imageData.image3 = item.image3;
+    
+    // Preserve array structure
+    if (item.images && Array.isArray(item.images)) {
+      imageData.images = [...item.images];
+    }
+    
+    // Fallback for imageUrl
+    if (item.imageUrl && !imageData.image) {
+      imageData.image = item.imageUrl;
+    }
 
     return {
       id,
       name,
       price,
       description: item.description || "",
-      image: item.image || "",
       category: item.category || "",
       originalData: item,
+      ...imageData, // Spread all image data
     };
   },
 
@@ -605,7 +634,7 @@ const cartSlice = createSlice({
       storage.save(state);
     },
 
-    // ENHANCED: addToCart with debugging
+    // ENHANCED: addToCart with universal image support
     addToCart: (state, action) => {
       const { item, dates, allowDuplicates = false } = action.payload;
 
@@ -613,7 +642,14 @@ const cartSlice = createSlice({
         item: item?.name, 
         dates, 
         allowDuplicates,
-        currentItems: state.items?.length || 0
+        currentItems: state.items?.length || 0,
+        itemImages: {
+          hasImage: !!item.image,
+          hasImagesObject: !!(item.images && typeof item.images === 'object' && !Array.isArray(item.images)),
+          hasImage1: !!item.image1,
+          hasImagesArray: !!(item.images && Array.isArray(item.images)),
+          imageStructure: item.images ? (Array.isArray(item.images) ? 'array' : typeof item.images) : 'none'
+        }
       });
 
       if (!item || !item.name || item.price === undefined) {
@@ -626,17 +662,38 @@ const cartSlice = createSlice({
       state.error = null;
       state.validationErrors = {};
 
-      // Normalize item data
+      // ENHANCED: Normalize item data with all image structures preserved
       const normalizedItem = {
         id: item.id || item._id || utils.generateCartItemId(),
         name: item.name || item.itemName || "",
         itemName: item.name || item.itemName || "",
         price: parseFloat(item.price) || 0,
         description: item.description || "",
-        image: item.image || item.imageUrl || "",
         category: item.category || "",
         originalData: item,
+        // ENHANCED: Preserve ALL image data using conditional spreading
+        ...(item.image && { image: item.image }),
+        ...(item.images && typeof item.images === 'object' && !Array.isArray(item.images) && { images: { ...item.images } }),
+        ...(item.image1 && { image1: item.image1 }),
+        ...(item.image2 && { image2: item.image2 }),
+        ...(item.image3 && { image3: item.image3 }),
+        ...(item.images && Array.isArray(item.images) && { images: [...item.images] }),
+        ...(item.imageUrl && !item.image && { image: item.imageUrl }),
+        // Also preserve colors and sizes if they exist
+        ...(item.colors && Array.isArray(item.colors) && { colors: [...item.colors] }),
+        ...(item.sizes && Array.isArray(item.sizes) && { sizes: [...item.sizes] }),
+        ...(item.outOfStock !== undefined && { outOfStock: item.outOfStock }),
       };
+
+      console.log('🖼️ Normalized item image data:', {
+        hasImage: !!normalizedItem.image,
+        hasImagesObject: !!(normalizedItem.images && typeof normalizedItem.images === 'object' && !Array.isArray(normalizedItem.images)),
+        hasImage1: !!normalizedItem.image1,
+        hasImage2: !!normalizedItem.image2,
+        hasImage3: !!normalizedItem.image3,
+        imagesObjectKeys: normalizedItem.images && typeof normalizedItem.images === 'object' && !Array.isArray(normalizedItem.images) ? Object.keys(normalizedItem.images) : [],
+        imagesArrayLength: Array.isArray(normalizedItem.images) ? normalizedItem.images.length : 0
+      });
 
       // Check for existing item (prevent duplicates unless explicitly allowed)
       if (!allowDuplicates) {
@@ -674,7 +731,7 @@ const cartSlice = createSlice({
         );
       }
 
-      // Create cart item
+      // ENHANCED: Create cart item with ALL image data preserved
       const cartItem = {
         cartId: utils.generateCartItemId(),
         id: normalizedItem.id,
@@ -682,7 +739,6 @@ const cartSlice = createSlice({
         itemName: normalizedItem.name,
         description: normalizedItem.description,
         price: normalizedItem.price,
-        image: normalizedItem.image,
         category: normalizedItem.category,
         quantity: 1,
         duration,
@@ -690,9 +746,29 @@ const cartSlice = createSlice({
         orderMode: state.orderMode,
         addedAt: new Date().toISOString(),
         originalData: normalizedItem.originalData,
+        // ENHANCED: Preserve ALL image structures
+        ...(normalizedItem.image && { image: normalizedItem.image }),
+        ...(normalizedItem.images && { images: normalizedItem.images }),
+        ...(normalizedItem.image1 && { image1: normalizedItem.image1 }),
+        ...(normalizedItem.image2 && { image2: normalizedItem.image2 }),
+        ...(normalizedItem.image3 && { image3: normalizedItem.image3 }),
+        // Also preserve colors, sizes, and stock status
+        ...(normalizedItem.colors && { colors: normalizedItem.colors }),
+        ...(normalizedItem.sizes && { sizes: normalizedItem.sizes }),
+        ...(normalizedItem.outOfStock !== undefined && { outOfStock: normalizedItem.outOfStock }),
       };
 
-      console.log('✅ Adding cart item:', cartItem);
+      console.log('✅ Created cart item with preserved image data:', {
+        name: cartItem.name,
+        hasImage: !!cartItem.image,
+        hasImagesObject: !!(cartItem.images && typeof cartItem.images === 'object' && !Array.isArray(cartItem.images)),
+        hasImage1: !!cartItem.image1,
+        hasImage2: !!cartItem.image2,
+        hasImage3: !!cartItem.image3,
+        hasColors: !!(cartItem.colors && cartItem.colors.length > 0),
+        hasSizes: !!(cartItem.sizes && cartItem.sizes.length > 0),
+        outOfStock: !!cartItem.outOfStock
+      });
 
       // Add to cart
       state.items.push(cartItem);
@@ -706,8 +782,11 @@ const cartSlice = createSlice({
       // Save to storage
       storage.save(state);
       
-      console.log('✅ Item added to cart successfully, new total items:', state.items.length);
-      console.log('💰 New cart total:', state.totalAmount);
+      console.log('✅ Item added to cart successfully with all image data preserved');
+      console.log('📊 New cart stats:', {
+        totalItems: state.items.length,
+        cartTotal: state.totalAmount
+      });
     },
 
     removeFromCart: (state, action) => {

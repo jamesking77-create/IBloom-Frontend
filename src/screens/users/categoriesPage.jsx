@@ -909,7 +909,7 @@ const CategoriesPage = () => {
         onClose={handleCloseModal}
         item={modalItem}
         category={category}
-        onAddToCart={handleModalAddToCart}
+        onAddToCart={handleModalAddToCart}view
         navigationSource={navigationSource}
       />
 

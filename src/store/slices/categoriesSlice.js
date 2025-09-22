@@ -263,7 +263,6 @@ const createItemAPI = async (categoryId, itemData, subCategoryId = null) => {
   const response = await post(url, formData, config);
   return response?.data?.data;
 };
-
 const updateItemAPI = async (categoryId, itemId, itemData, subCategoryId = null) => {
   const config = {
     headers: {
@@ -312,17 +311,22 @@ const updateItemAPI = async (categoryId, itemId, itemData, subCategoryId = null)
 
   // Use the correct route structure based on your backend routes
   let url;
-  if (subCategoryId) {
+  if (subCategoryId !== null && subCategoryId !== undefined && subCategoryId !== '') {
     // Use the subcategory-specific route
     url = `/api/services/categories/${categoryId}/subcategories/${subCategoryId}/items/${itemId}`;
+    console.log('🔄 Updating item in subcategory:', subCategoryId);
   } else {
     // Use the main category route
     url = `/api/services/categories/${categoryId}/items/${itemId}`;
+    console.log('🔄 Updating item in main category');
   }
 
+  console.log('🚀 UPDATE API URL:', url);
   const response = await put(url, formData, config);
   return response?.data?.data;
 };
+
+
 const deleteItemAPI = async (categoryId, itemId, subCategoryId = null) => {
   const config = {
     headers: {
@@ -332,14 +336,17 @@ const deleteItemAPI = async (categoryId, itemId, subCategoryId = null) => {
 
   // Use the correct route structure based on your backend routes
   let url;
-  if (subCategoryId) {
+  if (subCategoryId !== null && subCategoryId !== undefined && subCategoryId !== '') {
     // Use the subcategory-specific route
     url = `/api/services/categories/${categoryId}/subcategories/${subCategoryId}/items/${itemId}`;
+    console.log('🗑️ Deleting item from subcategory:', subCategoryId);
   } else {
     // Use the main category route
     url = `/api/services/categories/${categoryId}/items/${itemId}`;
+    console.log('🗑️ Deleting item from main category');
   }
 
+  console.log('🚀 DELETE API URL:', url);
   const response = await del(url, config);
   return response?.data?.data;
 };

@@ -560,14 +560,14 @@ const ItemDetailsModal = ({
                   }`}>
                     {formatPrice(item.price)}
                   </div>
-                  <div className="text-xs text-gray-600">
+                  {/* <div className="text-xs text-gray-600">
                     Per {item.orderMode === 'booking' ? 'hour' : 'day'}
                   </div>
                 </div>
                 <div className="text-xs text-gray-600 text-right">
                   Duration: {item.duration || 1}<br/>
                   {item.orderMode === 'booking' ? 'hour(s)' : 'day(s)'}
-                </div>
+                </div> */}
               </div>
             </div>
 

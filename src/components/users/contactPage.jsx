@@ -1,6 +1,7 @@
 // screens/users/ContactPage.js
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchCompanyInfo } from "../../store/slices/publicCompanyInfoSlice";
 import { post } from "../../utils/api";
 import {
   Phone,
@@ -14,9 +15,11 @@ import {
   MessageCircle,
   CheckCircle,
   AlertCircle,
+  Smartphone,
 } from "lucide-react";
 
 const ContactPage = () => {
+  const dispatch = useDispatch();
   const [isVisible, setIsVisible] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -29,14 +32,17 @@ const ContactPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
-  const { userData } = useSelector((state) => state.profile);
-
-  // Admin email fallback
-  const adminEmail = userData?.email || "adeoyemayopoelijah@gmail.com";
+  
+  // Get company info from public Redux store
+  const { companyInfo, companyInfoLoading } = useSelector((state) => state.public);
 
   useEffect(() => {
     setIsVisible(true);
-  }, []);
+    // Fetch company info if not already loaded
+    if (!companyInfo?.email) {
+      dispatch(fetchCompanyInfo());
+    }
+  }, [dispatch, companyInfo?.email]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -54,7 +60,7 @@ const ContactPage = () => {
 
     try {
       const payload = {
-        to: adminEmail,
+        to: companyInfo?.email || "adeoyemayopoelijah@gmail.com",
         subject: `New Contact Inquiry from ${formData.name} - ${
           formData.eventType || "General"
         }`,
@@ -83,7 +89,6 @@ const ContactPage = () => {
         },
       };
 
-      // Send to /api/mailer/send-email
       await post("/api/mailer/send-email", payload);
 
       setSubmitStatus("success");
@@ -109,11 +114,9 @@ const ContactPage = () => {
   // Helper function to generate map URL based on location
   const getMapUrl = (location) => {
     if (!location) {
-      // Fallback to default location
       return "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.789!2d3.4347!3d6.4548!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103bf50c5b1f5b5b%3A0x2d4e8f6a7c9b1234!2s178B%20Corporation%20Drive%2C%20Dolphin%20Estate%2C%20Ikoyi%2C%20Lagos%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1735649200";
     }
 
-    // Create a search-based embed URL that doesn't require API key
     const encodedLocation = encodeURIComponent(location);
     return `https://maps.google.com/maps?width=100%25&height=600&hl=en&q=${encodedLocation}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
   };
@@ -140,26 +143,26 @@ const ContactPage = () => {
     {
       icon: Phone,
       title: "Phone",
-      details: userData?.phone || "No phone number available",
-      href: userData?.phone ? `tel:${userData.phone}` : "#",
+      details: companyInfo?.phone || companyInfo?.mobile || "No phone number available",
+      href: companyInfo?.phone ? `tel:${companyInfo.phone}` : companyInfo?.mobile ? `tel:${companyInfo.mobile}` : "#",
       color: "text-green-600",
-      available: !!userData?.phone,
+      available: !!(companyInfo?.phone || companyInfo?.mobile),
     },
     {
       icon: Mail,
       title: "Email",
-      details: userData?.email || "No email available",
-      href: userData?.email ? `mailto:${userData.email}` : "#",
+      details: companyInfo?.email || "No email available",
+      href: companyInfo?.email ? `mailto:${companyInfo.email}` : "#",
       color: "text-blue-600",
-      available: !!userData?.email,
+      available: !!companyInfo?.email,
     },
     {
       icon: MapPin,
       title: "Location",
-      details: userData?.location || "No location available",
-      href: getLocationSearchUrl(userData?.location),
+      details: companyInfo?.location || "No location available",
+      href: getLocationSearchUrl(companyInfo?.location),
       color: "text-red-600",
-      available: !!userData?.location,
+      available: !!companyInfo?.location,
     },
     {
       icon: Clock,
@@ -180,6 +183,18 @@ const ContactPage = () => {
     "Graduation",
     "Other",
   ];
+
+  // Show loading state while company info is being fetched
+  if (companyInfoLoading && !companyInfo?.email) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading contact information...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -238,12 +253,12 @@ const ContactPage = () => {
                     href={info.href}
                     target={info.title === "Location" ? "_blank" : "_self"}
                     rel={info.title === "Location" ? "noopener noreferrer" : ""}
-                    className="text-gray-600 hover:text-blue-600 transition-colors duration-200 text-sm break-words"
+                    className="text-gray-800 hover:text-blue-600 transition-colors duration-200 text-sm break-words font-semibold"
                   >
                     {info.details}
                   </a>
                 ) : (
-                  <span className="text-gray-600 text-sm break-words">
+                  <span className="text-gray-800 text-sm break-words font-semibold">
                     {info.details}
                   </span>
                 )}
@@ -415,19 +430,18 @@ const ContactPage = () => {
               <div className="h-full flex flex-col">
                 {/* Interactive Map */}
                 <div className="rounded-2xl h-64 mb-6 overflow-hidden shadow-lg border border-gray-200 relative group">
-                  {userData?.location ? (
+                  {companyInfo?.location ? (
                     <iframe
-                      src={getMapUrl(userData.location)}
+                      src={getMapUrl(companyInfo.location)}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
                       allowFullScreen=""
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
-                      title={`IBLOOM Location - ${userData.location}`}
+                      title={`IBLOOM Location - ${companyInfo.location}`}
                     ></iframe>
                   ) : (
-                    // Fallback map when no location data is available
                     <iframe
                       src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.789!2d3.4347!3d6.4548!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103bf50c5b1f5b5b%3A0x2d4e8f6a7c9b1234!2s178B%20Corporation%20Drive%2C%20Dolphin%20Estate%2C%20Ikoyi%2C%20Lagos%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1735649200"
                       width="100%"
@@ -443,11 +457,11 @@ const ContactPage = () => {
                   {/* Map overlay with company info */}
                   <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg">
                     <p className="text-sm font-semibold text-gray-800">
-                      {userData?.name || "IBLOOM Rentals"}
+                      {companyInfo?.name || "IBLOOM Rentals"}
                     </p>
                     <p className="text-xs text-gray-600 max-w-xs truncate">
-                      {userData?.location
-                        ? userData.location.split(",")[0]
+                      {companyInfo?.location
+                        ? companyInfo.location.split(",")[0]
                         : "No 178B Corporation Drive"}
                     </p>
                   </div>
@@ -456,11 +470,11 @@ const ContactPage = () => {
                 {/* Get Directions Button */}
                 <div className="mb-8">
                   <a
-                    href={getDirectionsUrl(userData?.location)}
+                    href={getDirectionsUrl(companyInfo?.location)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center transform hover:scale-105 transition-all duration-300 shadow-lg ${
-                      !userData?.location ? "opacity-60 cursor-not-allowed" : ""
+                      !companyInfo?.location ? "opacity-60 cursor-not-allowed" : ""
                     }`}
                   >
                     <MapPin className="w-5 h-5 mr-3" />
@@ -477,9 +491,17 @@ const ContactPage = () => {
                     <p className="text-gray-600">
                       We respond to all inquiries within 24 hours. For urgent
                       requests, please call us directly{" "}
-                      {userData?.phone
-                        ? `at ${userData.phone}`
-                        : "via the contact form"}
+                      {companyInfo?.phone ? (
+                        <>
+                          at <span className="font-bold text-gray-800">{companyInfo.phone}</span>
+                        </>
+                      ) : companyInfo?.mobile ? (
+                        <>
+                          at <span className="font-bold text-gray-800">{companyInfo.mobile}</span>
+                        </>
+                      ) : (
+                        "via the contact form"
+                      )}
                       .
                     </p>
                   </div>
@@ -554,7 +576,7 @@ const ContactPage = () => {
                 View FAQ
               </button>
               <a
-                href="mailto:ibloomrentals@gmail.com"
+                href={companyInfo?.email ? `mailto:${companyInfo.email}` : "mailto:ibloomrentals@gmail.com"}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 font-medium inline-block"
               >
                 Send MSG

@@ -37,7 +37,7 @@ const FaqPage = () => {
         },
         {
           question: "What are your delivery charges?",
-          answer: "Delivery charges vary based on distance and order size. Local deliveries (within 15 miles) start at $50. We offer free delivery for orders over $500 within our standard service area."
+          answer: "Delivery charges vary based on distance and order size. Local deliveries (within 15 miles) for orders over $500 within our standard service area."
         },
         {
           question: "Can I pick up items myself?",

@@ -394,9 +394,7 @@ const ItemDetailsModal = ({
                 }`}>
                   {formatPrice(item.price)}
                 </div>
-                <div className="text-xs sm:text-sm text-gray-600">
-                  Per {item.orderMode === 'booking' ? 'hour' : 'day'} • Duration: {item.duration || 1} {item.orderMode === 'booking' ? 'hour(s)' : 'day(s)'}
-                </div>
+                
               </div>
 
               {/* Description - Mobile Readable */}

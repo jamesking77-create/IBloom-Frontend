@@ -163,9 +163,6 @@ const Bookings = () => {
     };
   };
 
-  console.log("this is current booking------->>>>>>>>>>>>>>>>>>>>>>>>>>: ", currentViewingBooking);
-  
-
   // Save bank details to localStorage
   const saveBankDetails = (bankDetails) => {
     try {
@@ -1365,7 +1362,7 @@ const Bookings = () => {
                         <div className="flex gap-3">
                           {service.image && (
                             <img
-                              src={service.images.image1}
+                              src={service.image}
                               alt={service.name}
                               className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                             />

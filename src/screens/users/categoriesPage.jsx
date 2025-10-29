@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { ArrowLeft, Package, Search, Filter, AlertTriangle, CheckCircle, Palette, Ruler, Grid, List, Eye } from 'lucide-react';
+import { ArrowLeft, Package, Search, Filter, AlertTriangle, CheckCircle, Palette, Ruler, Grid, List, Eye, Check } from 'lucide-react';
 import { fetchCategories } from '../../store/slices/categoriesSlice';
 import { addToCart, selectCartItems, openCart } from '../../store/slices/cart-slice';
 import FloatingChatBox from '../../UI/floatingChatBox';
@@ -24,6 +24,7 @@ const CategoriesPage = () => {
   const [modalItem, setModalItem] = useState(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
+  const [selectedColors, setSelectedColors] = useState({});
 
   // Navigation source detection
   const navigationSource = location.state?.from || 'home';
@@ -98,6 +99,13 @@ const CategoriesPage = () => {
 
     setFilteredItems(items);
   }, [category, selectedSubCategory, searchQuery, sortBy]);
+
+  const handleColorSelect = (itemId, color) => {
+  setSelectedColors(prev => ({
+    ...prev,
+    [itemId]: color
+  }));
+};
 
   // Handle subcategory selection
   const handleSubCategoryClick = (subCategory) => {
@@ -180,106 +188,118 @@ const CategoriesPage = () => {
   };
 
   // Enhanced add to cart process
-  const addToCartProcess = (item) => {
-    console.log('🛒 Original item:', item);
-    console.log('🛒 Navigation source:', navigationSource);
-    
-    let processedPrice;
-    if (typeof item.price === 'string') {
-      processedPrice = parseFloat(item.price.replace(/[₦\s,]/g, ''));
-    } else {
-      processedPrice = parseFloat(item.price || 0);
-    }
-    
-    if (isNaN(processedPrice) || processedPrice <= 0) {
-      console.error('❌ Invalid price detected:', item.price);
-      alert('Error: Invalid item price. Please contact support.');
-      return;
-    }
-    
-    const processedItem = {
-      ...item,
-      price: processedPrice
-    };
-    
-    console.log('✅ Processed item price:', processedPrice);
-    
-    const isCartEmpty = cartItems.length === 0;
-    
-    // For order process, always navigate back after adding item
-    if (fromOrderProcess) {
-      dispatch(addToCart({ 
-        item: processedItem,
-        dates: null,
-        allowDuplicates: false 
-      }));
-      
-      console.log('📦 Navigating back to Order Process after adding item');
-      navigate('/orderprocess', { 
-        state: { 
-          fromWarehouse: true,
-          warehouseInfo: warehouseInfo,
-          addedItem: processedItem
-        } 
-      });
-      return;
-    }
-    
-    // For event booking or default behavior
-    if (isCartEmpty) {
-      navigateToCorrectScreen(processedItem);
-    } else {
-      dispatch(addToCart({ 
-        item: processedItem,
-        dates: null,
-        allowDuplicates: false 
-      }));
-      
-      setSelectedItem(processedItem);
-      setShowPopup(true);
-    }
+const addToCartProcess = (item) => {
+  console.log('🛒 Original item:', item);
+  console.log('🛒 Navigation source:', navigationSource);
+  
+  let processedPrice;
+  if (typeof item.price === 'string') {
+    processedPrice = parseFloat(item.price.replace(/[₦\s,]/g, ''));
+  } else {
+    processedPrice = parseFloat(item.price || 0);
+  }
+  
+  if (isNaN(processedPrice) || processedPrice <= 0) {
+    console.error('❌ Invalid price detected:', item.price);
+    alert('Error: Invalid item price. Please contact support.');
+    return;
+  }
+  
+  // NEW: Get selected color for this item
+  const selectedColor = selectedColors[item.id];
+  
+  // NEW: Append color to item name if selected
+  const itemName = selectedColor 
+    ? `${item.name} - Color: ${selectedColor}`
+    : item.name;
+  
+  const processedItem = {
+    ...item,
+    name: itemName,  // ← Modified name with color
+    selectedColor: selectedColor, // ← Store selected color separately too
+    price: processedPrice
   };
+  
+  console.log('✅ Processed item with color:', processedItem);
+  
+  const isCartEmpty = cartItems.length === 0;
+  
+  // For order process, always navigate back after adding item
+  if (fromOrderProcess) {
+    dispatch(addToCart({ 
+      item: processedItem,
+      dates: null,
+      allowDuplicates: false 
+    }));
+    
+    console.log('📦 Navigating back to Order Process after adding item');
+    navigate('/orderprocess', { 
+      state: { 
+        fromWarehouse: true,
+        warehouseInfo: warehouseInfo,
+        addedItem: processedItem
+      } 
+    });
+    return;
+  }
+  
+  // For event booking or default behavior
+  if (isCartEmpty) {
+    navigateToCorrectScreen(processedItem);
+  } else {
+    dispatch(addToCart({ 
+      item: processedItem,
+      dates: null,
+      allowDuplicates: false 
+    }));
+    
+    setSelectedItem(processedItem);
+    setShowPopup(true);
+  }
+};
 
-  // Handle add to cart from modal
-  const handleModalAddToCart = (item) => {
-    console.log('🛒 Adding to cart from modal:', item);
+const handleModalAddToCart = (item) => {
+  console.log('🛒 Adding to cart from modal:', item);
+  
+  // Item already has selectedColor if it was set in modal
+  // No need to modify here, just pass it through
+  
+  if (fromOrderProcess) {
+    dispatch(addToCart({ 
+      item: item,
+      dates: null,
+      allowDuplicates: false 
+    }));
     
-    if (fromOrderProcess) {
-      dispatch(addToCart({ 
-        item: item,
-        dates: null,
-        allowDuplicates: false 
-      }));
-      
-      handleCloseModal();
-      
-      console.log('📦 Navigating back to Order Process from modal');
-      navigate('/order-process', { 
-        state: { 
-          fromWarehouse: true,
-          warehouseInfo: warehouseInfo,
-          addedItem: item
-        } 
-      });
-      return;
-    }
+    handleCloseModal();
     
-    const isCartEmpty = cartItems.length === 0;
+    console.log('📦 Navigating back to Order Process from modal');
+    navigate('/order-process', { 
+      state: { 
+        fromWarehouse: true,
+        warehouseInfo: warehouseInfo,
+        addedItem: item
+      } 
+    });
+    return;
+  }
+  
+  const isCartEmpty = cartItems.length === 0;
+  
+  if (isCartEmpty) {
+    navigateToCorrectScreen(item);
+  } else {
+    dispatch(addToCart({ 
+      item: item,
+      dates: null,
+      allowDuplicates: false 
+    }));
     
-    if (isCartEmpty) {
-      navigateToCorrectScreen(item);
-    } else {
-      dispatch(addToCart({ 
-        item: item,
-        dates: null,
-        allowDuplicates: false 
-      }));
-      
-      setSelectedItem(item);
-      setShowPopup(true);
-      handleCloseModal();
-    }
-  };
+    setSelectedItem(item);
+    setShowPopup(true);
+    handleCloseModal();
+  }
+};  
 
   const handleClosePopup = () => {
     setShowPopup(false);
@@ -654,240 +674,305 @@ const CategoriesPage = () => {
                 ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 : "space-y-4"
             }>
-              {filteredItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  className={
-                    viewMode === 'grid'
-                      ? "group cursor-pointer transform transition-all duration-500 hover:scale-105"
-                      : "group cursor-pointer bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex items-center gap-4"
-                  }
-                  style={viewMode === 'grid' ? { animationDelay: `${index * 100}ms` } : {}}
-                >
-                  {viewMode === 'grid' ? (
-                    // Grid View
-                    <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50">
-                      <div className="relative overflow-hidden">
-                        <img
-                          src={getPrimaryImage(item)}
-                          alt={item.name}
-                          className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer"
-                          onError={(e) => {
-                            e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop';
-                          }}
-                          onClick={() => handleItemClick(item)}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        
-                        {/* Price Badge */}
-                        {item.price && (
-                          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-lg">
-                            <div className="flex items-center text-green-600 font-semibold">
-                              <span className="text-sm">₦</span>
-                              <span className="ml-1">{formatPrice(item.price).replace('₦', '')}</span>
-                            </div>
-                          </div>
-                        )}
+{filteredItems.map((item, index) => (
+  <div
+    key={item.id}
+    className={
+      viewMode === 'grid' 
+        ? "group transform transition-all duration-500 hover:scale-105"
+        : "group cursor-pointer bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex items-center gap-4"
+    }
+    style={viewMode === 'grid' ? { animationDelay: `${index * 100}ms` } : {}}
+  >
+    {viewMode === 'grid' ? (
+      // Grid View
+      <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50">
+        {/* IMAGE SECTION - This opens modal */}
+        <div 
+          className="relative overflow-hidden cursor-pointer"
+          onClick={() => handleItemClick(item)}
+        >
+          <img
+            src={getPrimaryImage(item)}
+            alt={item.name}
+            className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
+            onError={(e) => {
+              e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop';
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          {/* Price Badge */}
+          {item.price && (
+            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-lg">
+              <div className="flex items-center text-green-600 font-semibold">
+                <span className="text-sm">₦</span>
+                <span className="ml-1">{formatPrice(item.price).replace('₦', '')}</span>
+              </div>
+            </div>
+          )}
 
-                        {/* Stock Status Badge */}
-                        <div className="absolute top-4 left-4">
-                          {item.outOfStock ? (
-                            <div className="bg-red-500/90 backdrop-blur-sm text-white rounded-full px-2 py-1 flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" />
-                              <span className="text-xs font-medium">Out of Stock</span>
-                            </div>
-                          ) : (
-                            <div className="bg-green-500/90 backdrop-blur-sm text-white rounded-full px-2 py-1 flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3" />
-                              <span className="text-xs font-medium">In Stock</span>
-                            </div>
-                          )}
-                        </div>
+          {/* Stock Status Badge */}
+          <div className="absolute top-4 left-4">
+            {item.outOfStock ? (
+              <div className="bg-red-500/90 backdrop-blur-sm text-white rounded-full px-2 py-1 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                <span className="text-xs font-medium">Out of Stock</span>
+              </div>
+            ) : (
+              <div className="bg-green-500/90 backdrop-blur-sm text-white rounded-full px-2 py-1 flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" />
+                <span className="text-xs font-medium">In Stock</span>
+              </div>
+            )}
+          </div>
 
-                        {/* Navigation context badge */}
-                        {(fromEventBooking || fromOrderProcess) && (
-                          <div className="absolute bottom-4 left-4 bg-blue-600/90 backdrop-blur-sm text-white rounded-full px-2 py-1 text-xs font-medium">
-                            {fromEventBooking ? '📅' : '📦'}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="p-6">
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300 cursor-pointer"
-                            onClick={() => handleItemClick(item)}>
-                          {item.name}
-                        </h3>
-                        <p className="text-gray-600 mb-4 line-clamp-2">
-                          {item.description}
-                        </p>
-                        
-                        {/* Item Colors and Sizes */}
-                        <div className="space-y-2 mb-4">
-                          {item.colors && item.colors.length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <Palette className="w-4 h-4 text-gray-400" />
-                              <div className="flex flex-wrap gap-1">
-                                {item.colors.slice(0, 3).map((color, index) => (
-                                  <span key={index} className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
-                                    {color}
-                                  </span>
-                                ))}
-                                {item.colors.length > 3 && (
-                                  <span className="text-xs text-gray-400">+{item.colors.length - 3}</span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {item.sizes && item.sizes.length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <Ruler className="w-4 h-4 text-gray-400" />
-                              <div className="flex flex-wrap gap-1">
-                                {item.sizes.slice(0, 3).map((size, index) => (
-                                  <span key={index} className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
-                                    {size}
-                                  </span>
-                                ))}
-                                {item.sizes.length > 3 && (
-                                  <span className="text-xs text-gray-400">+{item.sizes.length - 3}</span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => handleItemClick(item)}
-                            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors duration-300 font-medium flex items-center justify-center gap-2"
-                          >
-                            <Eye className="w-4 h-4" />
-                            View Details
-                          </button>
-                          <button
-                            onClick={() => addToCartProcess(item)}
-                            disabled={item.outOfStock}
-                            className={`flex-1 px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
-                              item.outOfStock
-                                ? 'bg-gray-300 text-gray-500'
-                                : fromEventBooking 
-                                ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
-                                : fromOrderProcess
-                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
-                                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
-                            }`}
-                          >
-                            {item.outOfStock 
-                              ? 'Out of Stock' 
-                              : fromEventBooking ? 'Add to Booking' 
-                              : fromOrderProcess ? 'Add to Order' 
-                              : 'Add To Cart'
-                            }
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    // List View
-                    <>
-                      <div className="relative flex-shrink-0">
-                        <img
-                          src={getPrimaryImage(item)}
-                          alt={item.name}
-                          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg cursor-pointer"
-                          onError={(e) => {
-                            e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=200&h=200&fit=crop';
-                          }}
-                          onClick={() => handleItemClick(item)}
-                        />
-                        {/* Stock indicator for list view */}
-                        <div className="absolute -top-1 -right-1">
-                          {item.outOfStock ? (
-                            <AlertTriangle className="w-4 h-4 text-red-500" />
-                          ) : (
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate cursor-pointer hover:text-blue-600 transition-colors"
-                                onClick={() => handleItemClick(item)}>
-                              {item.name}
-                            </h3>
-                            <p className="text-gray-600 text-sm line-clamp-2 mb-2">
-                              {item.description}
-                            </p>
-                            
-                            {/* Colors and sizes in list view */}
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-3">
-                              {item.colors && item.colors.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <Palette className="w-3 h-3" />
-                                  <span>{item.colors.length} colors</span>
-                                </div>
-                              )}
-                              {item.sizes && item.sizes.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <Ruler className="w-3 h-3" />
-                                  <span>{item.sizes.length} sizes</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-1">
-                                {item.outOfStock ? (
-                                  <span className="text-red-600 font-medium">Out of Stock</span>
-                                ) : (
-                                  <span className="text-green-600 font-medium">In Stock</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col items-end gap-2">
-                            {item.price && (
-                              <div className="text-lg font-semibold text-green-600">
-                                {formatPrice(item.price)}
-                              </div>
-                            )}
-                            
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleItemClick(item)}
-                                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium text-sm flex items-center gap-1"
-                              >
-                                <Eye className="w-4 h-4" />
-                                Details
-                              </button>
-                              <button
-                                onClick={() => addToCartProcess(item)}
-                                disabled={item.outOfStock}
-                                className={`px-4 py-2 rounded-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
-                                  item.outOfStock
-                                    ? 'bg-gray-300 text-gray-500'
-                                    : fromEventBooking 
-                                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                                    : fromOrderProcess
-                                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                }`}
-                              >
-                                {item.outOfStock 
-                                  ? 'Out of Stock' 
-                                  : fromEventBooking ? 'Add to Booking' 
-                                  : fromOrderProcess ? 'Add to Order' 
-                                  : 'Add To Cart'
-                                }
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
+          {/* Navigation context badge */}
+          {(fromEventBooking || fromOrderProcess) && (
+            <div className="absolute bottom-4 left-4 bg-blue-600/90 backdrop-blur-sm text-white rounded-full px-2 py-1 text-xs font-medium">
+              {fromEventBooking ? '📅' : '📦'}
+            </div>
+          )}
+        </div>
+        
+        {/* CONTENT SECTION - NOT clickable to open modal */}
+        <div className="p-6">
+          {/* Title - This opens modal */}
+          <h3 
+            className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300 cursor-pointer"
+            onClick={() => handleItemClick(item)}
+          >
+            {item.name}
+          </h3>
+          <p className="text-gray-600 mb-4 line-clamp-2">
+            {item.description}
+          </p>
+          
+          {/* Item Colors and Sizes - ISOLATED, won't trigger modal */}
+          <div className="space-y-2 mb-4">
+            {/* COLOR SELECTION - FIXED */}
+            {item.colors && item.colors.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs font-medium text-gray-600">
+                    {selectedColors[item.id] ? `Selected: ${selectedColors[item.id]}` : 'Select Color:'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {item.colors.map((color, colorIndex) => (
+                    <button
+                      key={colorIndex}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleColorSelect(item.id, color);
+                      }}
+                      className={`text-xs px-3 py-1.5 rounded-full font-bold transition-all transform hover:scale-105 active:scale-95 ${
+                        selectedColors[item.id] === color
+                          ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-300'
+                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      }`}
+                      type="button"
+                    >
+                      {color}
+                      {selectedColors[item.id] === color && (
+                        <Check className="w-3 h-3 inline ml-1" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* SIZES - Display only */}
+            {item.sizes && item.sizes.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Ruler className="w-4 h-4 text-gray-400" />
+                <div className="flex flex-wrap gap-1">
+                  {item.sizes.slice(0, 3).map((size, sizeIndex) => (
+                    <span key={sizeIndex} className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                      {size}
+                    </span>
+                  ))}
+                  {item.sizes.length > 3 && (
+                    <span className="text-xs text-gray-400">+{item.sizes.length - 3}</span>
                   )}
                 </div>
-              ))}
+              </div>
+            )}
+          </div>
+          
+          {/* ACTION BUTTONS */}
+          <div className="flex gap-3">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleItemClick(item);
+              }}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors duration-300 font-medium flex items-center justify-center gap-2"
+              type="button"
+            >
+              <Eye className="w-4 h-4" />
+              View Details
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Check if color is required but not selected
+                if (item.colors && item.colors.length > 0 && !selectedColors[item.id]) {
+                  alert('Please select a color first');
+                  return;
+                }
+                
+                addToCartProcess(item);
+              }}
+              disabled={item.outOfStock}
+              className={`flex-1 px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+                item.outOfStock
+                  ? 'bg-gray-300 text-gray-500'
+                  : fromEventBooking 
+                  ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
+                  : fromOrderProcess
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
+                  : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+              }`}
+              type="button"
+            >
+              {item.outOfStock 
+                ? 'Out of Stock' 
+                : fromEventBooking ? 'Add to Booking' 
+                : fromOrderProcess ? 'Add to Order' 
+                : 'Add To Cart'
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : (
+      // List View - Keep existing structure
+      <>
+        <div className="relative flex-shrink-0">
+          <img
+            src={getPrimaryImage(item)}
+            alt={item.name}
+            className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg cursor-pointer"
+            onError={(e) => {
+              e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=200&h=200&fit=crop';
+            }}
+            onClick={() => handleItemClick(item)}
+          />
+          <div className="absolute -top-1 -right-1">
+            {item.outOfStock ? (
+              <AlertTriangle className="w-4 h-4 text-red-500" />
+            ) : (
+              <CheckCircle className="w-4 h-4 text-green-500" />
+            )}
+          </div>
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate cursor-pointer hover:text-blue-600 transition-colors"
+                  onClick={() => handleItemClick(item)}>
+                {item.name}
+              </h3>
+              <p className="text-gray-600 text-sm line-clamp-2 mb-2">
+                {item.description}
+              </p>
+              
+              {/* Colors and sizes in list view */}
+              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-3">
+                {item.colors && item.colors.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Palette className="w-3 h-3" />
+                    {selectedColors[item.id] ? (
+                      <span className="font-bold text-blue-600">{selectedColors[item.id]}</span>
+                    ) : (
+                      <span>{item.colors.length} colors</span>
+                    )}
+                  </div>
+                )}
+                {item.sizes && item.sizes.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Ruler className="w-3 h-3" />
+                    <span>{item.sizes.length} sizes</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1">
+                  {item.outOfStock ? (
+                    <span className="text-red-600 font-medium">Out of Stock</span>
+                  ) : (
+                    <span className="text-green-600 font-medium">In Stock</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col items-end gap-2">
+              {item.price && (
+                <div className="text-lg font-semibold text-green-600">
+                  {formatPrice(item.price)}
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleItemClick(item);
+                  }}
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium text-sm flex items-center gap-1"
+                  type="button"
+                >
+                  <Eye className="w-4 h-4" />
+                  Details
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (item.colors && item.colors.length > 0 && !selectedColors[item.id]) {
+                      alert('Please select a color first');
+                      return;
+                    }
+                    
+                    addToCartProcess(item);
+                  }}
+                  disabled={item.outOfStock}
+                  className={`px-4 py-2 rounded-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                    item.outOfStock
+                      ? 'bg-gray-300 text-gray-500'
+                      : fromEventBooking 
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : fromOrderProcess
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                  type="button"
+                >
+                  {item.outOfStock 
+                    ? 'Out of Stock' 
+                    : fromEventBooking ? 'Add to Booking' 
+                    : fromOrderProcess ? 'Add to Order' 
+                    : 'Add To Cart'
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+))}
+
             </div>
           )}
         </div>

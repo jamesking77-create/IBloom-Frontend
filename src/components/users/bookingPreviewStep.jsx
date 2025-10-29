@@ -215,10 +215,13 @@ const handleConfirmBooking = useCallback(async () => {
         quantity: item.quantity || 1,
         duration: item.duration || 1,
         subtotal: (item.price || 0) * (item.quantity || 1),
-        image: item.image || item.imageUrl || "",
+        image: item.images?.image1 || item.imageUrl || "",
         orderMode: item.orderMode || "booking",
         addedAt: item.addedAt || new Date().toISOString(),
       })),
+
+     
+      
 
       pricing: {
         itemsSubtotal: calculations.subtotal || 0,
@@ -587,13 +590,14 @@ const handleConfirmBooking = useCallback(async () => {
               const itemPrice = item.price || 0;
               const itemQuantity = item.quantity || 1;
               const itemImage =
-                item.image ||
+                item.images?.image1 ||
                 item.imageUrl ||
                 "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
               const itemDuration = item.duration || 1;
               const orderMode = item.orderMode || "booking";
               const itemTotal = itemPrice * itemQuantity;
-
+                
+                
               return (
                 <div
                   key={cartId}

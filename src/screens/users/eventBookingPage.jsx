@@ -461,11 +461,11 @@ const EventBookingPage = () => {
   const handleNext = useCallback(() => {
     if (isNavigating) return;
 
-    console.log("=== 🚀 EventBookingPage handleNext called ===");
-    console.log("Current step:", currentStep);
-    console.log("Cart items:", cartItems.length);
-    console.log("Selected dates:", selectedDates);
-    console.log("Customer info:", customerInfo);
+    // console.log("=== 🚀 EventBookingPage handleNext called ===");
+    // console.log("Current step:", currentStep);
+    // console.log("Cart items:", cartItems.length);
+    // console.log("Selected dates:", selectedDates);
+    // console.log("Customer info:", customerInfo);
 
     setIsNavigating(true);
     setLocalError("");

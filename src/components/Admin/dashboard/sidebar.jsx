@@ -13,6 +13,7 @@ import {
   Home,
   Quote,
   ChevronLeft,
+  ImageDownIcon,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png";
@@ -66,6 +67,12 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
       icon: <User size={20} />,
       label: "Profile",
       path: "profile",
+      count: 0 // Profile doesn't have notifications
+    },
+{
+      icon: <ImageDownIcon size={20} />,
+      label: "Gallery",
+      path: "gallery",
       count: 0 // Profile doesn't have notifications
     },
     {

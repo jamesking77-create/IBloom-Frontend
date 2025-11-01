@@ -12,6 +12,7 @@ import categoriesReducer from "./slices/categoriesSlice";
 import quotesReducer from "./slices/quote-slice";
 import cartReducer from "./slices/cart-slice";
 import publicReducer from './slices/publicCompanyInfoSlice'
+import galleryReducer from "./slices/gallery-slice";
 const categorySyncMiddleware = (store) => (next) => (action) => {
   const result = next(action);
 
@@ -46,6 +47,7 @@ export const store = configureStore({
     quotes:quotesReducer,
     cart: cartReducer,
     public: publicReducer,
+    gallery: galleryReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

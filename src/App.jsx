@@ -17,7 +17,7 @@ import MailerScreen from "./screens/admin/dashboard/mailer";
 import CategoriesScreen from "./screens/admin/dashboard/categoriesScreen";
 import UserLayout from "./screens/users/userLayout";
 import HomePage from "./screens/users/homepage";
-import { QuotesList } from "./screens/admin/dashboard/quotesList";
+import  QuotesList  from "./screens/admin/dashboard/quotesList";
 import CategoriesPage from "./screens/users/categoriesPage";
 import EventBookingPage from "./screens/users/eventBookingPage";
 import AboutPage from "./components/users/aboutUsPage";
@@ -37,6 +37,7 @@ import { WebSocketProvider } from './utils/hooks/webSocketContext';
 // ADD THESE NEW IMPORTS
 import { GlobalNotificationProvider } from './components/globalNotificationProvider';
 import GlobalNotificationDisplay from './components/globalNotificationDisplay';
+import Gallery from "./screens/admin/dashboard/Gallery";
 
 const useKeepAlive = () => {
   useEffect(() => {
@@ -347,11 +348,12 @@ function AppContent() {
               <Route index element={<DashboardHome />} />
               <Route path="home" element={<DashboardHome />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="gallery" element={<Gallery />} />
               <Route path="bookings" element={<Bookings />} />
               <Route path="orders" element={<OrdersManagement />} />
               <Route path="mailer" element={<MailerScreen />} />
               <Route path="categories" element={<CategoriesScreen />} />
-              <Route path="quotes" element={<QuotesList />} />
+              <Route path="quotes" element={<QuotesList/>} />
             </Route>
 
             {/* User/Public Routes - NO Authentication Required */}

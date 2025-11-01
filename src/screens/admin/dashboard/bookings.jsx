@@ -81,10 +81,10 @@ const Bookings = () => {
   const pagination = useSelector(selectPagination);
   const selectedBooking = useSelector(selectSelectedBooking);
   const bookingStats = useSelector(selectBookingStats);
-  
+
   // ADDED: Get profile data for company info
-  const profileData = useSelector(state => state.profile.userData);
-  const profileLoading = useSelector(state => state.profile.loading);
+  const profileData = useSelector((state) => state.profile.userData);
+  const profileLoading = useSelector((state) => state.profile.loading);
 
   // WebSocket connection for real-time updates
   const {
@@ -175,12 +175,12 @@ const Bookings = () => {
   // ADDED: Helper function to get company info from profile with fallbacks
   const getCompanyInfoFromProfile = () => {
     const savedBankDetails = loadSavedBankDetails();
-    
+
     return {
       name: profileData?.name || "Your Event Company",
       address: profileData?.location || "123 Business Street",
       city: "Lagos", // You might want to extract this from location if it's structured
-      state: "Lagos State", // You might want to extract this from location if it's structured  
+      state: "Lagos State", // You might want to extract this from location if it's structured
       country: "Nigeria",
       phone: profileData?.phone || profileData?.mobile || "+234 123 456 7890",
       email: profileData?.email || "billing@youreventcompany.com",
@@ -1958,86 +1958,131 @@ const Bookings = () => {
                             Included
                           </th>
                           <th className="text-left p-3 font-medium text-gray-700">
-                            Description
+                            Description / Price
+                          </th>
+                          <th className="text-right p-3 font-medium text-gray-700 w-24">
+                            Amount
                           </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {invoiceData.additionalServices.map(
-                          (service, index) => (
-                            <tr
-                              key={service.id}
-                              className={service.required ? "bg-yellow-50" : ""}
-                            >
-                              <td className="p-3">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-gray-900">
-                                    {service.name}
-                                  </span>
-                                  {service.required && (
-                                    <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">
-                                      Required
+                          (service, index) => {
+                            const isPriceableService =
+                              service.name.toLowerCase().includes("delivery") ||
+                              service.name
+                                .toLowerCase()
+                                .includes("installation");
+                            const showPriceInput =
+                              isPriceableService && service.included === true;
+
+                            return (
+                              <tr
+                                key={service.id}
+                                className={
+                                  service.required ? "bg-yellow-50" : ""
+                                }
+                              >
+                                <td className="p-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-gray-900">
+                                      {service.name}
                                     </span>
+                                    {service.required && (
+                                      <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">
+                                        Required
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-3 text-center">
+                                  <div className="flex items-center justify-center gap-4">
+                                    <label className="flex items-center gap-2">
+                                      <input
+                                        type="radio"
+                                        name={`service-${service.id}`}
+                                        checked={service.included === true}
+                                        onChange={() =>
+                                          updateAdditionalServiceField(
+                                            index,
+                                            "included",
+                                            true
+                                          )
+                                        }
+                                        className="text-green-600"
+                                      />
+                                      <span className="text-sm font-medium text-green-600">
+                                        Yes
+                                      </span>
+                                    </label>
+                                    <label className="flex items-center gap-2">
+                                      <input
+                                        type="radio"
+                                        name={`service-${service.id}`}
+                                        checked={service.included === false}
+                                        onChange={() =>
+                                          updateAdditionalServiceField(
+                                            index,
+                                            "included",
+                                            false
+                                          )
+                                        }
+                                        className="text-red-600"
+                                      />
+                                      <span className="text-sm font-medium text-red-600">
+                                        No
+                                      </span>
+                                    </label>
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  {showPriceInput ? (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm text-gray-600">
+                                        ₦
+                                      </span>
+                                      <input
+                                        type="number"
+                                        value={service.price || ""}
+                                        onChange={(e) =>
+                                          updateAdditionalServiceField(
+                                            index,
+                                            "price",
+                                            parseFloat(e.target.value) || 0
+                                          )
+                                        }
+                                        className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+                                        placeholder="Enter price"
+                                        min="0"
+                                        step="0.01"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <textarea
+                                      value={service.description}
+                                      onChange={(e) =>
+                                        updateAdditionalServiceField(
+                                          index,
+                                          "description",
+                                          e.target.value
+                                        )
+                                      }
+                                      className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 resize-none"
+                                      rows="2"
+                                      placeholder="Add service description..."
+                                    />
                                   )}
-                                </div>
-                              </td>
-                              <td className="p-3 text-center">
-                                <div className="flex items-center justify-center gap-4">
-                                  <label className="flex items-center gap-2">
-                                    <input
-                                      type="radio"
-                                      name={`service-${service.id}`}
-                                      checked={service.included === true}
-                                      onChange={() =>
-                                        updateAdditionalServiceField(
-                                          index,
-                                          "included",
-                                          true
-                                        )
-                                      }
-                                      className="text-green-600"
-                                    />
-                                    <span className="text-sm font-medium text-green-600">
-                                      Yes
-                                    </span>
-                                  </label>
-                                  <label className="flex items-center gap-2">
-                                    <input
-                                      type="radio"
-                                      name={`service-${service.id}`}
-                                      checked={service.included === false}
-                                      onChange={() =>
-                                        updateAdditionalServiceField(
-                                          index,
-                                          "included",
-                                          false
-                                        )
-                                      }
-                                      className="text-red-600"
-                                    />
-                                    <span className="text-sm font-medium text-red-600">
-                                      No
-                                    </span>
-                                  </label>
-                                </div>
-                              </td>
-                              <td className="p-3">
-                                <textarea
-                                  value={service.description}
-                                  onChange={(e) =>
-                                    updateAdditionalServiceField(
-                                      index,
-                                      "description",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 resize-none"
-                                  rows="2"
-                                  placeholder="Add service description..."
-                                />
-                              </td>
-                            </tr>
-                          )
+                                </td>
+                                <td className="p-3 text-right font-medium">
+                                  {showPriceInput && service.price ? (
+                                    formatCurrency(service.price)
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          }
                         )}
                       </tbody>
                     </table>
@@ -2050,6 +2095,78 @@ const Bookings = () => {
 
                 {/* Totals */}
                 <div className="flex justify-end mb-6">
+                  <div className="w-80">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span>{formatCurrency(invoiceData.subtotal)}</span>
+                      </div>
+                      {(() => {
+                        const additionalServicesTotal =
+                          invoiceData.additionalServices
+                            .filter((s) => s.included === true && s.price)
+                            .reduce((sum, s) => sum + (s.price || 0), 0);
+
+                        return additionalServicesTotal > 0 ? (
+                          <div className="flex justify-between text-sm text-gray-600">
+                            <span>Additional Services:</span>
+                            <span>
+                              {formatCurrency(additionalServicesTotal)}
+                            </span>
+                          </div>
+                        ) : null;
+                      })()}
+                      {(() => {
+                        const additionalServicesTotal =
+                          invoiceData.additionalServices
+                            .filter((s) => s.included === true && s.price)
+                            .reduce((sum, s) => sum + (s.price || 0), 0);
+                        const subtotalWithAdditional =
+                          invoiceData.subtotal + additionalServicesTotal;
+                        const taxAmount =
+                          subtotalWithAdditional * invoiceData.taxRate;
+
+                        return (
+                          <div className="flex justify-between">
+                            <span>
+                              Tax ({(invoiceData.taxRate * 100).toFixed(1)}%):
+                            </span>
+                            <span>{formatCurrency(taxAmount)}</span>
+                          </div>
+                        );
+                      })()}
+                      {(() => {
+                        const additionalServicesTotal =
+                          invoiceData.additionalServices
+                            .filter((s) => s.included === true && s.price)
+                            .reduce((sum, s) => sum + (s.price || 0), 0);
+                        const subtotalWithAdditional =
+                          invoiceData.subtotal + additionalServicesTotal;
+                        const taxAmount =
+                          subtotalWithAdditional * invoiceData.taxRate;
+                        const grandTotal = subtotalWithAdditional + taxAmount;
+
+                        return (
+                          <div className="border-t pt-2 flex justify-between font-bold text-lg">
+                            <span>Total:</span>
+                            <span>{formatCurrency(grandTotal)}</span>
+                          </div>
+                        );
+                      })()}
+                      {invoiceData.requiresDeposit && (
+                        <div className="flex justify-between text-orange-600">
+                          <span>Deposit Required:</span>
+                          <span>
+                            {formatCurrency(invoiceData.depositAmount)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Totals */}
+                {/* <div className="flex justify-end mb-6">
                   <div className="w-80">
                     <div className="space-y-2">
                       <div className="flex justify-between">
@@ -2076,7 +2193,7 @@ const Bookings = () => {
                       )}
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Notes and Terms */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

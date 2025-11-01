@@ -17,7 +17,7 @@ import MailerScreen from "./screens/admin/dashboard/mailer";
 import CategoriesScreen from "./screens/admin/dashboard/categoriesScreen";
 import UserLayout from "./screens/users/userLayout";
 import HomePage from "./screens/users/homepage";
-import  QuotesList  from "./screens/admin/dashboard/quotesList";
+import { QuotesList } from "./screens/admin/dashboard/quotesList";
 import CategoriesPage from "./screens/users/categoriesPage";
 import EventBookingPage from "./screens/users/eventBookingPage";
 import AboutPage from "./components/users/aboutUsPage";
@@ -353,7 +353,7 @@ function AppContent() {
               <Route path="orders" element={<OrdersManagement />} />
               <Route path="mailer" element={<MailerScreen />} />
               <Route path="categories" element={<CategoriesScreen />} />
-              <Route path="quotes" element={<QuotesList/>} />
+              <Route path="quotes" element={<QuotesList />} />
             </Route>
 
             {/* User/Public Routes - NO Authentication Required */}

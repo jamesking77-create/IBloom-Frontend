@@ -1,6 +1,11 @@
 // screens/user/CategoriesPage.js - OPTIMIZED WITH SUBCATEGORIES AND ENHANCED UI
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import {
+  useParams,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import { ArrowLeft, Package, Search, Filter, AlertTriangle, CheckCircle, Palette, Ruler, Grid, List, Eye, Check } from 'lucide-react';
 import { fetchCategories } from '../../store/slices/categoriesSlice';
@@ -14,6 +19,7 @@ const CategoriesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const [searchParams] = useSearchParams();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
@@ -39,6 +45,40 @@ const CategoriesPage = () => {
   // Get the specific category
   const category = categories.find(cat => cat.id === parseInt(categoryId)) || location.state?.category;
 
+  const findItemById = (category, itemId) => {
+    if (!category || !itemId) return null;
+    const numericItemId = parseInt(itemId, 10);
+
+    // Check top-level items
+    let found = category.items?.find(
+      (i) => parseInt(i.id, 10) === numericItemId,
+    );
+    if (found) return found;
+
+    // Check inside subCategories
+    for (const sub of category.subCategories || []) {
+      found = sub.items?.find((i) => parseInt(i.id, 10) === numericItemId);
+      if (found) return found;
+    }
+
+    return null;
+  };
+
+
+  useEffect(() => {
+    if (!category) return;
+
+    const itemIdFromUrl = searchParams.get("item");
+    if (itemIdFromUrl) {
+      const foundItem = findItemById(category, itemIdFromUrl);
+      if (foundItem) {
+        setModalItem(foundItem);
+        setShowDetailsModal(true);
+      }
+    }
+  }, [category, searchParams]);
+
+  
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);

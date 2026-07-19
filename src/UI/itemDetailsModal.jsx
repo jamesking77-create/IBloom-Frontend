@@ -210,7 +210,7 @@ const ItemDetailsModal = ({
 
   // Add near handleShare
 const handleShareToWhatsApp = () => {
-  const phone = "2347071519196"; // your real number
+  const phone = "2348172258085"; // your real number
 
   const shareUrl = `https://ibloomrentals.com/share/${category.id}/${item.id}`;
 

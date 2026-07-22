@@ -19,7 +19,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Eye,
-  MessageCircle, // NEW
+  MessageCircle,
 } from "lucide-react";
 import { addToCart } from "../store/slices/cart-slice";
 
@@ -29,9 +29,9 @@ const ItemDetailsModal = ({
   item,
   category,
   onAddToCart,
-  navigationSource, // NEW: Add navigation source prop
-  warehouseInfo, // NEW: Add warehouse info for order process
-  onShowAddedPopup, // NEW: Add callback to show the added popup
+  navigationSource,
+  warehouseInfo,
+  onShowAddedPopup,
 }) => {
   const dispatch = useDispatch();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -40,9 +40,16 @@ const ItemDetailsModal = ({
   const [isZoomed, setIsZoomed] = useState(false);
   const [images, setImages] = useState([]);
   const [selectedColor, setSelectedColor] = useState(null);
+  const [showWhatsAppPicker, setShowWhatsAppPicker] = useState(false); // NEW
 
   const fromOrderProcess = navigationSource === "orderprocess";
   const fromEventBooking = navigationSource === "eventbooking";
+
+  // NEW: the two WhatsApp numbers to choose between
+  const whatsappNumbers = [
+    { label: "Sales Line 1", phone: "2348172258085" },
+    { label: "Sales Line 2", phone: "2348124862088" },
+  ];
 
   // Enhanced image extraction that supports all image structures
   useEffect(() => {
@@ -105,6 +112,7 @@ const ItemDetailsModal = ({
       setSelectedImageIndex(0);
       setShowAddedAnimation(false);
       setSelectedColor(null);
+      setShowWhatsAppPicker(false); // NEW: reset picker on open
     } else {
       document.body.style.overflow = "unset";
     }
@@ -208,13 +216,11 @@ const ItemDetailsModal = ({
     }
   };
 
-  // Add near handleShare
-const handleShareToWhatsApp = () => {
-  const phone = "2348172258085"; // your real number
+  // NEW: build the shared WhatsApp message text
+  const buildWhatsAppMessage = () => {
+    const shareUrl = `https://ibloomrentals.com/share/${category.id}/${item.id}`;
 
-  const shareUrl = `https://ibloomrentals.com/share/${category.id}/${item.id}`;
-
-  const message = `Hi, I'm interested in this item:
+    return `Hi, I'm interested in this item:
 
 *${item.name}*${selectedColor ? ` (Color: ${selectedColor})` : ""}
 ${category ? `Category: ${category.name}` : ""}
@@ -224,12 +230,22 @@ ${item.outOfStock ? "⚠️ Currently Out of Stock" : "✅ In Stock"}
 ${item.description ? item.description.slice(0, 150) : ""}
 
 View item: ${shareUrl}`;
+  };
 
-  window.open(
-    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
-    "_blank",
-  );
-};
+  // NEW: opens wa.me for the chosen number and closes the picker
+  const sendToWhatsAppNumber = (phone) => {
+    const message = buildWhatsAppMessage();
+    window.open(
+      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+      "_blank",
+    );
+    setShowWhatsAppPicker(false);
+  };
+
+  // CHANGED: now just toggles the picker instead of sending directly
+  const handleShareToWhatsApp = () => {
+    setShowWhatsAppPicker((prev) => !prev);
+  };
 
   const nextImage = () => {
     setSelectedImageIndex((prev) => (prev + 1) % images.length);
@@ -247,7 +263,8 @@ View item: ${shareUrl}`;
     e.target.src =
       "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop";
   };
-return (
+
+  return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
       <div
         className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden transform transition-all duration-300 scale-100 animate-fadeIn"
@@ -645,15 +662,52 @@ return (
         {/* Fixed Bottom Section - FIXED: Proper positioning */}
         <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
           <div className="max-w-4xl mx-auto space-y-3">
-            {/* Big bold WhatsApp button */}
-            <button
-              onClick={handleShareToWhatsApp}
-              type="button"
-              className="w-full py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg bg-[#25D366] hover:bg-[#1ebc59] text-white flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
-            >
-              <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" fill="white" />
-              Send to WhatsApp
-            </button>
+            {/* NEW: WhatsApp button wrapped in relative container for the popup */}
+            <div className="relative">
+              {showWhatsAppPicker && (
+                <>
+                  {/* Backdrop to close picker on outside click */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowWhatsAppPicker(false)}
+                  />
+                  <div className="absolute bottom-full mb-2 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-20">
+                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
+                      Choose a WhatsApp number
+                    </div>
+                    {whatsappNumbers.map((num) => (
+                      <button
+                        key={num.phone}
+                        onClick={() => sendToWhatsAppNumber(num.phone)}
+                        type="button"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left"
+                      >
+                        <MessageCircle
+                          className="w-5 h-5 text-[#25D366]"
+                          fill="#25D366"
+                        />
+                        <span className="font-medium text-gray-800">
+                          {num.label}
+                        </span>
+                        <span className="ml-auto text-sm text-gray-400">
+                          {num.phone}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Big bold WhatsApp button */}
+              <button
+                onClick={handleShareToWhatsApp}
+                type="button"
+                className="w-full py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg bg-[#25D366] hover:bg-[#1ebc59] text-white flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
+              >
+                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" fill="white" />
+                Send to WhatsApp
+              </button>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <button
@@ -726,6 +780,3 @@ return (
 };
 
 export default ItemDetailsModal;
-
-
-

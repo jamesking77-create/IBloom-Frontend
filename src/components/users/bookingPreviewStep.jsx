@@ -27,6 +27,7 @@ import {
   AlertCircleIcon,
   Truck,
   Settings,
+  MessageCircle, // NEW
 } from "lucide-react";
 
 import {
@@ -34,8 +35,8 @@ import {
   selectCreatingBooking,
   selectBookingCreated,
   selectLastCreatedBookingId,
-  resetBookingCreation
-} from '../../store/slices/booking-slice'; 
+  resetBookingCreation,
+} from "../../store/slices/booking-slice";
 
 const BookingPreviewStep = ({
   customerInfo,
@@ -51,18 +52,26 @@ const BookingPreviewStep = ({
   loading,
 }) => {
   const dispatch = useDispatch();
-  
+
   // Local state for UI interactions
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showWhatsAppPicker, setShowWhatsAppPicker] = useState(false); // NEW
+
+  // NEW: the two WhatsApp numbers to choose between
+  const whatsappNumbers = [
+    { label: "Sales Line 1", phone: "2348172258085" },
+    { label: "Sales Line 2", phone: "2348124862088" },
+  ];
 
   // FIXED: Memoized calculations to prevent unnecessary re-renders
   const calculations = useMemo(() => {
-    const subtotal = cartItems?.reduce((total, item) => {
-      const itemPrice = parseFloat(item.price) || 0;
-      const quantity = parseInt(item.quantity) || 1;
-      return total + (itemPrice * quantity);
-    }, 0) || 0;
+    const subtotal =
+      cartItems?.reduce((total, item) => {
+        const itemPrice = parseFloat(item.price) || 0;
+        const quantity = parseInt(item.quantity) || 1;
+        return total + itemPrice * quantity;
+      }, 0) || 0;
 
     const tax = subtotal * 0.075; // 7.5% tax
     const finalTotal = subtotal + tax;
@@ -71,14 +80,18 @@ const BookingPreviewStep = ({
       subtotal,
       tax,
       total: finalTotal,
-      itemCount: cartItems?.reduce((count, item) => count + (parseInt(item.quantity) || 1), 0) || 0
+      itemCount:
+        cartItems?.reduce(
+          (count, item) => count + (parseInt(item.quantity) || 1),
+          0,
+        ) || 0,
     };
   }, [cartItems]);
 
   // FIXED: Improved date formatting with error handling
   const formatDate = useCallback((dateString) => {
     if (!dateString) return "Not selected";
-    
+
     try {
       return new Date(dateString).toLocaleDateString("en-US", {
         weekday: "long",
@@ -94,7 +107,7 @@ const BookingPreviewStep = ({
 
   const formatTime = useCallback((timeString) => {
     if (!timeString) return "Not set";
-    
+
     try {
       return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
         hour: "numeric",
@@ -109,7 +122,7 @@ const BookingPreviewStep = ({
 
   const formatPrice = useCallback((price) => {
     if (!price && price !== 0) return "₦0";
-    
+
     try {
       const numericPrice = parseFloat(price.toString().replace(/[^\d.]/g, ""));
       return `₦${numericPrice.toLocaleString("en-NG")}`;
@@ -126,12 +139,12 @@ const BookingPreviewStep = ({
     try {
       const startDate = new Date(selectedDates.startDate);
       const endDate = new Date(selectedDates.endDate);
-      
+
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 1;
-      
+
       const diffTime = Math.abs(endDate - startDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      
+
       return Math.max(1, diffDays);
     } catch (error) {
       console.warn("Error calculating duration:", error);
@@ -139,145 +152,224 @@ const BookingPreviewStep = ({
     }
   }, [selectedDates]);
 
+  // NEW: Build a full booking summary message — mirrors what handleConfirmBooking sends,
+  // but formatted as readable WhatsApp text instead of an API payload.
+  const buildBookingWhatsAppMessage = useCallback(() => {
+    const duration = calculateDuration();
+
+    const itemLines = (cartItems || [])
+      .map((item, index) => {
+        const itemName = item.itemName || item.name || "Unknown Item";
+        const itemPrice = item.price || 0;
+        const itemQuantity = item.quantity || 1;
+        const itemDuration = item.duration || 1;
+        const orderMode = item.orderMode || "booking";
+        const itemTotal = itemPrice * itemQuantity;
+        const itemImage = item.images?.image1 || item.imageUrl || "";
+
+        return (
+          `${index + 1}. *${itemName}*\n` +
+          `   Qty: ${itemQuantity} | ${itemDuration} ${orderMode === "booking" ? "hr(s)" : "day(s)"}\n` +
+          `   ${formatPrice(itemPrice)} each → ${formatPrice(itemTotal)}` +
+          (itemImage ? `\n   Image: ${itemImage}` : "")
+        );
+      })
+      .join("\n\n");
+
+    return `*New Booking Request*
+
+*Event Details*
+Type: ${customerInfo?.eventType || "Not specified"}
+Host: ${customerInfo?.name || "Not specified"}
+Guests: ${customerInfo?.guests || "Not specified"}
+
+*Schedule*
+Start: ${formatDate(selectedDates?.startDate)}${selectedDates?.multiDay && selectedDates?.endDate !== selectedDates?.startDate ? `\nEnd: ${formatDate(selectedDates?.endDate)}` : ""}
+Time: ${formatTime(selectedDates?.startTime)} - ${formatTime(selectedDates?.endTime)}
+Duration: ${duration} ${duration === 1 ? "Day" : "Days"}
+
+*Location & Contact*
+Venue: ${customerInfo?.location || "Not specified"}
+Phone: ${customerInfo?.phone || "Not specified"}
+Email: ${customerInfo?.email || "Not specified"}
+
+*Delivery/Setup*
+Delivery: ${customerInfo?.delivery === "yes" ? "Yes - Deliver to venue" : customerInfo?.delivery === "no" ? "No - Self pickup" : "Not specified"}
+Setup: ${customerInfo?.installation === "yes" ? "Yes - Professional setup" : customerInfo?.installation === "no" ? "No - Self setup" : "Not specified"}
+
+${customerInfo?.specialRequests ? `*Special Requests*\n${customerInfo.specialRequests}\n\n` : ""}*Services (${calculations.itemCount})*
+
+${itemLines || "No services selected"}
+
+*Pricing*
+Subtotal: ${formatPrice(calculations.subtotal)}
+Tax (7.5%): ${formatPrice(calculations.tax)}
+*Total: ${formatPrice(calculations.total)}*`;
+  }, [
+    cartItems,
+    customerInfo,
+    selectedDates,
+    calculations,
+    calculateDuration,
+    formatDate,
+    formatTime,
+    formatPrice,
+  ]);
+
+  // NEW: opens wa.me for the chosen number with the full booking summary
+  const sendBookingToWhatsAppNumber = useCallback(
+    (phone) => {
+      const message = buildBookingWhatsAppMessage();
+      window.open(
+        `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+        "_blank",
+      );
+      setShowWhatsAppPicker(false);
+    },
+    [buildBookingWhatsAppMessage],
+  );
+
+  // NEW: toggles the number picker
+  const handleShareBookingToWhatsApp = useCallback(() => {
+    setShowWhatsAppPicker((prev) => !prev);
+  }, []);
+
   // FIXED: Improved booking confirmation handler
-const handleConfirmBooking = useCallback(async () => {
-  if (isSubmitting || loading) {
-    console.log("⚠️ Already submitting or loading, ignoring click");
-    return;
-  }
+  const handleConfirmBooking = useCallback(async () => {
+    if (isSubmitting || loading) {
+      console.log("⚠️ Already submitting or loading, ignoring click");
+      return;
+    }
 
-  console.log('🚀 Starting booking confirmation...');
-  
-  // Final validation before submission
-  if (!cartItems || cartItems.length === 0) {
-    console.error("❌ No items in cart");
-    return;
-  }
-  
-  if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
-    console.error("❌ Missing customer information");
-    return;
-  }
-  
-  if (!selectedDates?.startDate || !selectedDates?.endDate) {
-    console.error("❌ Missing date information");
-    return;
-  }
+    console.log("🚀 Starting booking confirmation...");
 
-  setIsSubmitting(true);
+    // Final validation before submission
+    if (!cartItems || cartItems.length === 0) {
+      console.error("❌ No items in cart");
+      return;
+    }
 
-  try {
-    // Create the booking data in the EXACT format your backend expects
-    const bookingData = {
-      bookingId: "BK" + Date.now().toString().slice(-6),
-      bookingDate: new Date().toISOString(),
-      status: "pending_confirmation",
-      orderMode: "booking",
+    if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
+      console.error("❌ Missing customer information");
+      return;
+    }
 
-      // IMPORTANT: Match your backend's expected structure exactly
-      customer: {
-        personalInfo: {
-          name: customerInfo?.name || "",
-          email: customerInfo?.email || "",
-          phone: customerInfo?.phone || "",
+    if (!selectedDates?.startDate || !selectedDates?.endDate) {
+      console.error("❌ Missing date information");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Create the booking data in the EXACT format your backend expects
+      const bookingData = {
+        bookingId: "BK" + Date.now().toString().slice(-6),
+        bookingDate: new Date().toISOString(),
+        status: "pending_confirmation",
+        orderMode: "booking",
+
+        // IMPORTANT: Match your backend's expected structure exactly
+        customer: {
+          personalInfo: {
+            name: customerInfo?.name || "",
+            email: customerInfo?.email || "",
+            phone: customerInfo?.phone || "",
+          },
+          eventDetails: {
+            eventType: customerInfo?.eventType || "",
+            numberOfGuests: customerInfo?.guests || 0,
+            location: customerInfo?.location || "",
+            specialRequests: customerInfo?.specialRequests || "",
+            delivery: customerInfo?.delivery || "no",
+            installation: customerInfo?.installation || "no",
+          },
         },
-        eventDetails: {
-          eventType: customerInfo?.eventType || "",
-          numberOfGuests: customerInfo?.guests || 0,
-          location: customerInfo?.location || "",
-          specialRequests: customerInfo?.specialRequests || "",
-          delivery: customerInfo?.delivery || "no",
-          installation: customerInfo?.installation || "no",
+
+        eventSchedule: {
+          startDate: selectedDates?.startDate || "",
+          endDate: selectedDates?.endDate || "",
+          startTime: selectedDates?.startTime || "",
+          endTime: selectedDates?.endTime || "",
+          isMultiDay: selectedDates?.multiDay || false,
+          durationInDays: calculateDuration(),
+          formatted: {
+            startDate: formatDate(selectedDates?.startDate),
+            endDate: formatDate(selectedDates?.endDate),
+            startTime: formatTime(selectedDates?.startTime),
+            endTime: formatTime(selectedDates?.endTime),
+          },
         },
-      },
 
-      eventSchedule: {
-        startDate: selectedDates?.startDate || "",
-        endDate: selectedDates?.endDate || "",
-        startTime: selectedDates?.startTime || "",
-        endTime: selectedDates?.endTime || "",
-        isMultiDay: selectedDates?.multiDay || false,
-        durationInDays: calculateDuration(),
-        formatted: {
-          startDate: formatDate(selectedDates?.startDate),
-          endDate: formatDate(selectedDates?.endDate),
-          startTime: formatTime(selectedDates?.startTime),
-          endTime: formatTime(selectedDates?.endTime),
+        services: cartItems.map((item, index) => ({
+          serviceId: item.cartId || item.id || `service-${index}`,
+          name: item.itemName || item.name || "Unknown Service",
+          description: item.description || "",
+          category: item.category || "General",
+          unitPrice: item.price || 0,
+          quantity: item.quantity || 1,
+          duration: item.duration || 1,
+          subtotal: (item.price || 0) * (item.quantity || 1),
+          image: item.images?.image1 || item.imageUrl || "",
+          orderMode: item.orderMode || "booking",
+          addedAt: item.addedAt || new Date().toISOString(),
+        })),
+
+        pricing: {
+          itemsSubtotal: calculations.subtotal || 0,
+          taxAmount: calculations.tax || 0,
+          taxRate: 0.075,
+          totalAmount: calculations.total || 0,
+          currency: "NGN",
+          totalItems: calculations.itemCount || 0,
+          totalServices: cartItems.length || 0,
         },
-      },
 
-      services: cartItems.map((item, index) => ({
-        serviceId: item.cartId || item.id || `service-${index}`,
-        name: item.itemName || item.name || "Unknown Service",
-        description: item.description || "",
-        category: item.category || "General",
-        unitPrice: item.price || 0,
-        quantity: item.quantity || 1,
-        duration: item.duration || 1,
-        subtotal: (item.price || 0) * (item.quantity || 1),
-        image: item.images?.image1 || item.imageUrl || "",
-        orderMode: item.orderMode || "booking",
-        addedAt: item.addedAt || new Date().toISOString(),
-      })),
+        systemInfo: {
+          platform: "web",
+          userAgent: navigator.userAgent,
+          timestamp: Date.now(),
+          locale: "en-NG",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          createdAt: new Date().toISOString(),
+          source: "event_booking_page",
+        },
 
-     
-      
+        businessData: {
+          requiresDeposit: true,
+          depositPolicy: "Refundable deposit varies by items selected",
+          cancellationPolicy: "As per terms and conditions",
+          deliveryRequired: customerInfo?.delivery === "yes",
+          setupRequired: customerInfo?.installation === "yes",
+          preferredContact: customerInfo?.email ? "email" : "phone",
+          followUpRequired: true,
+        },
 
-      pricing: {
-        itemsSubtotal: calculations.subtotal || 0,
-        taxAmount: calculations.tax || 0,
-        taxRate: 0.075,
-        totalAmount: calculations.total || 0,
-        currency: "NGN",
-        totalItems: calculations.itemCount || 0,
-        totalServices: cartItems.length || 0,
-      },
+        validation: {
+          hasCustomerInfo: !!(
+            customerInfo?.name &&
+            customerInfo?.email &&
+            customerInfo?.phone
+          ),
+          hasEventSchedule: !!(
+            selectedDates?.startDate && selectedDates?.endDate
+          ),
+          hasServices: cartItems.length > 0,
+          hasPricing: !!(calculations.total && calculations.total > 0),
+        },
+      };
 
-      systemInfo: {
-        platform: "web",
-        userAgent: navigator.userAgent,
-        timestamp: Date.now(),
-        locale: "en-NG",
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        createdAt: new Date().toISOString(),
-        source: "event_booking_page",
-      },
+      const result = await dispatch(
+        createBookingFromCart(bookingData),
+      ).unwrap();
 
-      businessData: {
-        requiresDeposit: true,
-        depositPolicy: "Refundable deposit varies by items selected",
-        cancellationPolicy: "As per terms and conditions",
-        deliveryRequired: customerInfo?.delivery === "yes",
-        setupRequired: customerInfo?.installation === "yes",
-        preferredContact: customerInfo?.email ? "email" : "phone",
-        followUpRequired: true,
-      },
-
-      validation: {
-        hasCustomerInfo: !!(
-          customerInfo?.name &&
-          customerInfo?.email &&
-          customerInfo?.phone
-        ),
-        hasEventSchedule: !!(
-          selectedDates?.startDate && selectedDates?.endDate
-        ),
-        hasServices: cartItems.length > 0,
-        hasPricing: !!(calculations.total && calculations.total > 0),
-      },
-    };
-
-
-    const result = await dispatch(createBookingFromCart(bookingData)).unwrap();
-    
-    console.log("✅ Booking created successfully:", result);
-    
-  } catch (err) {
-    console.error("❌ Error confirming booking:", err);
-  } finally {
-    setIsSubmitting(false);
-  }
-}, [
+      console.log("✅ Booking created successfully:", result);
+    } catch (err) {
+      console.error("❌ Error confirming booking:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
     isSubmitting,
     loading,
     cartItems,
@@ -288,7 +380,7 @@ const handleConfirmBooking = useCallback(async () => {
     formatDate,
     formatTime,
     formatPrice,
-    onSubmit
+    onSubmit,
   ]);
 
   const eventDuration = calculateDuration();
@@ -324,21 +416,21 @@ const handleConfirmBooking = useCallback(async () => {
             <div className="space-y-2 sm:space-y-3 text-gray-700 text-sm sm:text-base">
               <p>
                 • To ensure the safety and return of our rental items, a
-                refundable deposit will be added to your invoice. This amount
-                is not fixed and varies based on your selected items.
+                refundable deposit will be added to your invoice. This amount is
+                not fixed and varies based on your selected items.
               </p>
               <p>
-                • If all items are returned complete and in good condition,
-                your full deposit will be refunded.
+                • If all items are returned complete and in good condition, your
+                full deposit will be refunded.
               </p>
               <p>
-                • If any item is lost or damaged, the cost will be deducted
-                from the deposit.
+                • If any item is lost or damaged, the cost will be deducted from
+                the deposit.
               </p>
               <p>
-                • In cases where the deposit does not cover the full cost of
-                the damaged or missing items, clients will be required to pay
-                the balance to cover replacement or repair.
+                • In cases where the deposit does not cover the full cost of the
+                damaged or missing items, clients will be required to pay the
+                balance to cover replacement or repair.
               </p>
               <p>
                 • We encourage all clients to handle rental items with care to
@@ -355,16 +447,20 @@ const handleConfirmBooking = useCallback(async () => {
             </h3>
             <div className="space-y-2 sm:space-y-3 text-gray-700 text-sm sm:text-base">
               <p>
-                • For bookings extending beyond 24 hours, additional charges will apply for each subsequent day.
+                • For bookings extending beyond 24 hours, additional charges
+                will apply for each subsequent day.
               </p>
               <p>
-                • Multi-day rates are calculated on a per-day basis and will be clearly outlined in your final invoice.
+                • Multi-day rates are calculated on a per-day basis and will be
+                clearly outlined in your final invoice.
               </p>
               <p>
-                • Extended rental periods may be subject to different terms regarding setup, maintenance, and collection schedules.
+                • Extended rental periods may be subject to different terms
+                regarding setup, maintenance, and collection schedules.
               </p>
               <p>
-                • Clients are responsible for the security and proper care of rented items throughout the entire booking duration.
+                • Clients are responsible for the security and proper care of
+                rented items throughout the entire booking duration.
               </p>
             </div>
           </div>
@@ -394,7 +490,8 @@ const handleConfirmBooking = useCallback(async () => {
               {eventDuration} {eventDuration === 1 ? "Day" : "Days"}
             </div>
             <div className="bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
-              {calculations.itemCount} Service{calculations.itemCount !== 1 ? "s" : ""}
+              {calculations.itemCount} Service
+              {calculations.itemCount !== 1 ? "s" : ""}
             </div>
           </div>
         </div>
@@ -418,9 +515,7 @@ const handleConfirmBooking = useCallback(async () => {
                 </p>
               </div>
               <div>
-                <span className="text-xs sm:text-sm text-gray-600">
-                  Host:
-                </span>
+                <span className="text-xs sm:text-sm text-gray-600">Host:</span>
                 <p className="font-medium text-gray-800 text-sm sm:text-base">
                   {customerInfo?.name || "Not specified"}
                 </p>
@@ -465,9 +560,7 @@ const handleConfirmBooking = useCallback(async () => {
                   </div>
                 )}
               <div>
-                <span className="text-xs sm:text-sm text-gray-600">
-                  Time:
-                </span>
+                <span className="text-xs sm:text-sm text-gray-600">Time:</span>
                 <p className="font-medium text-gray-800 text-sm sm:text-base">
                   {formatTime(selectedDates?.startTime)} -{" "}
                   {formatTime(selectedDates?.endTime)}
@@ -486,25 +579,19 @@ const handleConfirmBooking = useCallback(async () => {
             </div>
             <div className="space-y-2 sm:space-y-3">
               <div>
-                <span className="text-xs sm:text-sm text-gray-600">
-                  Venue:
-                </span>
+                <span className="text-xs sm:text-sm text-gray-600">Venue:</span>
                 <p className="font-medium text-gray-800 text-sm sm:text-base">
                   {customerInfo?.location || "Not specified"}
                 </p>
               </div>
               <div>
-                <span className="text-xs sm:text-sm text-gray-600">
-                  Phone:
-                </span>
+                <span className="text-xs sm:text-sm text-gray-600">Phone:</span>
                 <p className="font-medium text-gray-800 text-sm sm:text-base">
                   {customerInfo?.phone || "Not specified"}
                 </p>
               </div>
               <div>
-                <span className="text-xs sm:text-sm text-gray-600">
-                  Email:
-                </span>
+                <span className="text-xs sm:text-sm text-gray-600">Email:</span>
                 <p className="font-medium text-gray-800 text-sm sm:text-base">
                   {customerInfo?.email || "Not specified"}
                 </p>
@@ -526,8 +613,8 @@ const handleConfirmBooking = useCallback(async () => {
               {customerInfo?.delivery === "yes"
                 ? "Yes - Deliver to venue"
                 : customerInfo?.delivery === "no"
-                ? "No - Self pickup"
-                : "Not specified"}
+                  ? "No - Self pickup"
+                  : "Not specified"}
             </p>
           </div>
 
@@ -542,8 +629,8 @@ const handleConfirmBooking = useCallback(async () => {
               {customerInfo?.installation === "yes"
                 ? "Yes - Professional setup required"
                 : customerInfo?.installation === "no"
-                ? "No - Self setup"
-                : "Not specified"}
+                  ? "No - Self setup"
+                  : "Not specified"}
             </p>
           </div>
         </div>
@@ -596,8 +683,7 @@ const handleConfirmBooking = useCallback(async () => {
               const itemDuration = item.duration || 1;
               const orderMode = item.orderMode || "booking";
               const itemTotal = itemPrice * itemQuantity;
-                
-                
+
               return (
                 <div
                   key={cartId}
@@ -802,9 +888,7 @@ const handleConfirmBooking = useCallback(async () => {
             <div className="flex items-center p-3 sm:p-4 bg-gray-50 rounded-xl">
               <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 mr-2 sm:mr-3" />
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">
-                  Phone Number
-                </p>
+                <p className="text-xs sm:text-sm text-gray-600">Phone Number</p>
                 <p className="font-medium text-gray-800 text-sm sm:text-base">
                   {customerInfo?.phone || "Not provided"}
                 </p>
@@ -849,8 +933,8 @@ const handleConfirmBooking = useCallback(async () => {
                 {customerInfo?.delivery === "yes"
                   ? "Yes - Deliver to venue"
                   : customerInfo?.delivery === "no"
-                  ? "No - Self pickup"
-                  : "Not specified"}
+                    ? "No - Self pickup"
+                    : "Not specified"}
               </p>
             </div>
           </div>
@@ -865,8 +949,8 @@ const handleConfirmBooking = useCallback(async () => {
                 {customerInfo?.installation === "yes"
                   ? "Yes - Professional setup required"
                   : customerInfo?.installation === "no"
-                  ? "No - Self setup"
-                  : "Not specified"}
+                    ? "No - Self setup"
+                    : "Not specified"}
               </p>
             </div>
           </div>
@@ -881,6 +965,51 @@ const handleConfirmBooking = useCallback(async () => {
         </div>
       )}
 
+      {/* NEW: Send full booking to WhatsApp */}
+      <div className="relative">
+        {showWhatsAppPicker && (
+          <>
+            {/* Backdrop to close picker on outside click */}
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setShowWhatsAppPicker(false)}
+            />
+            <div className="absolute bottom-full mb-2 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-20">
+              <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
+                Choose a WhatsApp number
+              </div>
+              {whatsappNumbers.map((num) => (
+                <button
+                  key={num.phone}
+                  onClick={() => sendBookingToWhatsAppNumber(num.phone)}
+                  type="button"
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left"
+                >
+                  <MessageCircle
+                    className="w-5 h-5 text-[#25D366]"
+                    fill="#25D366"
+                  />
+                  <span className="font-medium text-gray-800">{num.label}</span>
+                  <span className="ml-auto text-sm text-gray-400">
+                    {num.phone}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <button
+          onClick={handleShareBookingToWhatsApp}
+          disabled={!cartItems || cartItems.length === 0}
+          type="button"
+          className="w-full py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg bg-[#25D366] hover:bg-[#1ebc59] disabled:bg-gray-300 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
+        >
+          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" fill="white" />
+          Send Full Booking to WhatsApp
+        </button>
+      </div>
+
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
         <button
@@ -894,7 +1023,9 @@ const handleConfirmBooking = useCallback(async () => {
 
         <button
           onClick={handleConfirmBooking}
-          disabled={isSubmitting || loading || !cartItems || cartItems.length === 0}
+          disabled={
+            isSubmitting || loading || !cartItems || cartItems.length === 0
+          }
           className="flex items-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl hover:from-green-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base w-full sm:w-auto justify-center"
         >
           {isSubmitting || loading ? (

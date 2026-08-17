@@ -105,7 +105,7 @@ const MailerScreen = () => {
                   <p className="text-sm text-gray-500">{mail.email}</p>
                 </div>
                 <button
-                  className="text-blue-500 hover:underline"
+                  className="text-bloom-green-500 hover:underline"
                   onClick={() =>
                     handleStartComposing('individual', {
                       email: mail.email,
@@ -153,7 +153,7 @@ const MailerScreen = () => {
               <button
                 onClick={handleSendIndividual}
                 disabled={sendingMail}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="bg-bloom-green-600 text-white px-4 py-2 rounded hover:bg-bloom-green-700"
               >
                 {sendingMail ? 'Sending...' : 'Send'}
               </button>

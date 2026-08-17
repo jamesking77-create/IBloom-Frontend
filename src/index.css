@@ -1,6 +1,89 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 @import "tailwindcss";
 
+/* Ibloom brand tokens — Tailwind v4 reads theme values from this @theme
+   block (a tailwind.config.js theme.extend is NOT auto-loaded in v4),
+   so this is the single source of truth for brand color/font utilities. */
+@theme {
+  /* Named aliases used by the homepage/nav/footer redesign */
+  --color-bloom-green: #2F5D3A;
+  --color-bloom-green-light: #4F7C5B;
+  --color-bloom-green-dark: #1E3F26;
+
+  --color-bloom-rose: #A32B5E;
+  --color-bloom-rose-light: #C24A7C;
+  --color-bloom-rose-dark: #7A1F46;
+
+  --color-bloom-blush: #F3D9E3;
+  --color-bloom-gold: #C9A24B;
+  --color-bloom-ivory: #FBF7F1;
+  --color-bloom-charcoal: #241A20;
+
+  /* Full 10-step ramps — replacement for the app-wide blue/purple/indigo/pink
+     scale (links, focus rings, borders, badges, tables) used across the
+     admin dashboard and every form. blue -> bloom-green, purple/indigo/pink
+     -> bloom-rose, same shade numbers so hover/border/focus weight is preserved. */
+  --color-bloom-green-50: #EEF5EF;
+  --color-bloom-green-100: #D7E8D9;
+  --color-bloom-green-200: #B0D1B5;
+  --color-bloom-green-300: #86B78E;
+  --color-bloom-green-400: #5E9A69;
+  --color-bloom-green-500: #427C4C;
+  --color-bloom-green-600: #2F5D3A;
+  --color-bloom-green-700: #244A2E;
+  --color-bloom-green-800: #1C3924;
+  --color-bloom-green-900: #142A1A;
+
+  --color-bloom-rose-50: #FBEEF3;
+  --color-bloom-rose-100: #F6D9E4;
+  --color-bloom-rose-200: #EDB3C9;
+  --color-bloom-rose-300: #E187AB;
+  --color-bloom-rose-400: #D15E8C;
+  --color-bloom-rose-500: #B93E72;
+  --color-bloom-rose-600: #A32B5E;
+  --color-bloom-rose-700: #82214A;
+  --color-bloom-rose-800: #641938;
+  --color-bloom-rose-900: #481228;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Ibloom brand — organic blob decoration system.
+   Free-form background shapes used instead of plain circles/rectangles. */
+@keyframes blob-morph-a {
+  0%, 100% { border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%; }
+  50% { border-radius: 58% 42% 40% 60% / 55% 60% 40% 45%; }
+}
+@keyframes blob-morph-b {
+  0%, 100% { border-radius: 65% 35% 40% 60% / 55% 65% 35% 45%; }
+  50% { border-radius: 40% 60% 62% 38% / 40% 45% 55% 60%; }
+}
+@keyframes blob-morph-c {
+  0%, 100% { border-radius: 50% 50% 35% 65% / 65% 40% 60% 35%; }
+  50% { border-radius: 38% 62% 58% 42% / 45% 60% 40% 55%; }
+}
+
+.blob {
+  position: absolute;
+  filter: blur(60px);
+  pointer-events: none;
+}
+.blob-a {
+  border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%;
+  animation: blob-morph-a 22s ease-in-out infinite;
+}
+.blob-b {
+  border-radius: 65% 35% 40% 60% / 55% 65% 35% 45%;
+  animation: blob-morph-b 26s ease-in-out infinite;
+}
+.blob-c {
+  border-radius: 50% 50% 35% 65% / 65% 40% 60% 35%;
+  animation: blob-morph-c 19s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob-a, .blob-b, .blob-c {
+    animation: none;
+  }
+}
 

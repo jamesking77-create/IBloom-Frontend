@@ -15,7 +15,6 @@ import {
   CheckCircle,
   Edit3,
   ArrowLeft,
-  CreditCard,
   Package,
   Heart,
   AlertCircle,
@@ -152,7 +151,7 @@ const BookingPreviewStep = ({
     }
   }, [selectedDates]);
 
-  // NEW: Build a full booking summary message — mirrors what handleConfirmBooking sends,
+  // NEW: Build a full booking summary message — mirrors what submitBookingToBackend sends,
   // but formatted as readable WhatsApp text instead of an API payload.
   const buildBookingWhatsAppMessage = useCallback(() => {
     const duration = calculateDuration();
@@ -216,26 +215,12 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
     formatPrice,
   ]);
 
-  // NEW: opens wa.me for the chosen number with the full booking summary
-  const sendBookingToWhatsAppNumber = useCallback(
-    (phone) => {
-      const message = buildBookingWhatsAppMessage();
-      window.open(
-        `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
-        "_blank",
-      );
-      setShowWhatsAppPicker(false);
-    },
-    [buildBookingWhatsAppMessage],
-  );
-
-  // NEW: toggles the number picker
-  const handleShareBookingToWhatsApp = useCallback(() => {
-    setShowWhatsAppPicker((prev) => !prev);
-  }, []);
-
-  // FIXED: Improved booking confirmation handler
-  const handleConfirmBooking = useCallback(async () => {
+  // Submits the booking to the backend. Used to be behind its own "Confirm Booking"
+  // button; now runs as part of the WhatsApp send below, since the client wants a
+  // single action that both records the booking and gets it to them on WhatsApp
+  // (final pricing — delivery/setup — isn't shown on-site, so WhatsApp is where
+  // that gets sorted out anyway).
+  const submitBookingToBackend = useCallback(async () => {
     if (isSubmitting || loading) {
       console.log("⚠️ Already submitting or loading, ignoring click");
       return;
@@ -383,13 +368,35 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
     onSubmit,
   ]);
 
+  // Confirms the booking (submits to the backend) and opens WhatsApp with the full
+  // summary for the chosen sales line — one action doing what used to be two buttons.
+  // WhatsApp still opens even if the backend submission has an issue, since that's
+  // the client's actual lead channel and shouldn't get blocked by it.
+  const sendBookingToWhatsAppNumber = useCallback(
+    async (phone) => {
+      setShowWhatsAppPicker(false);
+      await submitBookingToBackend();
+      const message = buildBookingWhatsAppMessage();
+      window.open(
+        `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+        "_blank",
+      );
+    },
+    [submitBookingToBackend, buildBookingWhatsAppMessage],
+  );
+
+  // NEW: toggles the number picker
+  const handleShareBookingToWhatsApp = useCallback(() => {
+    setShowWhatsAppPicker((prev) => !prev);
+  }, []);
+
   const eventDuration = calculateDuration();
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn px-2 sm:px-0">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3 sm:mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold bg-bloom-green-600 bg-clip-text text-transparent mb-3 sm:mb-4">
           Booking Preview
         </h1>
         <p className="text-gray-600 text-base sm:text-lg px-4 sm:px-0">
@@ -479,17 +486,17 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
       </div>
 
       {/* Event Overview Card */}
-      <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-8 border border-white/20">
+      <div className="bg-bloom-green-50 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-8 border border-white/20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
           <h2 className="text-lg sm:text-2xl font-bold text-gray-800 flex items-center">
-            <BadgeInfo className="w-5 h-5 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-600" />
+            <BadgeInfo className="w-5 h-5 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-bloom-green-600" />
             Event Overview
           </h2>
           <div className="flex flex-wrap items-center gap-2 sm:gap-2">
             <div className="bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
               {eventDuration} {eventDuration === 1 ? "Day" : "Days"}
             </div>
-            <div className="bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+            <div className="bg-bloom-green-100 text-bloom-green-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
               {calculations.itemCount} Service
               {calculations.itemCount !== 1 ? "s" : ""}
             </div>
@@ -534,7 +541,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
           {/* Date & Time */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center mb-3 sm:mb-4">
-              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 mr-2 sm:mr-3" />
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-bloom-green-500 mr-2 sm:mr-3" />
               <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
                 Schedule
               </h3>
@@ -604,7 +611,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
         <div className="mt-4 sm:mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center mb-3">
-              <Truck className="w-5 h-5 text-blue-500 mr-2" />
+              <Truck className="w-5 h-5 text-bloom-green-500 mr-2" />
               <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
                 Delivery
               </h3>
@@ -620,7 +627,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
 
           <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center mb-3">
-              <Settings className="w-5 h-5 text-purple-500 mr-2" />
+              <Settings className="w-5 h-5 text-bloom-rose-500 mr-2" />
               <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
                 Setup
               </h3>
@@ -639,7 +646,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
         {customerInfo?.specialRequests && (
           <div className="mt-4 sm:mt-6 bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center mb-3 sm:mb-4">
-              <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500 mr-2 sm:mr-3" />
+              <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-bloom-rose-500 mr-2 sm:mr-3" />
               <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
                 Special Requests
               </h3>
@@ -661,7 +668,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
           </h2>
           <button
             onClick={onEditDates}
-            className="flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 text-sm sm:text-base"
+            className="flex items-center text-bloom-green-600 hover:text-bloom-green-800 transition-colors duration-200 text-sm sm:text-base"
           >
             <Edit3 className="w-4 h-4 mr-1" />
             <span className="hidden sm:inline">Edit Services</span>
@@ -702,7 +709,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
                               "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
                           }}
                         />
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
                           <Star className="w-2 h-2 text-white" />
                         </div>
                       </div>
@@ -746,7 +753,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
                               "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
                           }}
                         />
-                        <div className="absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                        <div className="absolute -top-2 -right-2 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
                           <Star className="w-3 h-3 text-white" />
                         </div>
                       </div>
@@ -794,7 +801,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
         {/* Pricing Summary */}
         {cartItems && cartItems.length > 0 && (
           <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
-            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-4 sm:p-6">
+            <div className="bg-bloom-green-50 rounded-2xl p-4 sm:p-6">
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-base sm:text-lg font-medium text-gray-700">
@@ -815,9 +822,9 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
                 <div className="border-t border-gray-300 pt-3 sm:pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-lg sm:text-2xl font-bold text-gray-800">
-                      Total:
+                      Items + Tax:
                     </span>
-                    <span className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                    <span className="text-xl sm:text-3xl font-bold text-bloom-green-600">
                       {formatPrice(calculations.total)}
                     </span>
                   </div>
@@ -825,7 +832,9 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
                 <div className="text-center pt-3 sm:pt-4">
                   <p className="text-xs sm:text-sm text-gray-600">
                     <Globe className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-                    Final amount may vary based on actual requirements
+                    This does not include delivery or setup fees — those depend
+                    on distance and setup complexity, and will be confirmed
+                    with you directly on WhatsApp
                   </p>
                 </div>
               </div>
@@ -838,12 +847,12 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-8 border border-gray-100">
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <h2 className="text-lg sm:text-2xl font-bold text-gray-800 flex items-center">
-            <User className="w-5 h-5 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-purple-600" />
+            <User className="w-5 h-5 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-bloom-rose-600" />
             Customer Information
           </h2>
           <button
             onClick={onEditCustomerInfo}
-            className="flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 text-sm sm:text-base"
+            className="flex items-center text-bloom-green-600 hover:text-bloom-green-800 transition-colors duration-200 text-sm sm:text-base"
           >
             <Edit3 className="w-4 h-4 mr-1" />
             <span className="hidden sm:inline">Edit Details</span>
@@ -965,53 +974,16 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
         </div>
       )}
 
-      {/* NEW: Send full booking to WhatsApp */}
-      <div className="relative">
-        {showWhatsAppPicker && (
-          <>
-            {/* Backdrop to close picker on outside click */}
-            <div
-              className="fixed inset-0 z-10"
-              onClick={() => setShowWhatsAppPicker(false)}
-            />
-            <div className="absolute bottom-full mb-2 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-20">
-              <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
-                Choose a WhatsApp number
-              </div>
-              {whatsappNumbers.map((num) => (
-                <button
-                  key={num.phone}
-                  onClick={() => sendBookingToWhatsAppNumber(num.phone)}
-                  type="button"
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left"
-                >
-                  <MessageCircle
-                    className="w-5 h-5 text-[#25D366]"
-                    fill="#25D366"
-                  />
-                  <span className="font-medium text-gray-800">{num.label}</span>
-                  <span className="ml-auto text-sm text-gray-400">
-                    {num.phone}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        <button
-          onClick={handleShareBookingToWhatsApp}
-          disabled={!cartItems || cartItems.length === 0}
-          type="button"
-          className="w-full py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg bg-[#25D366] hover:bg-[#1ebc59] disabled:bg-gray-300 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
-        >
-          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" fill="white" />
-          Send Full Booking to WhatsApp
-        </button>
-      </div>
+      {/*
+        There used to be a separate "Confirm Booking" button here alongside the
+        WhatsApp button. It's been removed: delivery/setup fees depend on distance
+        and setup complexity, so we can't show a trustworthy final total on-site,
+        and pricing gets finalized in the WhatsApp chat anyway. The WhatsApp button
+        below now does both jobs — it submits the booking AND sends the summary.
+      */}
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 space-y-3 sm:space-y-0">
+      <div className="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 gap-3">
         <button
           onClick={onPrevious}
           disabled={isSubmitting || loading}
@@ -1021,35 +993,66 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
           Previous
         </button>
 
-        <button
-          onClick={handleConfirmBooking}
-          disabled={
-            isSubmitting || loading || !cartItems || cartItems.length === 0
-          }
-          className="flex items-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl hover:from-green-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base w-full sm:w-auto justify-center"
-        >
-          {isSubmitting || loading ? (
+        <div className="relative w-full sm:flex-1 sm:max-w-md">
+          {showWhatsAppPicker && (
             <>
-              <div className="animate-spin rounded-full h-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
-              <span className="hidden sm:inline">Processing...</span>
-              <span className="sm:hidden">Processing...</span>
-            </>
-          ) : (
-            <>
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              <span className="hidden sm:inline">
-                Confirm Booking ({formatPrice(calculations.total)})
-              </span>
-              <span className="sm:hidden">
-                Confirm ({formatPrice(calculations.total)})
-              </span>
+              {/* Backdrop to close picker on outside click */}
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowWhatsAppPicker(false)}
+              />
+              <div className="absolute bottom-full mb-2 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-20">
+                <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
+                  Choose a WhatsApp number
+                </div>
+                {whatsappNumbers.map((num) => (
+                  <button
+                    key={num.phone}
+                    onClick={() => sendBookingToWhatsAppNumber(num.phone)}
+                    type="button"
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left"
+                  >
+                    <MessageCircle
+                      className="w-5 h-5 text-[#25D366]"
+                      fill="#25D366"
+                    />
+                    <span className="font-medium text-gray-800">
+                      {num.label}
+                    </span>
+                    <span className="ml-auto text-sm text-gray-400">
+                      {num.phone}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </>
           )}
-        </button>
+
+          <button
+            onClick={handleShareBookingToWhatsApp}
+            disabled={
+              isSubmitting || loading || !cartItems || cartItems.length === 0
+            }
+            type="button"
+            className="w-full py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg bg-[#25D366] hover:bg-[#1ebc59] disabled:bg-gray-300 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
+          >
+            {isSubmitting || loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
+                Processing...
+              </>
+            ) : (
+              <>
+                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" fill="white" />
+                Confirm &amp; Send to WhatsApp
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Trust Indicators */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-4 sm:p-6 border border-green-200">
+      <div className="bg-bloom-green-50 rounded-2xl p-4 sm:p-6 border border-green-200">
         <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-8">
           <div className="flex items-center">
             <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mr-2" />

@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Star,
   AlertCircle,
+  AlertTriangle,
   BadgeInfo,
   User,
   MapPin,
@@ -535,9 +536,9 @@ const OrderDateCustomerStep = ({
 
       {/* Warehouse Info Summary */}
       {warehouseInfo && (
-        <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-white/20">
+        <div className="bg-bloom-green-50 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border border-white/20">
           <div className="flex items-center mb-4">
-            <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 mr-2 sm:mr-3" />
+            <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-bloom-green-600 mr-2 sm:mr-3" />
             <h2 className="text-lg sm:text-xl font-bold text-gray-800">
               Pickup Location: {warehouseInfo.name}
             </h2>
@@ -560,11 +561,11 @@ const OrderDateCustomerStep = ({
         
         {/* Cart Header */}
         <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 lg:mb-8">
-          <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center">
+          <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold bg-bloom-rose-600 bg-clip-text text-transparent flex items-center">
             <div className="relative mr-2 sm:mr-3">
-              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-purple-600" />
+              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-bloom-rose-600" />
               {cartItemCount > 0 && (
-                <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-4 h-4 sm:w-5 sm:h-5 bg-bloom-rose-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">
                     {cartItemCount}
                   </span>
@@ -580,7 +581,7 @@ const OrderDateCustomerStep = ({
           <div className="flex items-center space-x-2 sm:space-x-3">
             <button
               onClick={onAddMoreItems}
-              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center group text-xs sm:text-sm md:text-base"
+              className="bg-bloom-green-500 hover:bg-bloom-green-600 text-white px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center group text-xs sm:text-sm md:text-base"
             >
               <Plus className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2 group-hover:rotate-90 transition-transform duration-300" />
               <span className="hidden xs:inline">Add More Items</span>
@@ -589,7 +590,7 @@ const OrderDateCustomerStep = ({
             {cartItems.length > 0 && (
               <button
                 onClick={handleClearCart}
-                className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center group"
+                className="bg-bloom-rose-500 hover:bg-bloom-rose-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center group"
                 title="Clear Cart"
               >
                 <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 group-hover:rotate-12 transition-transform duration-300" />
@@ -716,7 +717,7 @@ const OrderDateCustomerStep = ({
                 <span className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">
                   Total:
                 </span>
-                <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-bloom-green-600 bg-clip-text text-transparent">
                   {formatPrice(totals.total)}
                 </span>
               </div>
@@ -741,8 +742,8 @@ const OrderDateCustomerStep = ({
         {/* Date Selection */}
         <div className="bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-lg sm:shadow-xl p-4 sm:p-6 md:p-8 border border-white/30">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 md:mb-8 space-y-3 sm:space-y-0">
-            <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center">
-              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 mr-2 sm:mr-3 text-blue-600" />
+            <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-bloom-green-600 bg-clip-text text-transparent flex items-center">
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 mr-2 sm:mr-3 text-bloom-green-600" />
               Order Date
             </h2>
             
@@ -754,7 +755,7 @@ const OrderDateCustomerStep = ({
                 className="relative inline-flex items-center"
               >
                 {isMultiDay ? (
-                  <ToggleRight className="w-8 h-8 text-blue-600 hover:text-blue-700 transition-colors" />
+                  <ToggleRight className="w-8 h-8 text-bloom-green-600 hover:text-bloom-green-700 transition-colors" />
                 ) : (
                   <ToggleLeft className="w-8 h-8 text-gray-400 hover:text-gray-500 transition-colors" />
                 )}
@@ -764,8 +765,8 @@ const OrderDateCustomerStep = ({
           </div>
 
           {/* Mode Indicator */}
-          <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
-            <p className="text-sm text-blue-800 font-medium flex items-center">
+          <div className="mb-4 p-3 bg-bloom-green-50 rounded-xl border border-bloom-green-200">
+            <p className="text-sm text-bloom-green-800 font-medium flex items-center">
               <Clock className="w-4 h-4 mr-2" />
               {isMultiDay 
                 ? "Multi-day order mode: Select start and end dates for your order period"
@@ -826,14 +827,14 @@ const OrderDateCustomerStep = ({
                       day.isPast
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                         : day.isStartSelected
-                        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-110"
+                        ? "bg-bloom-green-500 text-white shadow-lg scale-110"
                         : day.isEndSelected
-                        ? "bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg scale-110"
+                        ? "bg-bloom-green-500 text-white shadow-lg scale-110"
                         : day.isInRange
-                        ? "bg-gradient-to-r from-blue-200 to-purple-200 text-blue-800"
+                        ? "bg-bloom-green-200 text-bloom-green-800"
                         : day.isToday
-                        ? "bg-gradient-to-r from-yellow-200 to-orange-200 text-orange-800 border-2 border-orange-400"
-                        : "hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 text-gray-700"
+                        ? "bg-yellow-200 text-orange-800 border-2 border-orange-400"
+                        : "hover:bg-gradient-to-r hover:bg-gray-100 text-gray-700"
                     }`}
                   >
                     {day.day}
@@ -869,32 +870,32 @@ const OrderDateCustomerStep = ({
 
           {/* Selected Date Summary */}
           {startDate && (
-            <div className="mt-4 sm:mt-6 md:mt-8 p-3 sm:p-4 md:p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl sm:rounded-2xl border border-blue-200">
-              <h3 className="text-sm sm:text-base md:text-lg font-semibold text-blue-800 mb-2 sm:mb-3 md:mb-4 flex items-center">
-                <BadgeInfo className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-pink-500" />
+            <div className="mt-4 sm:mt-6 md:mt-8 p-3 sm:p-4 md:p-6 bg-bloom-green-50 rounded-xl sm:rounded-2xl border border-bloom-green-200">
+              <h3 className="text-sm sm:text-base md:text-lg font-semibold text-bloom-green-800 mb-2 sm:mb-3 md:mb-4 flex items-center">
+                <BadgeInfo className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-bloom-rose-500" />
                 Selected Order Date:
               </h3>
               <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                 {isMultiDay ? (
                   <>
-                    <p className="text-blue-700">
+                    <p className="text-bloom-green-700">
                       <span className="font-medium">Start Date:</span> {formatDate(startDate)}
                     </p>
                     {endDate && (
-                      <p className="text-blue-700">
+                      <p className="text-bloom-green-700">
                         <span className="font-medium">End Date:</span> {formatDate(endDate)}
                       </p>
                     )}
-                    <p className="text-blue-700">
+                    <p className="text-bloom-green-700">
                       <span className="font-medium">Duration:</span> {duration} day{duration !== 1 ? "s" : ""}
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-blue-700">
+                    <p className="text-bloom-green-700">
                       <span className="font-medium">Order Date:</span> {formatDate(startDate)}
                     </p>
-                    <p className="text-blue-700">
+                    <p className="text-bloom-green-700">
                       <span className="font-medium">Duration:</span> 1 day
                     </p>
                   </>
@@ -907,7 +908,7 @@ const OrderDateCustomerStep = ({
         {/* Customer Information */}
         <div className="bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-lg sm:shadow-xl p-4 sm:p-6 md:p-8 border border-white/30">
           <div className="flex items-center mb-6 sm:mb-8">
-            <User className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mr-2 sm:mr-3" />
+            <User className="w-6 h-6 sm:w-8 sm:h-8 text-bloom-green-600 mr-2 sm:mr-3" />
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
               Customer Information
             </h2>
@@ -934,9 +935,9 @@ const OrderDateCustomerStep = ({
                       : isFieldValid("name")
                       ? "border-green-300 bg-green-50"
                       : focusedField === "name"
-                      ? "border-blue-300 bg-blue-50"
+                      ? "border-bloom-green-300 bg-bloom-green-50"
                       : "border-gray-200 bg-gray-50"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                  } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                   placeholder="Enter your full name"
                 />
                 {isFieldValid("name") && (
@@ -971,9 +972,9 @@ const OrderDateCustomerStep = ({
                       : isFieldValid("email")
                       ? "border-green-300 bg-green-50"
                       : focusedField === "email"
-                      ? "border-blue-300 bg-blue-50"
+                      ? "border-bloom-green-300 bg-bloom-green-50"
                       : "border-gray-200 bg-gray-50"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                  } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                   placeholder="Enter email address"
                 />
                 {isFieldValid("email") && (
@@ -1008,9 +1009,9 @@ const OrderDateCustomerStep = ({
                       : isFieldValid("phone")
                       ? "border-green-300 bg-green-50"
                       : focusedField === "phone"
-                      ? "border-blue-300 bg-blue-50"
+                      ? "border-bloom-green-300 bg-bloom-green-50"
                       : "border-gray-200 bg-gray-50"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                  } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                   placeholder="Enter phone number"
                 />
                 {isFieldValid("phone") && (
@@ -1044,9 +1045,9 @@ const OrderDateCustomerStep = ({
                       : isFieldValid("delivery")
                       ? "border-green-300 bg-green-50"
                       : focusedField === "delivery"
-                      ? "border-blue-300 bg-blue-50"
+                      ? "border-bloom-green-300 bg-bloom-green-50"
                       : "border-gray-200 bg-gray-50"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                  } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                 >
                   {deliveryOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -1085,9 +1086,9 @@ const OrderDateCustomerStep = ({
                       : isFieldValid("installation")
                       ? "border-green-300 bg-green-50"
                       : focusedField === "installation"
-                      ? "border-blue-300 bg-blue-50"
+                      ? "border-bloom-green-300 bg-bloom-green-50"
                       : "border-gray-200 bg-gray-50"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                  } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                 >
                   {installationOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -1122,9 +1123,9 @@ const OrderDateCustomerStep = ({
                   onBlur={handleBlur}
                   className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 transition-all duration-300 text-sm sm:text-base ${
                     focusedField === "eventType"
-                      ? "border-blue-300 bg-blue-50"
+                      ? "border-bloom-green-300 bg-bloom-green-50"
                       : "border-gray-200 bg-gray-50"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                  } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                 >
                   <option value="">Select event type</option>
                   {eventTypes.map((type) => (
@@ -1157,9 +1158,9 @@ const OrderDateCustomerStep = ({
                         : isFieldValid("location")
                         ? "border-green-300 bg-green-50"
                         : focusedField === "location"
-                        ? "border-blue-300 bg-blue-50"
+                        ? "border-bloom-green-300 bg-bloom-green-50"
                         : "border-gray-200 bg-gray-50"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                    } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                     placeholder="Enter delivery address"
                   />
                   {isFieldValid("location") && (
@@ -1191,14 +1192,33 @@ const OrderDateCustomerStep = ({
                   rows={3}
                   className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 transition-all duration-300 text-sm sm:text-base ${
                     focusedField === "specialRequests"
-                      ? "border-blue-300 bg-blue-50"
+                      ? "border-bloom-green-300 bg-bloom-green-50"
                       : "border-gray-200 bg-gray-50"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none`}
+                  } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20 resize-none`}
                   placeholder="Any special requests or additional information..."
                 />
               </div>
             </div>
           </div>
+
+          {/* Delivery/Setup Fee Notice — shown the moment either is set to "yes" */}
+          {(formData.delivery === "yes" || formData.installation === "yes") && (
+            <div className="mt-4 sm:mt-6 bg-amber-50 border-2 border-amber-400 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex items-start gap-3">
+              <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 flex-shrink-0" />
+              <div>
+                <p className="font-bold text-amber-900 text-sm sm:text-base mb-1">
+                  Delivery &amp; setup fees are not included in the price shown
+                </p>
+                <p className="text-amber-800 text-xs sm:text-sm leading-relaxed">
+                  These fees depend on your distance from us and how involved
+                  the setup is, so they're calculated per order, not shown as a
+                  fixed price here. Our team will confirm the exact
+                  delivery/setup cost with you directly on WhatsApp before your
+                  order is finalized.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1225,7 +1245,7 @@ const OrderDateCustomerStep = ({
             cartItems.length === 0 || 
             (formData.delivery === "yes" && !formData.location)
           }
-          className="group relative bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 sm:px-8 md:px-12 lg:px-16 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base md:text-lg disabled:cursor-not-allowed w-full sm:w-auto max-w-md sm:max-w-none"
+          className="group relative bg-bloom-green-600 hover:bg-bloom-green-700 disabled:bg-gray-400 text-white px-6 sm:px-8 md:px-12 lg:px-16 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base md:text-lg disabled:cursor-not-allowed w-full sm:w-auto max-w-md sm:max-w-none"
         >
           <span className="relative z-10 flex items-center justify-center">
             <span>Continue to Order Review</span>
@@ -1235,7 +1255,7 @@ const OrderDateCustomerStep = ({
               </span>
             )}
           </span>
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-bloom-green-400 rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
         </button>
       </div>
 

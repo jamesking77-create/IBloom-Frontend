@@ -12,6 +12,7 @@ import {
   Star,
   CheckCircle,
   AlertCircle,
+  AlertTriangle,
   Clock,
   ArrowLeft,
   BadgeInfo,
@@ -293,14 +294,14 @@ const CustomerDetailsStep = ({
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn">
       {/* Enhanced Event Summary */}
-      <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-8 border border-white/20 transform transition-all duration-500 hover:shadow-2xl">
+      <div className="bg-bloom-green-50 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-8 border border-white/20 transform transition-all duration-500 hover:shadow-2xl">
         <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h2 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center">
-            <Calendar className="w-5 h-5 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-600" />
+          <h2 className="text-lg sm:text-2xl font-bold bg-bloom-green-600 bg-clip-text text-transparent flex items-center">
+            <Calendar className="w-5 h-5 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-bloom-green-600" />
             Event Summary
           </h2>
           <div className="flex items-center bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl px-3 sm:px-4 py-1 sm:py-2 shadow-lg">
-            <BadgeInfo className="w-4 h-4 sm:w-5 sm:h-5 text-pink-500 mr-2" />
+            <BadgeInfo className="w-4 h-4 sm:w-5 sm:h-5 text-bloom-rose-500 mr-2" />
             <span className="text-xs sm:text-sm font-medium text-gray-700">
               {cartItems?.length || 0} items
             </span>
@@ -310,7 +311,7 @@ const CustomerDetailsStep = ({
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20 transform transition-all duration-300 hover:scale-105">
             <div className="flex items-center mb-3 sm:mb-4">
-              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 mr-2 sm:mr-3" />
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-bloom-green-500 mr-2 sm:mr-3" />
               <h3 className="font-semibold text-gray-800 text-sm sm:text-base">Date & Time</h3>
             </div>
             <div className="space-y-2 text-xs sm:text-sm">
@@ -340,7 +341,7 @@ const CustomerDetailsStep = ({
 
           <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20 transform transition-all duration-300 hover:scale-105">
             <div className="flex items-center mb-3 sm:mb-4">
-              <BadgeInfo className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500 mr-2 sm:mr-3" />
+              <BadgeInfo className="w-5 h-5 sm:w-6 sm:h-6 text-bloom-rose-500 mr-2 sm:mr-3" />
               <h3 className="font-semibold text-gray-800 text-sm sm:text-base">Services</h3>
             </div>
             <div className="space-y-2 text-xs sm:text-sm">
@@ -383,7 +384,7 @@ const CustomerDetailsStep = ({
       {/* Customer Information Form */}
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-8 border border-gray-100">
         <div className="flex items-center mb-6 sm:mb-8">
-          <User className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mr-2 sm:mr-3" />
+          <User className="w-6 h-6 sm:w-8 sm:h-8 text-bloom-green-600 mr-2 sm:mr-3" />
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
             Customer Information
           </h2>
@@ -410,9 +411,9 @@ const CustomerDetailsStep = ({
                     : isFieldValid("name")
                     ? "border-green-300 bg-green-50"
                     : focusedField === "name"
-                    ? "border-blue-300 bg-blue-50"
+                    ? "border-bloom-green-300 bg-bloom-green-50"
                     : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                 placeholder="Enter customer's full name"
               />
               {isFieldValid("name") && (
@@ -446,9 +447,9 @@ const CustomerDetailsStep = ({
                     : isFieldValid("eventType")
                     ? "border-green-300 bg-green-50"
                     : focusedField === "eventType"
-                    ? "border-blue-300 bg-blue-50"
+                    ? "border-bloom-green-300 bg-bloom-green-50"
                     : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
               >
                 <option value="">Select event type</option>
                 {eventTypes.map((type) => (
@@ -489,9 +490,9 @@ const CustomerDetailsStep = ({
                     : isFieldValid("location")
                     ? "border-green-300 bg-green-50"
                     : focusedField === "location"
-                    ? "border-blue-300 bg-blue-50"
+                    ? "border-bloom-green-300 bg-bloom-green-50"
                     : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                 placeholder="Enter event location/address"
               />
               {isFieldValid("location") && (
@@ -526,9 +527,9 @@ const CustomerDetailsStep = ({
                     : isFieldValid("phone")
                     ? "border-green-300 bg-green-50"
                     : focusedField === "phone"
-                    ? "border-blue-300 bg-blue-50"
+                    ? "border-bloom-green-300 bg-bloom-green-50"
                     : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                 placeholder="Enter phone number"
               />
               {isFieldValid("phone") && (
@@ -563,9 +564,9 @@ const CustomerDetailsStep = ({
                     : isFieldValid("email")
                     ? "border-green-300 bg-green-50"
                     : focusedField === "email"
-                    ? "border-blue-300 bg-blue-50"
+                    ? "border-bloom-green-300 bg-bloom-green-50"
                     : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                 placeholder="Enter email address"
               />
               {isFieldValid("email") && (
@@ -600,9 +601,9 @@ const CustomerDetailsStep = ({
                     : isFieldValid("guests")
                     ? "border-green-300 bg-green-50"
                     : focusedField === "guests"
-                    ? "border-blue-300 bg-blue-50"
+                    ? "border-bloom-green-300 bg-bloom-green-50"
                     : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
                 placeholder="Enter number of guests"
                 min="1"
               />
@@ -637,9 +638,9 @@ const CustomerDetailsStep = ({
                     : isFieldValid("delivery")
                     ? "border-green-300 bg-green-50"
                     : focusedField === "delivery"
-                    ? "border-blue-300 bg-blue-50"
+                    ? "border-bloom-green-300 bg-bloom-green-50"
                     : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
               >
                 {deliveryOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -680,9 +681,9 @@ const CustomerDetailsStep = ({
                     : isFieldValid("installation")
                     ? "border-green-300 bg-green-50"
                     : focusedField === "installation"
-                    ? "border-blue-300 bg-blue-50"
+                    ? "border-bloom-green-300 bg-bloom-green-50"
                     : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
               >
                 {installationOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -703,6 +704,25 @@ const CustomerDetailsStep = ({
           </div>
         </div>
 
+        {/* Delivery/Setup Fee Notice — shown the moment either is set to "yes" */}
+        {(formData.delivery === "yes" || formData.installation === "yes") && (
+          <div className="mt-4 sm:mt-6 bg-amber-50 border-2 border-amber-400 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex items-start gap-3">
+            <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 flex-shrink-0" />
+            <div>
+              <p className="font-bold text-amber-900 text-sm sm:text-base mb-1">
+                Delivery &amp; setup fees are not included in the price shown
+              </p>
+              <p className="text-amber-800 text-xs sm:text-sm leading-relaxed">
+                These fees depend on your distance from us and how involved the
+                setup is, so they're calculated per booking, not shown as a
+                fixed price here. Our team will confirm the exact delivery/setup
+                cost with you directly on WhatsApp before your booking is
+                finalized.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Special Requests */}
         <div className="mt-4 sm:mt-6 space-y-2">
           <label className="flex items-center text-sm font-medium text-gray-700">
@@ -721,9 +741,9 @@ const CustomerDetailsStep = ({
               rows={4}
               className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 transition-all duration-300 text-sm sm:text-base ${
                 focusedField === "specialRequests"
-                  ? "border-blue-300 bg-blue-50"
+                  ? "border-bloom-green-300 bg-bloom-green-50"
                   : "border-gray-200 bg-gray-50"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none`}
+              } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20 resize-none`}
               placeholder="Any special requests or additional information for your event..."
             />
           </div>
@@ -776,7 +796,7 @@ const CustomerDetailsStep = ({
         <button
           onClick={handleNext}
           disabled={isSubmitting}
-          className="flex items-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full sm:w-auto justify-center text-sm sm:text-base"
+          className="flex items-center px-6 sm:px-8 py-3 sm:py-4 bg-bloom-green-600 text-white rounded-lg sm:rounded-xl hover:bg-bloom-green-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full sm:w-auto justify-center text-sm sm:text-base"
         >
           {isSubmitting ? (
             <>

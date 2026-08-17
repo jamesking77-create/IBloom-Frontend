@@ -210,7 +210,7 @@ const Calendar = () => {
       <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg h-full">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bloom-green-500 mx-auto mb-2"></div>
             <p className="text-gray-600 text-sm">Loading calendar...</p>
           </div>
         </div>
@@ -222,7 +222,7 @@ const Calendar = () => {
     <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg h-full">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center gap-2">
-          <CalendarIcon size={20} className="text-blue-500" />
+          <CalendarIcon size={20} className="text-bloom-green-500" />
           Calendar
         </h3>
         <div className="flex items-center gap-2 md:gap-4">
@@ -256,10 +256,10 @@ const Calendar = () => {
             key={index} 
             className={`
               aspect-square flex items-center justify-center relative text-xs md:text-sm rounded-md cursor-pointer
-              ${day ? 'bg-white hover:bg-blue-50 transition-colors' : 'bg-transparent'}
-              ${day && isToday(day) ? 'bg-blue-500 text-white hover:bg-blue-600' : 'text-gray-700'}
-              ${day && hasBooking(day) && !isToday(day) ? 'border-2 border-blue-400' : ''}
-              ${day && selectedDate === day ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
+              ${day ? 'bg-white hover:bg-bloom-green-50 transition-colors' : 'bg-transparent'}
+              ${day && isToday(day) ? 'bg-bloom-green-500 text-white hover:bg-bloom-green-600' : 'text-gray-700'}
+              ${day && hasBooking(day) && !isToday(day) ? 'border-2 border-bloom-green-400' : ''}
+              ${day && selectedDate === day ? 'ring-2 ring-bloom-green-500 ring-offset-1' : ''}
             `}
             onClick={() => day && handleDayClick(day)}
             onMouseEnter={() => day && handleDayHover(day)}
@@ -297,14 +297,14 @@ const Calendar = () => {
       
       {/* Selected Day Details */}
       {selectedDate && bookingDatesMap[selectedDate] && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg max-h-48 overflow-y-auto">
-          <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+        <div className="mt-4 p-3 bg-bloom-green-50 rounded-lg max-h-48 overflow-y-auto">
+          <h4 className="font-semibold text-bloom-green-800 mb-2 flex items-center gap-2">
             <CalendarIcon size={16} />
             {months[currentDate.getMonth()]} {selectedDate}, {currentDate.getFullYear()}
           </h4>
           <div className="space-y-2">
             {bookingDatesMap[selectedDate].map((booking, index) => (
-              <div key={`${booking.id}-${index}`} className="bg-white p-2 rounded-md border-l-4 border-blue-400">
+              <div key={`${booking.id}-${index}`} className="bg-white p-2 rounded-md border-l-4 border-bloom-green-400">
                 <div className="flex justify-between items-start mb-1">
                   <span className="font-medium text-gray-800 text-sm">{booking.customerName}</span>
                   <span className={`px-2 py-1 text-xs rounded-full text-white ${getStatusColor(booking.status)}`}>
@@ -332,7 +332,7 @@ const Calendar = () => {
                     {booking.amount}
                   </div>
                   {booking.isMultiDay && (
-                    <div className="text-purple-600 font-medium">
+                    <div className="text-bloom-rose-600 font-medium">
                       Multi-day event
                     </div>
                   )}
@@ -347,7 +347,7 @@ const Calendar = () => {
       <div className="mt-4 p-3 bg-gray-50 rounded-lg">
         <div className="flex items-center gap-4 text-xs md:text-sm text-gray-600 flex-wrap">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-bloom-green-500 rounded-full"></div>
             <span>Today</span>
           </div>
           <div className="flex items-center gap-2">

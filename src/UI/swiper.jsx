@@ -128,21 +128,21 @@ const TheSwiper = ({ categories, onCategoryClick }) => {
         }
       `}</style>
 
-      <div className="relative py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+      <div className="relative py-20 bg-bloom-charcoal overflow-hidden">
         {/* Animated Background Elements */}
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
+          <div className="absolute top-20 left-10 w-72 h-72 bg-bloom-rose-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-bloom-green-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-bloom-rose-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4">
           {/* Header */}
           <div className="text-center mb-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mb-6 floating-animation">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-bloom-rose-500 rounded-full mb-6 floating-animation">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-4">
+            <h2 className="text-5xl md:text-6xl font-bold text-white mb-4">
               Rental Categories
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
@@ -153,13 +153,13 @@ const TheSwiper = ({ categories, onCategoryClick }) => {
           {/* Navigation Buttons */}
           <div className="flex justify-center gap-4 mb-8">
             <button 
-              className="nav-button rounded-full p-4 text-white hover:text-purple-200 transition-colors"
+              className="nav-button rounded-full p-4 text-white hover:text-bloom-rose-200 transition-colors"
               onClick={() => swiperRef.current?.slidePrev()}
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button 
-              className="nav-button rounded-full p-4 text-white hover:text-purple-200 transition-colors"
+              className="nav-button rounded-full p-4 text-white hover:text-bloom-rose-200 transition-colors"
               onClick={() => swiperRef.current?.slideNext()}
             >
               <ChevronRight className="w-6 h-6" />
@@ -212,7 +212,7 @@ const TheSwiper = ({ categories, onCategoryClick }) => {
                   {/* Content */}
                   <div className="relative z-10 h-full flex flex-col justify-end p-8">
                     <div className="transform transition-all duration-500 group-hover:translate-y-[-10px]">
-                      <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-purple-200 transition-colors duration-300">
+                      <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-bloom-rose-200 transition-colors duration-300">
                         {category.name}
                       </h3>
                       <p className="text-gray-300 text-sm mb-4 opacity-90">
@@ -221,8 +221,8 @@ const TheSwiper = ({ categories, onCategoryClick }) => {
                       
                       {category.types && category.types.length > 0 && (
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                          <span className="text-purple-300 text-sm font-medium">
+                          <div className="w-2 h-2 bg-bloom-rose-400 rounded-full animate-pulse"></div>
+                          <span className="text-bloom-rose-300 text-sm font-medium">
                             {category.types.length} item{category.types.length !== 1 ? 's' : ''} available
                           </span>
                         </div>
@@ -230,7 +230,7 @@ const TheSwiper = ({ categories, onCategoryClick }) => {
                     </div>
 
                     {/* Hover Effect Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-purple-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-bloom-rose-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" />
                   </div>
 
                   {/* Corner Decoration */}

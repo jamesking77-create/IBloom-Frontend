@@ -22,7 +22,7 @@ const BookingSuccessPopup = ({ isOpen, onClose, bookingId, customerInfo }) => {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-6">
           <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full mx-4 transform transition-all duration-300 scale-100 max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="relative bg-gradient-to-r from-green-500 to-blue-500 rounded-t-3xl p-4 text-white">
+            <div className="relative bg-bloom-green-500 rounded-t-3xl p-4 text-white">
               <button
                 onClick={onClose}
                 className="absolute top-3 right-3 text-white hover:text-gray-200 transition-colors duration-200 bg-white bg-opacity-20 rounded-full p-2"
@@ -44,7 +44,7 @@ const BookingSuccessPopup = ({ isOpen, onClose, bookingId, customerInfo }) => {
             {/* Content */}
             <div className="p-6">
               {/* Booking ID */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4 mb-6 border border-blue-200">
+              <div className="bg-bloom-green-50 rounded-2xl p-4 mb-6 border border-bloom-green-200">
                 <div className="text-center">
                   <p className="text-sm text-gray-600 mb-1">Your Booking Reference</p>
                   <p className="text-xl font-bold text-gray-800 font-mono">
@@ -77,7 +77,7 @@ const BookingSuccessPopup = ({ isOpen, onClose, bookingId, customerInfo }) => {
                   </h3>
                   <div className="space-y-3">
                     <div className="flex items-center">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                      <div className="w-2 h-2 bg-bloom-green-500 rounded-full mr-3"></div>
                       <span className="text-sm text-gray-700">Review within 2-4 hours</span>
                     </div>
                     <div className="flex items-center">
@@ -85,7 +85,7 @@ const BookingSuccessPopup = ({ isOpen, onClose, bookingId, customerInfo }) => {
                       <span className="text-sm text-gray-700">Contact via preferred method</span>
                     </div>
                     <div className="flex items-center">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
+                      <div className="w-2 h-2 bg-bloom-rose-500 rounded-full mr-3"></div>
                       <span className="text-sm text-gray-700">Discuss final details & confirmation</span>
                     </div>
                   </div>
@@ -95,13 +95,13 @@ const BookingSuccessPopup = ({ isOpen, onClose, bookingId, customerInfo }) => {
               {/* Contact Information */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center mb-4">
-                  <User className="w-5 h-5 mr-2 text-blue-600" />
+                  <User className="w-5 h-5 mr-2 text-bloom-green-600" />
                   We'll Contact You Soon Via:
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex items-center p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <Mail className="w-5 h-5 text-blue-600 mr-3" />
+                  <div className="flex items-center p-4 bg-bloom-green-50 rounded-xl border border-bloom-green-200">
+                    <Mail className="w-5 h-5 text-bloom-green-600 mr-3" />
                     <div>
                       <p className="font-medium text-gray-800">Email</p>
                       <p className="text-sm text-gray-600">{customerInfo?.email || 'Your registered email'}</p>
@@ -116,8 +116,8 @@ const BookingSuccessPopup = ({ isOpen, onClose, bookingId, customerInfo }) => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center p-4 bg-purple-50 rounded-xl border border-purple-200">
-                    <Phone className="w-5 h-5 text-purple-600 mr-3" />
+                  <div className="flex items-center p-4 bg-bloom-rose-50 rounded-xl border border-bloom-rose-200">
+                    <Phone className="w-5 h-5 text-bloom-rose-600 mr-3" />
                     <div>
                       <p className="font-medium text-gray-800">Direct Call</p>
                       <p className="text-sm text-gray-600">Personal consultation</p>
@@ -127,7 +127,7 @@ const BookingSuccessPopup = ({ isOpen, onClose, bookingId, customerInfo }) => {
               </div>
 
               {/* Trust Message */}
-              <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4 border border-blue-200">
+              <div className="text-center bg-bloom-green-50 rounded-2xl p-4 border border-bloom-green-200">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Star className="w-4 h-4 text-yellow-500" />
                   <Star className="w-4 h-4 text-yellow-500" />
@@ -147,7 +147,7 @@ const BookingSuccessPopup = ({ isOpen, onClose, bookingId, customerInfo }) => {
                 onClick={() => {
                   onClose();
                 }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg font-medium"
+                className="bg-bloom-green-600 text-white px-8 py-3 rounded-xl hover:bg-bloom-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg font-medium"
               >
                 Got It, Thanks!
               </button>

@@ -42,64 +42,48 @@ const QuickActionsSection = ({ navigate }) => {
             0% { opacity: 0; transform: translate3d(0, 15px, 0); }
             100% { opacity: 1; transform: translate3d(0, 0, 0); }
           }
-          
+
           @keyframes quickSlideLeft {
             0% { opacity: 0; transform: translate3d(-15px, 0, 0); }
             100% { opacity: 1; transform: translate3d(0, 0, 0); }
           }
-          
+
           @keyframes quickSlideRight {
             0% { opacity: 0; transform: translate3d(15px, 0, 0); }
             100% { opacity: 1; transform: translate3d(0, 0, 0); }
           }
-          
+
           @keyframes gentleFloat {
             0%, 100% { transform: translate3d(0, 0, 0); }
             50% { transform: translate3d(0, -3px, 0); }
           }
-          
+
           .quick-fade-up { animation: quickFadeUp 0.5s ease-out forwards; }
           .quick-slide-left { animation: quickSlideLeft 0.5s ease-out forwards; }
           .quick-slide-right { animation: quickSlideRight 0.5s ease-out forwards; }
           .gentle-float { animation: gentleFloat 4s ease-in-out infinite; }
-          
+
           .quick-glass {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(47, 93, 58, 0.12);
+            box-shadow: 0 4px 16px rgba(36, 26, 32, 0.06);
             transition: all 0.25s ease;
           }
-          
+
           .quick-glass:hover {
-            background: rgba(255, 255, 255, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(47, 93, 58, 0.2);
+            box-shadow: 0 10px 24px rgba(36, 26, 32, 0.1);
             transform: translateY(-3px) scale(1.01);
           }
-          
-          .quick-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-          }
-          
-          .icon-shine {
-            filter: drop-shadow(0 0 6px rgba(102, 126, 234, 0.3));
-            transition: filter 0.25s ease;
-          }
-          
-          .icon-shine:hover {
-            filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5));
-          }
-          
+
           /* Performance containment */
           .quick-actions-container {
             contain: layout style;
             will-change: contents;
           }
-          
+
           /* Accessibility */
           @media (prefers-reduced-motion: reduce) {
             * {
@@ -112,46 +96,46 @@ const QuickActionsSection = ({ navigate }) => {
         `}
       </style>
 
-      <section 
+      <section
         ref={sectionRef}
-        className="quick-actions-container py-16 bg-gray-200 relative overflow-hidden"
+        className="quick-actions-container py-16 bg-bloom-ivory relative overflow-hidden"
       >
-        {/* Subtle background elements */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute top-16 left-16 w-64 h-64 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full blur-2xl" />
-          <div className="absolute bottom-16 right-16 w-48 h-48 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full blur-2xl" />
+        {/* Organic background shapes */}
+        <div className="absolute inset-0 opacity-30 pointer-events-none">
+          <div className="blob blob-a absolute top-16 -left-10 w-72 h-72 bg-bloom-green/20" />
+          <div className="blob blob-b absolute bottom-16 -right-10 w-64 h-64 bg-bloom-rose/15" />
         </div>
 
         {/* Floating decorations */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
-          <Sparkles className="absolute top-1/4 left-1/4 w-4 h-4 text-blue-400 gentle-float" style={{ animationDelay: '0s' }} />
-          <Clock className="absolute top-3/4 right-1/4 w-5 h-5 text-purple-400 gentle-float" style={{ animationDelay: '2s' }} />
-          <Sparkles className="absolute top-1/2 right-1/3 w-3 h-3 text-pink-400 gentle-float" style={{ animationDelay: '1s' }} />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+          <Sparkles className="absolute top-1/4 left-1/4 w-4 h-4 text-bloom-green gentle-float" style={{ animationDelay: '0s' }} />
+          <Clock className="absolute top-3/4 right-1/4 w-5 h-5 text-bloom-rose gentle-float" style={{ animationDelay: '2s' }} />
+          <Sparkles className="absolute top-1/2 right-1/3 w-3 h-3 text-bloom-gold gentle-float" style={{ animationDelay: '1s' }} />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           {/* Header */}
-          <header 
+          <header
             className={`text-center mb-16 transition-opacity duration-500 ${
               isVisible ? 'quick-fade-up' : 'opacity-0'
             }`}
           >
             <div className="inline-flex items-center justify-center p-2 quick-glass rounded-full mb-6">
-              <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
+              <Sparkles className="w-5 h-5 text-bloom-green mr-2" />
               <span className="text-gray-700 font-medium">Quick Actions</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              Get Started <span className="quick-gradient">Instantly</span>
+            <h2 className="font-display text-4xl md:text-5xl font-semibold text-gray-800 mb-4">
+              Get Started <span className="text-bloom-rose">Instantly</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
               Choose your path to the perfect event. Fast, simple, and tailored to your needs.
             </p>
-            <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto mt-8 rounded-full" />
+            <div className="w-16 h-1 bg-bloom-rose mx-auto mt-8 rounded-full" />
           </header>
 
           {/* Action Cards Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            
+
             {/* Order by Date Card */}
             <article
               className={`transition-opacity duration-500 ${
@@ -161,44 +145,35 @@ const QuickActionsSection = ({ navigate }) => {
             >
               <div
                 onClick={handleOrderByDate}
-                className="quick-glass relative rounded-3xl p-8 cursor-pointer group overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="quick-glass relative rounded-3xl p-8 cursor-pointer group overflow-hidden focus:outline-none focus:ring-2 focus:ring-bloom-green focus:ring-offset-2"
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handleOrderByDate()}
                 aria-label="Order by Date - Plan your event with date-specific inventory"
               >
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-purple-600/3 opacity-0 group-hover:opacity-100 transition-opacity duration-250 rounded-3xl" />
-                
                 <div className="relative z-10">
                   {/* Icon Container */}
                   <div className="flex items-center justify-center mb-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-15 group-hover:opacity-30 transition-opacity duration-250" />
-                      <div className="relative p-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl transform group-hover:scale-105 transition-transform duration-250">
-                        <Calendar className="w-8 h-8 text-white icon-shine" />
-                      </div>
+                    <div className="relative p-4 bg-bloom-green rounded-2xl transform group-hover:scale-105 transition-transform duration-250">
+                      <Calendar className="w-8 h-8 text-white" />
                     </div>
                   </div>
-                  
+
                   {/* Content */}
                   <div className="text-center">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:quick-gradient transition-all duration-250">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-bloom-green transition-colors duration-250">
                       Order by Date
                     </h3>
                     <p className="text-gray-600 mb-6 leading-relaxed">
                       Plan ahead with confidence. Browse our complete inventory filtered by your event date to ensure perfect availability.
                     </p>
-                    
+
                     {/* Call to Action */}
-                    <div className="inline-flex items-center justify-center px-6 py-3 quick-glass rounded-full text-gray-700 font-medium group-hover:bg-white/20 group-hover:text-gray-800 transition-all duration-250">
+                    <div className="inline-flex items-center justify-center px-6 py-3 bg-white/70 border border-bloom-green/20 rounded-full text-gray-700 font-medium group-hover:bg-bloom-green group-hover:text-white group-hover:border-bloom-green transition-all duration-250">
                       <span>Plan Your Event</span>
                       <ChevronRight className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-250" />
                     </div>
                   </div>
-
-                  {/* Decorative glow */}
-                  <div className="absolute top-4 right-4 w-12 h-12 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
                 </div>
               </div>
             </article>
@@ -212,51 +187,42 @@ const QuickActionsSection = ({ navigate }) => {
             >
               <div
                 onClick={handleBookItems}
-                className="quick-glass relative rounded-3xl p-8 cursor-pointer group overflow-hidden focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                className="quick-glass relative rounded-3xl p-8 cursor-pointer group overflow-hidden focus:outline-none focus:ring-2 focus:ring-bloom-rose focus:ring-offset-2"
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handleBookItems()}
                 aria-label="Book Items Now - Start building your dream event instantly"
               >
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-pink-600/3 opacity-0 group-hover:opacity-100 transition-opacity duration-250 rounded-3xl" />
-                
                 <div className="relative z-10">
                   {/* Icon Container */}
                   <div className="flex items-center justify-center mb-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur opacity-15 group-hover:opacity-30 transition-opacity duration-250" />
-                      <div className="relative p-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl transform group-hover:scale-105 transition-transform duration-250">
-                        <ShoppingBag className="w-8 h-8 text-white icon-shine" />
-                      </div>
+                    <div className="relative p-4 bg-bloom-rose rounded-2xl transform group-hover:scale-105 transition-transform duration-250">
+                      <ShoppingBag className="w-8 h-8 text-white" />
                     </div>
                   </div>
-                  
+
                   {/* Content */}
                   <div className="text-center">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:quick-gradient transition-all duration-250">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-bloom-rose transition-colors duration-250">
                       Book Items Now
                     </h3>
                     <p className="text-gray-600 mb-6 leading-relaxed">
                       Start building your dream event instantly. Browse our premium collection and reserve items with our streamlined booking process.
                     </p>
-                    
+
                     {/* Call to Action */}
-                    <div className="inline-flex items-center justify-center px-6 py-3 quick-glass rounded-full text-gray-700 font-medium group-hover:bg-white/20 group-hover:text-gray-800 transition-all duration-250">
+                    <div className="inline-flex items-center justify-center px-6 py-3 bg-white/70 border border-bloom-rose/20 rounded-full text-gray-700 font-medium group-hover:bg-bloom-rose group-hover:text-white group-hover:border-bloom-rose transition-all duration-250">
                       <span>Start Booking</span>
                       <ChevronRight className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-250" />
                     </div>
                   </div>
-
-                  {/* Decorative glow */}
-                  <div className="absolute top-4 right-4 w-12 h-12 bg-gradient-to-r from-purple-600/10 to-pink-600/10 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
                 </div>
               </div>
             </article>
           </div>
 
           {/* Trust Indicator */}
-          <footer 
+          <footer
             className={`text-center mt-16 transition-opacity duration-500 ${
               isVisible ? 'quick-fade-up' : 'opacity-0'
             }`}

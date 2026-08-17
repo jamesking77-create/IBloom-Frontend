@@ -340,7 +340,7 @@ const MailerScreen = () => {
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <div className="text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent mb-2 sm:mb-3">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-slate-900 bg-clip-text text-transparent mb-2 sm:mb-3">
               Mail Center
             </h1>
             <p className="text-slate-600 text-sm sm:text-base lg:text-lg font-medium">
@@ -353,7 +353,7 @@ const MailerScreen = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
           <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg border border-white/20 p-3 sm:p-4 lg:p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
             <div className="flex items-center">
-              <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg">
+              <div className="p-2 sm:p-3 bg-bloom-green-500 rounded-lg sm:rounded-xl shadow-lg">
                 <Users className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
               </div>
               <div className="ml-3 sm:ml-4 min-w-0 flex-1">
@@ -369,7 +369,7 @@ const MailerScreen = () => {
 
           <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg border border-white/20 p-3 sm:p-4 lg:p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
             <div className="flex items-center">
-              <div className="p-2 sm:p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg sm:rounded-xl shadow-lg">
+              <div className="p-2 sm:p-3 bg-emerald-500 rounded-lg sm:rounded-xl shadow-lg">
                 <Send className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
               </div>
               <div className="ml-3 sm:ml-4 min-w-0 flex-1">
@@ -385,7 +385,7 @@ const MailerScreen = () => {
 
           <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg border border-white/20 p-3 sm:p-4 lg:p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
             <div className="flex items-center">
-              <div className="p-2 sm:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl shadow-lg">
+              <div className="p-2 sm:p-3 bg-bloom-rose-500 rounded-lg sm:rounded-xl shadow-lg">
                 <Mail className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
               </div>
               <div className="ml-3 sm:ml-4 min-w-0 flex-1">
@@ -401,7 +401,7 @@ const MailerScreen = () => {
 
           <div className="bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg border border-white/20 p-3 sm:p-4 lg:p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
             <div className="flex items-center">
-              <div className="p-2 sm:p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg sm:rounded-xl shadow-lg">
+              <div className="p-2 sm:p-3 bg-amber-500 rounded-lg sm:rounded-xl shadow-lg">
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
               </div>
               <div className="ml-3 sm:ml-4 min-w-0 flex-1">
@@ -431,7 +431,7 @@ const MailerScreen = () => {
                   <div className="flex gap-2 sm:gap-3">
                     <button
                       onClick={() => handleStartComposing("broadcast")}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-semibold rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-bloom-rose-600 text-white text-sm font-semibold rounded-xl hover:bg-bloom-rose-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
                     >
                       <Users className="w-4 h-4 mr-1.5 sm:mr-2" />
                       <span className="hidden sm:inline">Broadcast</span>
@@ -458,14 +458,14 @@ const MailerScreen = () => {
                       placeholder="Search customers..."
                       value={searchQuery}
                       onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-sm placeholder-slate-400"
+                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-sm placeholder-slate-400"
                     />
                   </div>
 
                   <select
                     value={statusFilter}
                     onChange={(e) => dispatch(setStatusFilter(e.target.value))}
-                    className="px-4 py-2.5 sm:py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-sm min-w-[120px]"
+                    className="px-4 py-2.5 sm:py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-sm min-w-[120px]"
                   >
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -480,7 +480,7 @@ const MailerScreen = () => {
                       type="checkbox"
                       checked={selectedMails.length === filteredMails.length}
                       onChange={handleSelectAll}
-                      className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 focus:ring-2"
+                      className="w-4 h-4 text-bloom-green-600 border-slate-300 rounded focus:ring-bloom-green-500 focus:ring-2"
                     />
                     <label className="ml-2 text-sm text-slate-600 font-medium">
                       Select All ({selectedMails.length} selected)
@@ -492,7 +492,7 @@ const MailerScreen = () => {
               <div className="flex-1 overflow-hidden">
                 {loading ? (
                   <div className="p-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bloom-green-600 mx-auto"></div>
                     <p className="mt-2 text-slate-600 font-medium">
                       Loading emails...
                     </p>
@@ -518,13 +518,13 @@ const MailerScreen = () => {
                             type="checkbox"
                             checked={selectedMails.includes(mail.id)}
                             onChange={() => handleSelectMail(mail.id)}
-                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                            className="w-4 h-4 text-bloom-green-600 border-slate-300 rounded focus:ring-bloom-green-500"
                           />
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                <div className="p-2 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex-shrink-0">
+                                <div className="p-2 bg-slate-100 rounded-lg flex-shrink-0">
                                   <User className="w-4 h-4 text-slate-600" />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -539,7 +539,7 @@ const MailerScreen = () => {
 
                               <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                                 <button
-                                  className="inline-flex items-center px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-semibold rounded-full hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg"
+                                  className="inline-flex items-center px-2.5 sm:px-3 py-1.5 bg-bloom-green-500 text-white text-xs font-semibold rounded-full hover:bg-bloom-green-600 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg"
                                   onClick={() =>
                                     handleStartComposing("individual", {
                                       email: mail.email,
@@ -612,20 +612,20 @@ const MailerScreen = () => {
                         To
                       </label>
                       {mailComposition.recipient ? (
-                        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200/60">
+                        <div className="p-4 bg-bloom-green-50 rounded-xl border border-bloom-green-200/60">
                           <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                              <User className="w-4 h-4 text-blue-600" />
+                            <div className="p-2 bg-bloom-green-100 rounded-lg">
+                              <User className="w-4 h-4 text-bloom-green-600" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-blue-900 truncate">
+                              <p className="text-sm font-bold text-bloom-green-900 truncate">
                                 {mailComposition.recipient.customerName}
                               </p>
-                              <p className="text-sm text-blue-700 truncate">
+                              <p className="text-sm text-bloom-green-700 truncate">
                                 {mailComposition.recipient.email}
                               </p>
                             </div>
-                            <div className="flex items-center text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full font-semibold">
+                            <div className="flex items-center text-xs text-bloom-green-600 bg-bloom-green-100 px-2 py-1 rounded-full font-semibold">
                               <CheckCircle className="w-3 h-3 mr-1" />
                               Selected
                             </div>
@@ -650,26 +650,26 @@ const MailerScreen = () => {
                       <label className="block text-sm font-semibold text-slate-700 mb-3">
                         Recipients
                       </label>
-                      <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200/60">
+                      <div className="p-4 bg-bloom-rose-50 rounded-xl border border-bloom-rose-200/60">
                         <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-purple-100 rounded-lg">
-                            <Users className="w-4 h-4 text-purple-600" />
+                          <div className="p-2 bg-bloom-rose-100 rounded-lg">
+                            <Users className="w-4 h-4 text-bloom-rose-600" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-purple-900">
+                            <p className="text-sm font-bold text-bloom-rose-900">
                               Broadcasting to{" "}
                               {selectedMails.length > 0
                                 ? selectedMails.length
                                 : filteredMails.length}{" "}
                               recipients
                             </p>
-                            <p className="text-sm text-purple-700">
+                            <p className="text-sm text-bloom-rose-700">
                               {selectedMails.length > 0
                                 ? "Selected customers only"
                                 : "All filtered customers"}
                             </p>
                           </div>
-                          <div className="flex items-center text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full font-semibold">
+                          <div className="flex items-center text-xs text-bloom-rose-600 bg-bloom-rose-100 px-2 py-1 rounded-full font-semibold">
                             <Users className="w-3 h-3 mr-1" />
                             {selectedMails.length > 0
                               ? selectedMails.length
@@ -691,7 +691,7 @@ const MailerScreen = () => {
                         dispatch(updateMailSubject(e.target.value))
                       }
                       placeholder="Enter email subject..."
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-sm placeholder-slate-400"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-sm placeholder-slate-400"
                     />
                   </div>
 
@@ -706,7 +706,7 @@ const MailerScreen = () => {
                       }
                       placeholder="Enter your message..."
                       rows={6}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-sm placeholder-slate-400 resize-none"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-sm placeholder-slate-400 resize-none"
                     />
                   </div>
 
@@ -720,7 +720,7 @@ const MailerScreen = () => {
                     <div
                       className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 ${
                         dragActive
-                          ? "border-blue-500 bg-blue-50/50 scale-[1.02]"
+                          ? "border-bloom-green-500 bg-bloom-green-50/50 scale-[1.02]"
                           : "border-slate-300 hover:border-slate-400 hover:bg-slate-50/30"
                       }`}
                       onDragEnter={handleDrag}
@@ -779,7 +779,7 @@ const MailerScreen = () => {
                                     href={attachment.preview}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-blue-800 p-1.5 rounded-lg hover:bg-blue-50 transition-all duration-200"
+                                    className="text-bloom-green-600 hover:text-bloom-green-800 p-1.5 rounded-lg hover:bg-bloom-green-50 transition-all duration-200"
                                   >
                                     <Download className="w-4 h-4" />
                                   </a>
@@ -799,8 +799,8 @@ const MailerScreen = () => {
                       )}
 
                     {uploadingAttachment && (
-                      <div className="mt-2 flex items-center text-sm text-blue-600 font-medium">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                      <div className="mt-2 flex items-center text-sm text-bloom-green-600 font-medium">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-bloom-green-600 mr-2"></div>
                         Adding attachment...
                       </div>
                     )}
@@ -814,7 +814,7 @@ const MailerScreen = () => {
                           : handleBroadcast
                       }
                       disabled={sendingMail}
-                      className="flex-1 inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-bold rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                      className="flex-1 inline-flex items-center justify-center px-4 py-3 bg-bloom-green-600 text-white text-sm font-bold rounded-xl hover:bg-bloom-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
                     >
                       {sendingMail ? (
                         <>
@@ -827,7 +827,7 @@ const MailerScreen = () => {
                           Send
                           {mailComposition.attachments &&
                             mailComposition.attachments.length > 0 && (
-                              <span className="ml-2 bg-blue-500/80 text-xs px-2 py-1 rounded-full font-bold">
+                              <span className="ml-2 bg-bloom-green-500/80 text-xs px-2 py-1 rounded-full font-bold">
                                 {mailComposition.attachments.length}
                               </span>
                             )}
@@ -837,7 +837,7 @@ const MailerScreen = () => {
 
                     <button
                       onClick={() => dispatch(clearComposition())}
-                      className="px-4 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white text-sm font-bold rounded-xl hover:from-slate-700 hover:to-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                      className="px-4 py-3 bg-slate-600 text-white text-sm font-bold rounded-xl hover:bg-slate-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
                     >
                       Clear
                     </button>
@@ -847,7 +847,7 @@ const MailerScreen = () => {
             ) : (
               <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-6">
                 <div className="text-center">
-                  <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl w-fit mx-auto mb-6">
+                  <div className="p-4 bg-slate-100 rounded-2xl w-fit mx-auto mb-6">
                     <Mail className="w-12 h-12 text-slate-600" />
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">
@@ -860,7 +860,7 @@ const MailerScreen = () => {
                   <div className="space-y-4">
                     <button
                       onClick={() => handleStartComposing("individual")}
-                      className="w-full inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-bold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                      className="w-full inline-flex items-center justify-center px-6 py-4 bg-bloom-green-600 text-white text-sm font-bold rounded-xl hover:bg-bloom-green-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
                     >
                       <User className="w-5 h-5 mr-3" />
                       Individual Email
@@ -868,7 +868,7 @@ const MailerScreen = () => {
 
                     <button
                       onClick={() => handleStartComposing("broadcast")}
-                      className="w-full inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-bold rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                      className="w-full inline-flex items-center justify-center px-6 py-4 bg-bloom-rose-600 text-white text-sm font-bold rounded-xl hover:bg-bloom-rose-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
                     >
                       <Users className="w-5 h-5 mr-3" />
                       Broadcast Email
@@ -904,7 +904,7 @@ const MailerScreen = () => {
                   {fetchingHistory ? (
                     /* ADD loading state */
                     <div className="p-6 text-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-bloom-green-600 mx-auto mb-2"></div>
                       <p className="text-gray-600">Loading history...</p>
                     </div>
                   ) : mailHistory.length === 0 ? (
@@ -920,20 +920,20 @@ const MailerScreen = () => {
                             <div
                               className={`p-1.5 rounded-full ${
                                 mail.type === "broadcast"
-                                  ? "bg-purple-100"
-                                  : "bg-blue-100"
+                                  ? "bg-bloom-rose-100"
+                                  : "bg-bloom-green-100"
                               }`}
                             >
                               {mail.type === "broadcast" ? (
                                 <Users
                                   className={`w-3 h-3 ${
                                     mail.type === "broadcast"
-                                      ? "text-purple-600"
-                                      : "text-blue-600"
+                                      ? "text-bloom-rose-600"
+                                      : "text-bloom-green-600"
                                   }`}
                                 />
                               ) : (
-                                <User className="w-3 h-3 text-blue-600" />
+                                <User className="w-3 h-3 text-bloom-green-600" />
                               )}
                             </div>
 

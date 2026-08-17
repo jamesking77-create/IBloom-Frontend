@@ -196,7 +196,7 @@ const LineChartComponent = () => {
       <div className="bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-lg h-full min-h-[300px] sm:min-h-[400px]">
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500 mx-auto mb-3 sm:mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-bloom-green-500 mx-auto mb-3 sm:mb-4"></div>
             <p className="text-gray-600 text-sm sm:text-base">Loading booking data...</p>
           </div>
         </div>
@@ -214,7 +214,7 @@ const LineChartComponent = () => {
             <div className="text-gray-600 text-sm mb-4">{error}</div>
             <button 
               onClick={() => dispatch(fetchBookings())}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg sm:rounded-xl hover:bg-blue-600 transition-colors text-sm sm:text-base"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-bloom-green-500 text-white rounded-lg sm:rounded-xl hover:bg-bloom-green-600 transition-colors text-sm sm:text-base"
             >
               <RefreshCw size={16} />
               Retry
@@ -246,7 +246,7 @@ const LineChartComponent = () => {
       <div className="mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
           <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-0">
-            <TrendingUp className="text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />
+            <TrendingUp className="text-bloom-green-500 w-5 h-5 sm:w-6 sm:h-6" />
             <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800">Monthly Performance</h3>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
@@ -259,17 +259,17 @@ const LineChartComponent = () => {
       
       {/* Stats Summary - FULLY RESPONSIVE GRID */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-blue-200">
+        <div className="bg-bloom-green-50 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-bloom-green-200">
           <div className="flex items-center gap-1 sm:gap-2 mb-1">
-            <BarChart3 className="text-blue-600 w-3 h-3 sm:w-4 sm:h-4" />
-            <p className="text-xs sm:text-sm text-blue-600 font-medium">Total Bookings</p>
+            <BarChart3 className="text-bloom-green-600 w-3 h-3 sm:w-4 sm:h-4" />
+            <p className="text-xs sm:text-sm text-bloom-green-600 font-medium">Total Bookings</p>
           </div>
-          <p className="text-sm sm:text-lg md:text-xl font-bold text-blue-700">
+          <p className="text-sm sm:text-lg md:text-xl font-bold text-bloom-green-700">
             {summaryStats.totalBookings.toLocaleString()}
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-green-200">
+        <div className="bg-green-50 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-green-200">
           <div className="flex items-center gap-1 sm:gap-2 mb-1">
             <DollarSign className="text-green-600 w-3 h-3 sm:w-4 sm:h-4" />
             <p className="text-xs sm:text-sm text-green-600 font-medium">Total Revenue</p>
@@ -279,17 +279,17 @@ const LineChartComponent = () => {
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-purple-200">
+        <div className="bg-bloom-rose-50 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-bloom-rose-200">
           <div className="flex items-center gap-1 sm:gap-2 mb-1">
-            <Activity className="text-purple-600 w-3 h-3 sm:w-4 sm:h-4" />
-            <p className="text-xs sm:text-sm text-purple-600 font-medium">Avg Bookings</p>
+            <Activity className="text-bloom-rose-600 w-3 h-3 sm:w-4 sm:h-4" />
+            <p className="text-xs sm:text-sm text-bloom-rose-600 font-medium">Avg Bookings</p>
           </div>
-          <p className="text-sm sm:text-lg md:text-xl font-bold text-purple-700">
+          <p className="text-sm sm:text-lg md:text-xl font-bold text-bloom-rose-700">
             {summaryStats.averageBookings}
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-orange-200">
+        <div className="bg-orange-50 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-orange-200">
           <div className="flex items-center gap-1 sm:gap-2 mb-1">
             <TrendingUp className="text-orange-600 w-3 h-3 sm:w-4 sm:h-4" />
             <p className="text-xs sm:text-sm text-orange-600 font-medium">Avg Revenue</p>
@@ -397,7 +397,7 @@ const LineChartComponent = () => {
         <div className="flex justify-center gap-4 mb-4">
           {selectedMetrics.includes('bookings') && (
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <div className="w-3 h-3 rounded-full bg-bloom-green-500"></div>
               <span className="text-xs text-gray-600">Bookings</span>
             </div>
           )}
@@ -420,7 +420,7 @@ const LineChartComponent = () => {
             onClick={() => toggleMetric('bookings')}
             className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-full border transition-colors ${
               selectedMetrics.includes('bookings')
-                ? 'bg-blue-100 text-blue-700 border-blue-300'
+                ? 'bg-bloom-green-100 text-bloom-green-700 border-bloom-green-300'
                 : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
             }`}
           >

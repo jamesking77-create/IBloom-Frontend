@@ -53,14 +53,14 @@ const ItemAddedPopup = ({
           <div className="flex items-center justify-center mb-3 sm:mb-4">
             <div className={`rounded-full p-2 sm:p-3 ${
               fromOrderProcess 
-                ? 'bg-purple-100' 
+                ? 'bg-bloom-rose-100' 
                 : fromEventBooking 
                 ? 'bg-green-100' 
                 : 'bg-green-100'
             }`}>
               <Check className={`w-6 h-6 sm:w-8 sm:h-8 ${
                 fromOrderProcess 
-                  ? 'text-purple-600' 
+                  ? 'text-bloom-rose-600' 
                   : fromEventBooking 
                   ? 'text-green-600' 
                   : 'text-green-600'
@@ -82,7 +82,7 @@ const ItemAddedPopup = ({
             <div className="mt-2 sm:mt-3 flex justify-center">
               <div className={`inline-flex items-center px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
                 fromOrderProcess
-                  ? 'bg-purple-100 text-purple-800'
+                  ? 'bg-bloom-rose-100 text-bloom-rose-800'
                   : 'bg-green-100 text-green-800'
               }`}>
                 <span className="mr-1 text-sm">{fromOrderProcess ? '📦' : '📅'}</span>
@@ -151,10 +151,10 @@ const ItemAddedPopup = ({
               onClick={handleViewCart}
               className={`flex-1 px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg transition-all duration-300 transform active:scale-95 sm:hover:scale-105 font-medium flex items-center justify-center gap-2 text-white text-sm sm:text-base order-1 xs:order-2 ${
                 fromOrderProcess
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:from-purple-800 active:to-pink-800'
+                  ? 'bg-bloom-rose-600 hover:bg-bloom-rose-700 active:from-bloom-rose-800 active:to-bloom-rose-800'
                   : fromEventBooking
-                  ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 active:from-green-800 active:to-blue-800'
-                  : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:from-blue-800 active:to-purple-800'
+                  ? 'bg-bloom-green-600 hover:bg-bloom-green-700 active:bg-bloom-green-800'
+                  : 'bg-bloom-green-600 hover:bg-bloom-green-700 active:from-bloom-green-800 active:to-bloom-rose-800'
               }`}
             >
               <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

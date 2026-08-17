@@ -718,7 +718,7 @@ const Bookings = () => {
                   placeholder="Search bookings..."
                   value={searchQuery}
                   onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full text-sm sm:text-base"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent w-full text-sm sm:text-base"
                 />
               </div>
 
@@ -731,7 +731,7 @@ const Bookings = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => dispatch(setStatusFilter(e.target.value))}
-                  className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white w-full text-sm sm:text-base"
+                  className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent appearance-none bg-white w-full text-sm sm:text-base"
                 >
                   <option value="all">All Status</option>
                   <option value="pending_confirmation">Pending</option>
@@ -764,7 +764,7 @@ const Bookings = () => {
                 </div>
               </div>
               <div>
-                <div className="font-bold text-lg sm:text-xl text-blue-600">
+                <div className="font-bold text-lg sm:text-xl text-bloom-green-600">
                   {bookingStats.multiDay}
                 </div>
                 <div className="text-gray-600 text-xs sm:text-sm">
@@ -779,7 +779,7 @@ const Bookings = () => {
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bloom-green-600"></div>
             </div>
           ) : paginatedBookings.length === 0 ? (
             <div className="text-center py-12">
@@ -898,7 +898,7 @@ const Bookings = () => {
                               {booking.eventSchedule?.isMultiDay && (
                                 <div className="flex items-center gap-2 text-sm">
                                   <Clock size={14} className="text-gray-400" />
-                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                                  <span className="px-2 py-1 bg-bloom-green-100 text-bloom-green-800 text-xs rounded-full font-medium">
                                     {booking.eventSchedule.durationInDays ||
                                       "Multi"}{" "}
                                     Day Event
@@ -930,7 +930,7 @@ const Bookings = () => {
                           <div className="flex gap-2 mt-4">
                             <button
                               onClick={() => handleViewBooking(booking)}
-                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-bloom-green-600 text-white rounded-lg hover:bg-bloom-green-700 transition-colors text-sm"
                             >
                               <Eye size={16} />
                               <span className="hidden sm:inline">View</span>
@@ -938,7 +938,7 @@ const Bookings = () => {
 
                             <button
                               onClick={() => handleGenerateInvoice(booking)}
-                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-bloom-rose-600 text-white rounded-lg hover:bg-bloom-rose-700 transition-colors text-sm"
                             >
                               <FileText size={16} />
                               <span className="hidden sm:inline">Invoice</span>
@@ -1003,7 +1003,7 @@ const Bookings = () => {
                               {statusInfo.label}
                             </div>
                             {booking.eventSchedule?.isMultiDay && (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                              <span className="px-2 py-1 bg-bloom-green-100 text-bloom-green-800 text-xs rounded-full font-medium">
                                 Multi-day
                               </span>
                             )}
@@ -1073,7 +1073,7 @@ const Bookings = () => {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleViewBooking(booking)}
-                              className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                              className="flex items-center gap-1 px-3 py-2 bg-bloom-green-600 text-white rounded-lg hover:bg-bloom-green-700 transition-colors text-sm"
                             >
                               <Eye size={16} />
                               View
@@ -1081,7 +1081,7 @@ const Bookings = () => {
 
                             <button
                               onClick={() => handleGenerateInvoice(booking)}
-                              className="flex items-center gap-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                              className="flex items-center gap-1 px-3 py-2 bg-bloom-rose-600 text-white rounded-lg hover:bg-bloom-rose-700 transition-colors text-sm"
                             >
                               <FileText size={16} />
                               Invoice
@@ -1162,7 +1162,7 @@ const Bookings = () => {
                     onClick={() => handlePageChange(page)}
                     className={`px-3 py-2 rounded-lg text-sm ${
                       page === pagination.currentPage
-                        ? "bg-blue-600 text-white"
+                        ? "bg-bloom-green-600 text-white"
                         : "border border-gray-300 hover:bg-gray-50"
                     }`}
                   >
@@ -1340,7 +1340,7 @@ const Bookings = () => {
                   </h3>
                   <button
                     onClick={() => setExpandedServices(!expandedServices)}
-                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                    className="flex items-center gap-2 text-sm text-bloom-green-600 hover:text-bloom-green-700"
                   >
                     {expandedServices ? "Collapse" : "Expand All"}
                     {expandedServices ? (
@@ -1850,7 +1850,7 @@ const Bookings = () => {
                 </div>
 
                 {/* Event Details */}
-                <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                <div className="bg-bloom-green-50 p-4 rounded-lg mb-6">
                   <h3 className="font-semibold text-gray-900 mb-3">
                     Event Details
                   </h3>
@@ -1949,7 +1949,7 @@ const Bookings = () => {
                   </h3>
                   <div className="border border-gray-300 rounded-lg overflow-hidden">
                     <table className="w-full">
-                      <thead className="bg-blue-50">
+                      <thead className="bg-bloom-green-50">
                         <tr>
                           <th className="text-left p-3 font-medium text-gray-700">
                             Service

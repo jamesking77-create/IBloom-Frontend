@@ -150,11 +150,11 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
       case 'booking':
         if (status === 'confirmed') return <CheckCircle size={16} className="text-green-500" />;
         if (status === 'cancelled') return <XCircle size={16} className="text-red-500" />;
-        return <Calendar size={16} className="text-blue-500" />;
+        return <Calendar size={16} className="text-bloom-green-500" />;
       case 'system':
         return <Bell size={16} className="text-emerald-500" />;
       case 'new_booking':
-        return <Package size={16} className="text-purple-500" />;
+        return <Package size={16} className="text-bloom-rose-500" />;
       case 'status_update':
         return <Clock size={16} className="text-orange-500" />;
       default:
@@ -272,7 +272,7 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
                 {/* Notification Panel - FIXED: Move dropdown more to the right */}
                 <div className="absolute right-0 z-50 mt-2 w-80 sm:w-96 rounded-2xl shadow-2xl bg-white border border-gray-200 overflow-hidden transform translate-x-8">
                   {/* Header */}
-                  <div className="py-3 px-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
+                  <div className="py-3 px-4 border-b border-gray-200 bg-emerald-50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <h3 className="text-sm font-semibold text-gray-900">Live Activity</h3>
@@ -389,7 +389,7 @@ const DashboardHeader = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
             
             {isProfileOpen && (
               <div className="absolute right-0 z-50 mt-2 w-56 rounded-2xl shadow-2xl bg-white border border-gray-200 overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+                <div className="px-4 py-3 border-b border-gray-100 bg-emerald-50">
                   <p className="text-sm font-semibold text-gray-900 truncate">
                     {userData?.name || 'User'}
                   </p>

@@ -129,12 +129,12 @@ const BookingsList = () => {
       {/* Header - RESPONSIVE */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 space-y-2 sm:space-y-0">
         <div className="flex items-center gap-2 sm:gap-3">
-          <BookOpen className="text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />
+          <BookOpen className="text-bloom-green-500 w-5 h-5 sm:w-6 sm:h-6" />
           <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-gray-800">
             {isMobile ? 'Bookings' : 'Recent Bookings'}
           </h3>
           {!loading && bookings.length > 0 && (
-            <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">
+            <span className="bg-bloom-green-100 text-bloom-green-700 text-xs font-medium px-2 py-1 rounded-full">
               {bookings.length}
             </span>
           )}
@@ -152,7 +152,7 @@ const BookingsList = () => {
           )}
           
           <button 
-            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium transition-colors px-2 py-1 rounded-lg hover:bg-blue-50" 
+            className="flex items-center gap-1 text-bloom-green-600 hover:text-bloom-green-700 text-xs sm:text-sm font-medium transition-colors px-2 py-1 rounded-lg hover:bg-bloom-green-50" 
             onClick={handleMoveToBookings}
           >
             View All
@@ -166,7 +166,7 @@ const BookingsList = () => {
         {loading ? (
           <div className="flex justify-center items-center h-32 sm:h-40">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-bloom-green-600 mx-auto mb-2"></div>
               <p className="text-gray-600 text-xs sm:text-sm">Loading bookings...</p>
             </div>
           </div>
@@ -198,7 +198,7 @@ const BookingsList = () => {
               return (
                 <div 
                   key={bookingId || index} 
-                  className="group border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer"
+                  className="group border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 hover:shadow-md hover:border-bloom-green-200 transition-all duration-200 cursor-pointer"
                   // onClick={() => handleViewBooking(bookingId)}
                 >
                   {/* Mobile Layout */}
@@ -249,7 +249,7 @@ const BookingsList = () => {
                         <div className="flex items-center gap-2">
                           <span>{guests} guests</span>
                           {isMultiDay && (
-                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded-full font-medium">
+                            <span className="px-1.5 py-0.5 bg-bloom-green-100 text-bloom-green-800 rounded-full font-medium">
                               Multi
                             </span>
                           )}
@@ -290,7 +290,7 @@ const BookingsList = () => {
                           <span>ID: {String(bookingId).slice(-6)}</span>
                           <span>{guests} guests</span>
                           {isMultiDay && (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">
+                            <span className="px-2 py-1 bg-bloom-green-100 text-bloom-green-800 rounded-full font-medium">
                               Multi-day
                             </span>
                           )}
@@ -316,7 +316,7 @@ const BookingsList = () => {
                   
                   {/* Hover effect for desktop */}
                   {!isMobile && (
-                    <div className="absolute inset-y-0 right-0 w-1 bg-blue-500 rounded-r-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                    <div className="absolute inset-y-0 right-0 w-1 bg-bloom-green-500 rounded-r-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                   )}
                 </div>
               );
@@ -327,20 +327,20 @@ const BookingsList = () => {
       
       {/* Stats Footer - RESPONSIVE */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
-        <div className="text-center p-2 sm:p-3 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+        <div className="text-center p-2 sm:p-3 rounded-lg bg-bloom-green-50 border border-bloom-green-200">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <TrendingUp className="text-blue-600 w-3 h-3 sm:w-4 sm:h-4" />
-            {!isMobile && <span className="text-xs font-medium text-blue-600">Week</span>}
+            <TrendingUp className="text-bloom-green-600 w-3 h-3 sm:w-4 sm:h-4" />
+            {!isMobile && <span className="text-xs font-medium text-bloom-green-600">Week</span>}
           </div>
-          <div className="text-sm sm:text-lg md:text-xl font-bold text-blue-700">
+          <div className="text-sm sm:text-lg md:text-xl font-bold text-bloom-green-700">
             {loading ? '...' : calculatedStats.thisWeek}
           </div>
-          <div className="text-xs sm:text-sm text-blue-600 font-medium">
+          <div className="text-xs sm:text-sm text-bloom-green-600 font-medium">
             {isMobile ? 'Week' : 'This Week'}
           </div>
         </div>
         
-        <div className="text-center p-2 sm:p-3 rounded-lg bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
+        <div className="text-center p-2 sm:p-3 rounded-lg bg-green-50 border border-green-200">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Activity className="text-green-600 w-3 h-3 sm:w-4 sm:h-4" />
             {!isMobile && <span className="text-xs font-medium text-green-600">Month</span>}
@@ -353,7 +353,7 @@ const BookingsList = () => {
           </div>
         </div>
         
-        <div className="text-center p-2 sm:p-3 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
+        <div className="text-center p-2 sm:p-3 rounded-lg bg-emerald-50 border border-emerald-200">
           <div className="flex items-center justify-center gap-1 mb-1">
             <DollarSign className="text-emerald-600 w-3 h-3 sm:w-4 sm:h-4" />
             {!isMobile && <span className="text-xs font-medium text-emerald-600">Revenue</span>}

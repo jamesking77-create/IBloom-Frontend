@@ -35,7 +35,7 @@ const DashboardLayout = () => {
   };
   
   return (
-    <div className="h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex overflow-hidden">
+    <div className="h-screen bg-green-50 flex overflow-hidden">
       {/* Sidebar */}
       <Sidebar 
         isOpen={isSidebarOpen}

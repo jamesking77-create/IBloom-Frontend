@@ -12,6 +12,7 @@ import {
   Package,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Star,
   Heart,
   AlertCircle,
@@ -33,6 +34,24 @@ import {
 } from "../../store/slices/cart-slice";
 import ConfirmModal from "../../UI/confrimModal";
 import { notifySuccess } from "../../utils/toastify";
+
+// Friendly time-slot options (6:00 AM – 11:30 PM, 30-minute steps) for the time
+// dropdowns below — value stays 24-hour "HH:MM" so it's still compatible with the
+// startTime/endTime comparisons and formatters used elsewhere in the booking flow.
+const TIME_OPTIONS = Array.from({ length: 36 }, (_, i) => {
+  const totalMinutes = 6 * 60 + i * 30;
+  const hours24 = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const value = `${String(hours24).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  const period = hours24 >= 12 ? "PM" : "AM";
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  const label = `${hours12}:${String(minutes).padStart(2, "0")} ${period}`;
+  return { value, label };
+});
+
+// Renders a stored "HH:MM" value the same friendly way the dropdowns above show it
+const formatTimeLabel = (value) =>
+  TIME_OPTIONS.find((option) => option.value === value)?.label || value;
 
 const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
   const dispatch = useDispatch();
@@ -235,7 +254,7 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
             
             {/* Image Counter - Only show if multiple images */}
             {hasMultipleImages && (
-              <div className="absolute bottom-0 right-0 transform translate-x-1 translate-y-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+              <div className="absolute bottom-0 right-0 transform translate-x-1 translate-y-1 bg-bloom-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
                 {currentImageIndex + 1}
               </div>
             )}
@@ -258,7 +277,7 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
             )}
             
             {/* Star Badge */}
-            <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+            <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-yellow-400 rounded-full flex items-center justify-center">
               <Star className="w-2 h-2 sm:w-3 sm:h-3 text-white" />
             </div>
           </div>
@@ -274,7 +293,7 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
                 </h3>
                 {/* Show image count if multiple images */}
                 {hasMultipleImages && (
-                  <p className="text-blue-500 text-xs mb-1">
+                  <p className="text-bloom-green-500 text-xs mb-1">
                     {availableImages.length} images available
                   </p>
                 )}
@@ -329,13 +348,13 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
                       e.preventDefault();
                     }
                   }}
-                  className="mx-3 w-12 sm:w-14 text-center font-semibold text-gray-700 text-sm bg-white border border-gray-200 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 hover:border-gray-300 py-2"
+                  className="mx-3 w-12 sm:w-14 text-center font-semibold text-gray-700 text-sm bg-white border border-gray-200 rounded-md focus:border-bloom-green-500 focus:ring-2 focus:ring-bloom-green-200 transition-all duration-200 hover:border-gray-300 py-2"
                   title="Click to edit quantity directly"
                 />
                 
                 <button
                   onClick={() => handleIncrementQuantity(cartId)}
-                  className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200"
+                  className="w-8 h-8 bg-bloom-green-500 hover:bg-bloom-green-600 text-white rounded-full flex items-center justify-center transition-colors duration-200"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -591,7 +610,7 @@ const handleNext = () => {
   const calendarDays = generateCalendarDays();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-bloom-ivory">
       {/* Container with proper responsive padding */}
       <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-4 sm:py-6 md:py-8 lg:py-12 max-w-7xl">
         <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fadeIn">
@@ -613,11 +632,11 @@ const handleNext = () => {
             
             {/* Cart Header - Responsive Layout */}
             <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 lg:mb-8">
-              <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center">
+              <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold bg-bloom-rose-600 bg-clip-text text-transparent flex items-center">
                 <div className="relative mr-2 sm:mr-3">
-                  <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-purple-600" />
+                  <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-bloom-rose-600" />
                   {cartItemCount > 0 && (
-                    <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-4 h-4 sm:w-5 sm:h-5 bg-bloom-rose-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">
                         {cartItemCount}
                       </span>
@@ -633,7 +652,7 @@ const handleNext = () => {
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <button
                   onClick={onAddMoreItems}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center group text-xs sm:text-sm md:text-base"
+                  className="bg-bloom-green-500 hover:bg-bloom-green-600 text-white px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center group text-xs sm:text-sm md:text-base"
                 >
                   <Plus className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2 group-hover:rotate-90 transition-transform duration-300" />
                   <span className="hidden xs:inline">Add More Items</span>
@@ -642,7 +661,7 @@ const handleNext = () => {
                 {cartItems.length > 0 && (
                   <button
                     onClick={handleClearCart}
-                    className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center group"
+                    className="bg-bloom-rose-500 hover:bg-bloom-rose-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center group"
                     title="Clear Cart"
                   >
                     <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 group-hover:rotate-12 transition-transform duration-300" />
@@ -660,7 +679,7 @@ const handleNext = () => {
                 </p>
                 <button
                   onClick={onAddMoreItems}
-                  className="mt-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                  className="mt-4 bg-bloom-green-500 hover:bg-bloom-green-600 text-white px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl lg:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
                 >
                   Browse Items
                 </button>
@@ -693,7 +712,7 @@ const handleNext = () => {
                     <span className="text-base sm:text-lg md:text-xl font-semibold text-gray-800">
                       Total (Tax Included):
                     </span>
-                    <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                    <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-bloom-green-600 bg-clip-text text-transparent">
                       {formatPrice(cartTotal)}
                     </span>
                   </div>
@@ -720,8 +739,8 @@ const handleNext = () => {
               
               {/* Date Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 md:mb-8 space-y-3 sm:space-y-0">
-                <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center">
-                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 mr-2 sm:mr-3 text-blue-600" />
+                <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-bloom-green-600 bg-clip-text text-transparent flex items-center">
+                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 mr-2 sm:mr-3 text-bloom-green-600" />
                   Select Date
                 </h2>
                 
@@ -741,7 +760,7 @@ const handleNext = () => {
                     <div
                       className={`px-2 sm:px-3 md:px-4 py-1 sm:py-2 rounded-lg transition-all duration-300 text-xs sm:text-sm md:text-base ${
                         !isMultiDay
-                          ? "bg-blue-500 text-white shadow-lg"
+                          ? "bg-bloom-green-500 text-white shadow-lg"
                           : "text-gray-600 hover:bg-gray-200"
                       }`}
                     >
@@ -759,7 +778,7 @@ const handleNext = () => {
                     <div
                       className={`px-2 sm:px-3 md:px-4 py-1 sm:py-2 rounded-lg transition-all duration-300 text-xs sm:text-sm md:text-base ${
                         isMultiDay
-                          ? "bg-purple-500 text-white shadow-lg"
+                          ? "bg-bloom-rose-500 text-white shadow-lg"
                           : "text-gray-600 hover:bg-gray-200"
                       }`}
                     >
@@ -823,14 +842,14 @@ const handleNext = () => {
                           day.isPast
                             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                             : day.isSelected
-                            ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-110"
+                            ? "bg-bloom-green-500 text-white shadow-lg scale-110"
                             : day.isEndDateSelected
-                            ? "bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg scale-110"
+                            ? "bg-bloom-green-500 text-white shadow-lg scale-110"
                             : day.isInRange
-                            ? "bg-gradient-to-r from-blue-200 to-purple-200 text-blue-800"
+                            ? "bg-bloom-green-200 text-bloom-green-800"
                             : day.isToday
-                            ? "bg-gradient-to-r from-yellow-200 to-orange-200 text-orange-800 border-2 border-orange-400"
-                            : "hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 text-gray-700"
+                            ? "bg-yellow-200 text-orange-800 border-2 border-orange-400"
+                            : "hover:bg-gradient-to-r hover:bg-gray-100 text-gray-700"
                         }`}
                       >
                         {day.day}
@@ -857,8 +876,8 @@ const handleNext = () => {
 
             {/* Time Selection - Enhanced Responsive */}
             <div className="bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-lg sm:shadow-xl p-4 sm:p-6 md:p-8 border border-white/30 transform transition-all duration-500 hover:shadow-xl">
-              <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 sm:mb-6 md:mb-8 flex items-center">
-                <Clock className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 mr-2 sm:mr-3 text-purple-600" />
+              <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-bloom-rose-600 bg-clip-text text-transparent mb-4 sm:mb-6 md:mb-8 flex items-center">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 mr-2 sm:mr-3 text-bloom-rose-600" />
                 Select Time
               </h2>
 
@@ -869,13 +888,19 @@ const handleNext = () => {
                     Start Time
                   </label>
                   <div className="relative">
-                    <input
-                      type="time"
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 pointer-events-none group-hover:text-bloom-green-500 transition-colors duration-300" />
+                    <select
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 text-sm sm:text-base md:text-lg font-medium pr-10 sm:pr-12"
-                    />
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none group-hover:text-blue-500 transition-colors duration-300" />
+                      className="w-full appearance-none pl-10 sm:pl-12 pr-10 sm:pr-12 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-bloom-green-100 focus:border-bloom-green-500 transition-all duration-300 text-sm sm:text-base md:text-lg font-medium bg-white"
+                    >
+                      {TIME_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                   </div>
                   {errors.startTime && (
                     <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center">
@@ -891,13 +916,19 @@ const handleNext = () => {
                     End Time
                   </label>
                   <div className="relative">
-                    <input
-                      type="time"
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 pointer-events-none group-hover:text-bloom-rose-500 transition-colors duration-300" />
+                    <select
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 text-sm sm:text-base md:text-lg font-medium pr-10 sm:pr-12"
-                    />
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none group-hover:text-purple-500 transition-colors duration-300" />
+                      className="w-full appearance-none pl-10 sm:pl-12 pr-10 sm:pr-12 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-bloom-rose-100 focus:border-bloom-rose-500 transition-all duration-300 text-sm sm:text-base md:text-lg font-medium bg-white"
+                    >
+                      {TIME_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
                   </div>
                   {errors.endTime && (
                     <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center">
@@ -918,13 +949,13 @@ const handleNext = () => {
 
               {/* Selected Date Summary - Enhanced Responsive */}
               {selectedDate && (
-                <div className="mt-4 sm:mt-6 md:mt-8 p-3 sm:p-4 md:p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl sm:rounded-2xl border border-blue-200">
-                  <h3 className="text-sm sm:text-base md:text-lg font-semibold text-blue-800 mb-2 sm:mb-3 md:mb-4 flex items-center">
-                    <BadgeInfo className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-pink-500" />
+                <div className="mt-4 sm:mt-6 md:mt-8 p-3 sm:p-4 md:p-6 bg-bloom-green-50 rounded-xl sm:rounded-2xl border border-bloom-green-200">
+                  <h3 className="text-sm sm:text-base md:text-lg font-semibold text-bloom-green-800 mb-2 sm:mb-3 md:mb-4 flex items-center">
+                    <BadgeInfo className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-bloom-rose-500" />
                     Selected Date(s):
                   </h3>
                   <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
-                    <p className="text-blue-700">
+                    <p className="text-bloom-green-700">
                       <span className="font-medium">Start:</span>{" "}
                       {new Date(selectedDate).toLocaleDateString("en-US", {
                         weekday: "long",
@@ -934,7 +965,7 @@ const handleNext = () => {
                       })}
                     </p>
                     {isMultiDay && endDate && (
-                      <p className="text-blue-700">
+                      <p className="text-bloom-green-700">
                         <span className="font-medium">End:</span>{" "}
                         {new Date(endDate).toLocaleDateString("en-US", {
                           weekday: "long",
@@ -945,8 +976,8 @@ const handleNext = () => {
                       </p>
                     )}
                     {startTime && endTime && (
-                      <p className="text-blue-700">
-                        <span className="font-medium">Time:</span> {startTime} - {endTime}
+                      <p className="text-bloom-green-700">
+                        <span className="font-medium">Time:</span> {formatTimeLabel(startTime)} - {formatTimeLabel(endTime)}
                       </p>
                     )}
                   </div>
@@ -970,7 +1001,7 @@ const handleNext = () => {
               disabled={
                 !selectedDate || !startTime || !endTime || cartItems.length === 0
               }
-              className="group relative bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 sm:px-8 md:px-12 lg:px-16 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base md:text-lg disabled:cursor-not-allowed w-full sm:w-auto max-w-md sm:max-w-none"
+              className="group relative bg-bloom-green-600 hover:bg-bloom-green-700 disabled:bg-gray-400 text-white px-6 sm:px-8 md:px-12 lg:px-16 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base md:text-lg disabled:cursor-not-allowed w-full sm:w-auto max-w-md sm:max-w-none"
             >
               <span className="relative z-10 flex items-center justify-center">
                 <span>Continue to Customer Details</span>
@@ -980,7 +1011,7 @@ const handleNext = () => {
                   </span>
                 )}
               </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-bloom-green-400 rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
             </button>
           </div>
 

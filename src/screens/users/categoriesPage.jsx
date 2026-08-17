@@ -397,7 +397,7 @@ const handleModalAddToCart = (item) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bloom-green-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading category...</p>
         </div>
       </div>
@@ -413,7 +413,7 @@ const handleModalAddToCart = (item) => {
           <p className="text-gray-500 mb-6">The category you're looking for doesn't exist.</p>
           <button
             onClick={handleBackNavigation}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-300 flex items-center mx-auto"
+            className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-300 flex items-center mx-auto"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Go Back
@@ -447,7 +447,7 @@ const handleModalAddToCart = (item) => {
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {category.colors.slice(0, 4).map((color, index) => (
-                    <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    <span key={index} className="text-xs bg-bloom-green-100 text-bloom-green-800 px-2 py-1 rounded-full">
                       {color}
                     </span>
                   ))}
@@ -527,7 +527,7 @@ const handleModalAddToCart = (item) => {
                 onClick={handleShowAllItems}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   !selectedSubCategory 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-bloom-green-600 text-white' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -542,7 +542,7 @@ const handleModalAddToCart = (item) => {
                   onClick={() => handleSubCategoryClick(subCategory)}
                   className={`cursor-pointer rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 ${
                     selectedSubCategory?.id === subCategory.id 
-                      ? 'ring-2 ring-blue-500 shadow-lg' 
+                      ? 'ring-2 ring-bloom-green-500 shadow-lg' 
                       : 'hover:shadow-md'
                   }`}
                 >
@@ -554,7 +554,7 @@ const handleModalAddToCart = (item) => {
                     />
                     <div className={`absolute inset-0 ${
                       selectedSubCategory?.id === subCategory.id 
-                        ? 'bg-blue-600/20' 
+                        ? 'bg-bloom-green-600/20' 
                         : 'bg-black/20'
                     }`} />
                     
@@ -578,7 +578,7 @@ const handleModalAddToCart = (item) => {
                           <Palette className="w-3 h-3 text-gray-400" />
                           <div className="flex flex-wrap gap-1">
                             {subCategory.colors.slice(0, 2).map((color, index) => (
-                              <span key={index} className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                              <span key={index} className="text-xs bg-bloom-green-100 text-bloom-green-700 px-1.5 py-0.5 rounded">
                                 {color}
                               </span>
                             ))}
@@ -624,7 +624,7 @@ const handleModalAddToCart = (item) => {
                 placeholder="Search items..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent"
               />
             </div>
 
@@ -634,7 +634,7 @@ const handleModalAddToCart = (item) => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent"
                 >
                   <option value="name">Sort by Name</option>
                   <option value="price-low">Price: Low to High</option>
@@ -672,7 +672,7 @@ const handleModalAddToCart = (item) => {
               <span> for "{searchQuery}"</span>
             )}
             {(fromEventBooking || fromOrderProcess) && (
-              <span className="ml-2 text-blue-600 font-medium">
+              <span className="ml-2 text-bloom-green-600 font-medium">
                 • Adding to {fromEventBooking ? 'Event Booking' : 'Order Process'}
               </span>
             )}
@@ -702,7 +702,7 @@ const handleModalAddToCart = (item) => {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-300"
+                  className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-300"
                 >
                   Clear Search
                 </button>
@@ -710,97 +710,89 @@ const handleModalAddToCart = (item) => {
             </div>
           ) : (
             <div className={
-              viewMode === 'grid' 
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              viewMode === 'grid'
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch"
                 : "space-y-4"
             }>
 {filteredItems.map((item, index) => (
   <div
     key={item.id}
     className={
-      viewMode === 'grid' 
-        ? "group transform transition-all duration-500 hover:scale-105"
+      viewMode === 'grid'
+        ? "group h-full transition-all duration-500 hover:-translate-y-1"
         : "group cursor-pointer bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex items-center gap-4"
     }
     style={viewMode === 'grid' ? { animationDelay: `${index * 100}ms` } : {}}
   >
     {viewMode === 'grid' ? (
       // Grid View
-      <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50">
+      <div className="h-full flex flex-col bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-500 overflow-hidden border border-gray-100">
         {/* IMAGE SECTION - This opens modal */}
-        <div 
-          className="relative overflow-hidden cursor-pointer"
+        <div
+          className="relative overflow-hidden cursor-pointer h-56 shrink-0"
           onClick={() => handleItemClick(item)}
         >
           <img
             src={getPrimaryImage(item)}
             alt={item.name}
-            className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             onError={(e) => {
               e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop';
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          
+          <div className="absolute inset-0 bg-gradient-to-t from-bloom-charcoal/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
           {/* Price Badge */}
           {item.price && (
-            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-lg">
-              <div className="flex items-center text-green-600 font-semibold">
-                <span className="text-sm">₦</span>
-                <span className="ml-1">{formatPrice(item.price).replace('₦', '')}</span>
+            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
+              <div className="flex items-center text-bloom-rose-700 font-semibold text-sm">
+                <span>₦</span>
+                <span className="ml-0.5">{formatPrice(item.price).replace('₦', '')}</span>
               </div>
             </div>
           )}
 
           {/* Stock Status Badge */}
-          <div className="absolute top-4 left-4">
-            {item.outOfStock ? (
-              <div className="bg-red-500/90 backdrop-blur-sm text-white rounded-full px-2 py-1 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
-                <span className="text-xs font-medium">Out of Stock</span>
-              </div>
-            ) : (
-              <div className="bg-green-500/90 backdrop-blur-sm text-white rounded-full px-2 py-1 flex items-center gap-1">
-                <CheckCircle className="w-3 h-3" />
-                <span className="text-xs font-medium">In Stock</span>
-              </div>
-            )}
+          <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm">
+            <span className={`w-1.5 h-1.5 rounded-full ${item.outOfStock ? 'bg-red-500' : 'bg-emerald-500'}`} />
+            {item.outOfStock ? 'Out of Stock' : 'In Stock'}
           </div>
 
           {/* Navigation context badge */}
           {(fromEventBooking || fromOrderProcess) && (
-            <div className="absolute bottom-4 left-4 bg-blue-600/90 backdrop-blur-sm text-white rounded-full px-2 py-1 text-xs font-medium">
+            <div className="absolute bottom-3 left-3 bg-bloom-green-600/90 backdrop-blur-sm text-white rounded-full px-2 py-1 text-xs font-medium">
               {fromEventBooking ? '📅' : '📦'}
             </div>
           )}
         </div>
-        
+
         {/* CONTENT SECTION - NOT clickable to open modal */}
-        <div className="p-6">
+        <div className="flex flex-col flex-1 p-6">
           {/* Title - This opens modal */}
-          <h3 
-            className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300 cursor-pointer"
+          <h3
+            className="font-display text-lg font-semibold text-gray-800 mb-1.5 line-clamp-1 group-hover:text-bloom-green-600 transition-colors duration-300 cursor-pointer"
             onClick={() => handleItemClick(item)}
           >
             {item.name}
           </h3>
-          <p className="text-gray-600 mb-4 line-clamp-2">
+          <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 min-h-[2.6em]">
             {item.description}
           </p>
-          
-          {/* Item Colors and Sizes - ISOLATED, won't trigger modal */}
-          <div className="space-y-2 mb-4">
-            {/* COLOR SELECTION - FIXED */}
+
+          {/* Item Colors and Sizes - ISOLATED, won't trigger modal. Fixed-height so cards with
+              different color/size counts still line up. */}
+          <div className="mt-3 min-h-[3.25rem]">
+            {/* COLOR SELECTION - capped so extra colors don't grow the card */}
             {item.colors && item.colors.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Palette className="w-4 h-4 text-gray-400" />
-                  <span className="text-xs font-medium text-gray-600">
-                    {selectedColors[item.id] ? `Selected: ${selectedColors[item.id]}` : 'Select Color:'}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-xs font-medium text-gray-500">
+                    {selectedColors[item.id] ? `Selected: ${selectedColors[item.id]}` : 'Select color:'}
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {item.colors.map((color, colorIndex) => (
+                <div className="flex flex-wrap gap-1.5">
+                  {item.colors.slice(0, 4).map((color, colorIndex) => (
                     <button
                       key={colorIndex}
                       onClick={(e) => {
@@ -808,10 +800,10 @@ const handleModalAddToCart = (item) => {
                         e.stopPropagation();
                         handleColorSelect(item.id, color);
                       }}
-                      className={`text-xs px-3 py-1.5 rounded-full font-bold transition-all transform hover:scale-105 active:scale-95 ${
+                      className={`text-xs px-2.5 py-1 rounded-full font-medium transition-all hover:scale-105 active:scale-95 ${
                         selectedColors[item.id] === color
-                          ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-300'
-                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                          ? 'bg-bloom-green-600 text-white shadow-sm ring-2 ring-bloom-green-200'
+                          : 'bg-bloom-rose-50 text-bloom-rose-700 hover:bg-bloom-rose-100'
                       }`}
                       type="button"
                     >
@@ -821,17 +813,30 @@ const handleModalAddToCart = (item) => {
                       )}
                     </button>
                   ))}
+                  {item.colors.length > 4 && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleItemClick(item);
+                      }}
+                      className="text-xs px-2 py-1 text-gray-500 hover:text-bloom-green-600"
+                      type="button"
+                    >
+                      +{item.colors.length - 4} more
+                    </button>
+                  )}
                 </div>
               </div>
             )}
-            
+
             {/* SIZES - Display only */}
             {item.sizes && item.sizes.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Ruler className="w-4 h-4 text-gray-400" />
+              <div className="flex items-center gap-2 mt-1.5">
+                <Ruler className="w-3.5 h-3.5 text-gray-400" />
                 <div className="flex flex-wrap gap-1">
                   {item.sizes.slice(0, 3).map((size, sizeIndex) => (
-                    <span key={sizeIndex} className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                    <span key={sizeIndex} className="text-xs bg-bloom-gold/15 text-bloom-gold px-2 py-1 rounded-full">
                       {size}
                     </span>
                   ))}
@@ -842,16 +847,19 @@ const handleModalAddToCart = (item) => {
               </div>
             )}
           </div>
-          
+
+          {/* Spacer pushes the action row to the bottom so every card aligns */}
+          <div className="flex-1" />
+
           {/* ACTION BUTTONS */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
             <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 handleItemClick(item);
               }}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors duration-300 font-medium flex items-center justify-center gap-2"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors duration-300 font-medium flex items-center justify-center gap-2 text-sm"
               type="button"
             >
               <Eye className="w-4 h-4" />
@@ -861,31 +869,29 @@ const handleModalAddToCart = (item) => {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 // Check if color is required but not selected
                 if (item.colors && item.colors.length > 0 && !selectedColors[item.id]) {
                   alert('Please select a color first');
                   return;
                 }
-                
+
                 addToCartProcess(item);
               }}
               disabled={item.outOfStock}
-              className={`flex-1 px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+              className={`flex-1 px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
                 item.outOfStock
                   ? 'bg-gray-300 text-gray-500'
-                  : fromEventBooking 
-                  ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
                   : fromOrderProcess
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
-                  : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                  ? 'bg-bloom-rose-600 hover:bg-bloom-rose-700 text-white'
+                  : 'bg-bloom-green-600 hover:bg-bloom-green-700 text-white'
               }`}
               type="button"
             >
-              {item.outOfStock 
-                ? 'Out of Stock' 
-                : fromEventBooking ? 'Add to Booking' 
-                : fromOrderProcess ? 'Add to Order' 
+              {item.outOfStock
+                ? 'Out of Stock'
+                : fromEventBooking ? 'Add to Booking'
+                : fromOrderProcess ? 'Add to Order'
                 : 'Add To Cart'
               }
             </button>
@@ -917,7 +923,7 @@ const handleModalAddToCart = (item) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate cursor-pointer hover:text-blue-600 transition-colors"
+              <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate cursor-pointer hover:text-bloom-green-600 transition-colors"
                   onClick={() => handleItemClick(item)}>
                 {item.name}
               </h3>
@@ -931,7 +937,7 @@ const handleModalAddToCart = (item) => {
                   <div className="flex items-center gap-1">
                     <Palette className="w-3 h-3" />
                     {selectedColors[item.id] ? (
-                      <span className="font-bold text-blue-600">{selectedColors[item.id]}</span>
+                      <span className="font-bold text-bloom-green-600">{selectedColors[item.id]}</span>
                     ) : (
                       <span>{item.colors.length} colors</span>
                     )}
@@ -992,8 +998,8 @@ const handleModalAddToCart = (item) => {
                       : fromEventBooking 
                       ? 'bg-green-600 hover:bg-green-700 text-white'
                       : fromOrderProcess
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      ? 'bg-bloom-rose-600 hover:bg-bloom-rose-700 text-white'
+                      : 'bg-bloom-green-600 hover:bg-bloom-green-700 text-white'
                   }`}
                   type="button"
                 >

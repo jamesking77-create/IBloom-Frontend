@@ -88,7 +88,7 @@ const ConfirmBookingPopup = ({
         }
       `}</style>
 
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-bloom-ivory px-4">
         
         {/* Confetti */}
         {showConfetti && (
@@ -121,7 +121,7 @@ const ConfirmBookingPopup = ({
             
             {/* Success Icon */}
             <div className="mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg check-bounce">
+              <div className="w-20 h-20 bg-green-400 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg check-bounce">
                 <Check className="w-10 h-10 text-white" />
               </div>
             </div>
@@ -142,16 +142,16 @@ const ConfirmBookingPopup = ({
             </div>
 
             {/* Status Information */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
-              <h3 className="font-semibold text-blue-800 mb-2 flex items-center">
+            <div className="bg-bloom-green-50 border border-bloom-green-200 rounded-lg p-4 mb-6 text-left">
+              <h3 className="font-semibold text-bloom-green-800 mb-2 flex items-center">
                 <div className="w-2 h-2 bg-orange-400 rounded-full mr-2 animate-pulse"></div>
                 Under Review
               </h3>
-              <p className="text-sm text-blue-700 mb-3">
+              <p className="text-sm text-bloom-green-700 mb-3">
                 Your booking is currently under review. You will receive a response with your invoice and confirmation within the next 24 hours.
               </p>
               
-              <div className="flex items-center text-sm text-blue-600 space-x-4">
+              <div className="flex items-center text-sm text-bloom-green-600 space-x-4">
                 <div className="flex items-center">
                   <Mail className="w-4 h-4 mr-1" />
                   <span>Email</span>
@@ -167,7 +167,7 @@ const ConfirmBookingPopup = ({
             <div className="space-y-3">
               <button
                 onClick={onBackToHome}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center"
+                className="w-full bg-bloom-green-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-bloom-green-600 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center"
               >
                 <Home className="w-5 h-5 mr-2" />
                 Back to Homepage

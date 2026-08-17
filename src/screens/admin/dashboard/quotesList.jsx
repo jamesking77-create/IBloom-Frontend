@@ -373,7 +373,7 @@ export const QuotesList = () => {
   const getStatusColor = (status) => {
     switch(status) {
       case 'pending': return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'reviewed': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'reviewed': return 'bg-bloom-green-50 text-bloom-green-700 border-bloom-green-200';
       case 'responded': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'accepted': return 'bg-green-50 text-green-700 border-green-200';
       case 'cancelled': return 'bg-red-50 text-red-700 border-red-200';
@@ -440,7 +440,7 @@ export const QuotesList = () => {
           {hasResponse && (
             <button
               onClick={() => handleSendResponse(quote.quoteId || quote._id)}
-              className="flex items-center justify-center gap-2 p-3 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+              className="flex items-center justify-center gap-2 p-3 text-sm font-medium text-bloom-green-700 bg-bloom-green-50 rounded-lg border border-bloom-green-200 hover:bg-bloom-green-100 transition-colors"
               disabled={sending}
             >
               <Send size={16} />
@@ -492,7 +492,7 @@ export const QuotesList = () => {
               {hasResponse && (
                 <button
                   onClick={() => { handleSendResponse(quote.quoteId || quote._id); setShowActionMenu(null); }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-blue-50 text-blue-600 flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-bloom-green-50 text-bloom-green-600 flex items-center gap-3"
                   disabled={sending}
                 >
                   <Send size={16} />
@@ -534,7 +534,7 @@ export const QuotesList = () => {
         <div className="p-4 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+              <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
                 <Hash className="w-6 h-6 text-white" />
               </div>
               <div className="min-w-0 flex-1">
@@ -734,7 +734,7 @@ export const QuotesList = () => {
                   </button>
                   <button
                     onClick={() => handleSendResponse(quote.quoteId || quote._id)}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-bloom-green-700 bg-bloom-green-50 border border-bloom-green-200 rounded-lg hover:bg-bloom-green-100 transition-colors"
                     disabled={sending}
                   >
                     <Send size={16} />
@@ -770,7 +770,7 @@ export const QuotesList = () => {
                   ? 'bg-green-50 border-green-400 text-green-800' 
                   : notification.type === 'error'
                   ? 'bg-red-50 border-red-400 text-red-800'
-                  : 'bg-blue-50 border-blue-400 text-blue-800'
+                  : 'bg-bloom-green-50 border-bloom-green-400 text-bloom-green-800'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -791,7 +791,7 @@ export const QuotesList = () => {
       )}
 
       {/* Mobile Header */}
-      <div className="lg:hidden sticky top-0 bg-white border-b border-gray-200 z-40">
+      <div className="lg:hidden bg-white border-b border-gray-200">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-gray-900">Quotes</h1>
@@ -843,9 +843,9 @@ export const QuotesList = () => {
               <div className="text-lg font-bold text-emerald-700">{summary.responded}</div>
               <div className="text-xs text-emerald-600">Responded</div>
             </div>
-            <div className="p-2 bg-purple-50 rounded-lg">
-              <div className="text-lg font-bold text-purple-700">{summary.unviewed}</div>
-              <div className="text-xs text-purple-600">New</div>
+            <div className="p-2 bg-bloom-rose-50 rounded-lg">
+              <div className="text-lg font-bold text-bloom-rose-700">{summary.unviewed}</div>
+              <div className="text-xs text-bloom-rose-600">New</div>
             </div>
           </div>
         </div>
@@ -933,7 +933,7 @@ export const QuotesList = () => {
                 {!isConnected && connectionState !== 'connecting' && (
                   <button
                     onClick={reconnect}
-                    className="text-xs text-blue-600 hover:text-blue-700 underline"
+                    className="text-xs text-bloom-green-600 hover:text-bloom-green-700 underline"
                   >
                     Reconnect
                   </button>
@@ -988,10 +988,10 @@ export const QuotesList = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Reviewed</p>
-                <p className="text-3xl font-bold text-blue-600 mt-2">{summary.reviewed}</p>
+                <p className="text-3xl font-bold text-bloom-green-600 mt-2">{summary.reviewed}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Eye className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-bloom-green-100 rounded-xl flex items-center justify-center">
+                <Eye className="w-6 h-6 text-bloom-green-600" />
               </div>
             </div>
           </div>
@@ -1024,10 +1024,10 @@ export const QuotesList = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">New</p>
-                <p className="text-3xl font-bold text-purple-600 mt-2">{summary.unviewed}</p>
+                <p className="text-3xl font-bold text-bloom-rose-600 mt-2">{summary.unviewed}</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Bell className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-bloom-rose-100 rounded-xl flex items-center justify-center">
+                <Bell className="w-6 h-6 text-bloom-rose-600" />
               </div>
             </div>
           </div>
@@ -1223,7 +1223,7 @@ export const QuotesList = () => {
                             }`}>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                                  <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
                                     <Hash className="w-5 h-5 text-white" />
                                   </div>
                                   <div>
@@ -1300,7 +1300,7 @@ export const QuotesList = () => {
                                       </button>
                                       <button
                                         onClick={() => handleSendResponse(quote.quoteId || quote._id)}
-                                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-bloom-green-700 bg-bloom-green-50 border border-bloom-green-200 rounded-lg hover:bg-bloom-green-100 transition-colors"
                                         disabled={sending}
                                       >
                                         <Send size={14} />
@@ -1395,7 +1395,7 @@ export const QuotesList = () => {
                 
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
                       <Hash className="w-5 h-5 text-white" />
                     </div>
                     <div>

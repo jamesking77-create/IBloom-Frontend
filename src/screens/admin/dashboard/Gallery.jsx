@@ -45,7 +45,7 @@ const MediaCard = React.memo(({ item, onDelete }) => {
     >
       {/* Skeleton loader */}
       {!isLoaded && (
-        <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse flex items-center justify-center">
+        <div className="w-full h-64 bg-gray-100 animate-pulse flex items-center justify-center">
           <ImageIcon className="w-12 h-12 text-gray-300" />
         </div>
       )}
@@ -88,17 +88,17 @@ const MediaCard = React.memo(({ item, onDelete }) => {
 
 // Preview card component
 const PreviewCard = React.memo(({ src, index, onRemove }) => (
-  <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-dashed border-blue-300 rounded-xl overflow-hidden group">
+  <div className="relative bg-bloom-green-50 border-2 border-dashed border-bloom-green-300 rounded-xl overflow-hidden group">
     <img
       src={src}
       alt={`Preview ${index + 1}`}
       className="w-full h-40 object-cover opacity-80"
     />
-    <div className="absolute inset-0 bg-gradient-to-t from-blue-600/60 to-transparent flex flex-col items-center justify-center">
+    <div className="absolute inset-0 bg-gradient-to-t from-bloom-green-600/60 to-transparent flex flex-col items-center justify-center">
       <span className="text-white text-sm font-semibold mb-1">Ready to upload</span>
       <button
         onClick={onRemove}
-        className="bg-white text-blue-600 p-1 rounded-full hover:bg-blue-100 transition-colors"
+        className="bg-white text-bloom-green-600 p-1 rounded-full hover:bg-bloom-green-100 transition-colors"
         aria-label="Remove preview"
       >
         <X size={16} />
@@ -171,7 +171,7 @@ export default function Gallery() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 p-4 md:p-8">
+    <div className="min-h-screen bg-bloom-ivory p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -183,7 +183,7 @@ export default function Gallery() {
         <div className="bg-white p-6 rounded-2xl shadow-lg mb-8 border border-gray-100">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <label className="flex-1 cursor-pointer">
-              <div className="flex items-center gap-3 px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all">
+              <div className="flex items-center gap-3 px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-bloom-green-500 hover:bg-bloom-green-50 transition-all">
                 <Upload className="text-gray-400" size={20} />
                 <span className="text-gray-600 font-medium">
                   {selectedFiles.length > 0
@@ -206,7 +206,7 @@ export default function Gallery() {
               className={`px-6 py-3 text-white font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 shadow-md ${
                 uploading || !selectedFiles.length
                   ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:scale-105"
+                  : "bg-bloom-green-600 hover:bg-bloom-green-700 hover:shadow-lg hover:scale-105"
               }`}
             >
               <Upload size={18} />
@@ -242,7 +242,7 @@ export default function Gallery() {
                 key={i}
                 className="bg-white rounded-xl overflow-hidden shadow-sm"
               >
-                <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+                <div className="w-full h-64 bg-gray-100 animate-pulse" />
               </div>
             ))}
           </div>

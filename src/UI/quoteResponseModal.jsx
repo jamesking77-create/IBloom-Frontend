@@ -215,7 +215,7 @@ const QuoteResponseModal = ({ quote, isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white p-6">
+        <div className="bg-bloom-green-600 text-white p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Quote Response</h2>
@@ -355,7 +355,7 @@ const QuoteResponseModal = ({ quote, isOpen, onClose }) => {
               {/* Additional Costs */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <Calculator className="w-5 h-5 mr-2 text-blue-600" />
+                  <Calculator className="w-5 h-5 mr-2 text-bloom-green-600" />
                   Additional Costs
                 </h3>
                 
@@ -451,7 +451,7 @@ const QuoteResponseModal = ({ quote, isOpen, onClose }) => {
               </div>
 
               {/* Pricing Summary */}
-              <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg p-6 border border-emerald-200">
+              <div className="bg-bloom-green-50 rounded-lg p-6 border border-emerald-200">
                 <h4 className="font-semibold text-gray-800 mb-4">Pricing Summary</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
@@ -532,7 +532,7 @@ const QuoteResponseModal = ({ quote, isOpen, onClose }) => {
               {/* Send Options */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <Send className="w-5 h-5 mr-2 text-blue-600" />
+                  <Send className="w-5 h-5 mr-2 text-bloom-green-600" />
                   Send Options
                 </h3>
                 
@@ -594,7 +594,7 @@ const QuoteResponseModal = ({ quote, isOpen, onClose }) => {
               )}
 
               {/* Final Pricing Display */}
-              <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg p-6 border border-emerald-200">
+              <div className="bg-bloom-green-50 rounded-lg p-6 border border-emerald-200">
                 <h4 className="font-semibold text-gray-800 mb-4">Final Quote</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
@@ -694,7 +694,7 @@ const QuoteResponseModal = ({ quote, isOpen, onClose }) => {
                 <button
                   onClick={handleSendResponse}
                   disabled={isSending}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center disabled:cursor-not-allowed"
+                  className="bg-bloom-green-600 hover:bg-bloom-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center disabled:cursor-not-allowed"
                 >
                   {isSending ? (
                     <>

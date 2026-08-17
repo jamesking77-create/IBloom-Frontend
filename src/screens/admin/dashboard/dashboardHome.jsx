@@ -62,10 +62,10 @@ const NotificationSummaryCard = () => {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <CalendarIcon size={14} className="text-blue-500" />
+              <CalendarIcon size={14} className="text-bloom-green-500" />
               <span className="text-xs text-gray-600">Bookings</span>
             </div>
-            <p className="text-lg font-semibold text-blue-600">{unreadCounts.bookings}</p>
+            <p className="text-lg font-semibold text-bloom-green-600">{unreadCounts.bookings}</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
@@ -76,10 +76,10 @@ const NotificationSummaryCard = () => {
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <DollarSign size={14} className="text-purple-500" />
+              <DollarSign size={14} className="text-bloom-rose-500" />
               <span className="text-xs text-gray-600">Quotes</span>
             </div>
-            <p className="text-lg font-semibold text-purple-600">{unreadCounts.quotes}</p>
+            <p className="text-lg font-semibold text-bloom-rose-600">{unreadCounts.quotes}</p>
           </div>
         </div>
       </div>
@@ -107,9 +107,9 @@ const NotificationSummaryCard = () => {
                     </p>
                   </div>
                   <div className={`px-2 py-1 rounded text-xs font-medium ${
-                    notification.module === 'bookings' ? 'bg-blue-100 text-blue-700' :
+                    notification.module === 'bookings' ? 'bg-bloom-green-100 text-bloom-green-700' :
                     notification.module === 'orders' ? 'bg-green-100 text-green-700' :
-                    notification.module === 'quotes' ? 'bg-purple-100 text-purple-700' :
+                    notification.module === 'quotes' ? 'bg-bloom-rose-100 text-bloom-rose-700' :
                     'bg-gray-100 text-gray-700'
                   }`}>
                     {notification.module}

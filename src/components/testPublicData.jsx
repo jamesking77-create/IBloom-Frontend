@@ -52,8 +52,8 @@ const TestPublicData = () => {
 
   if (loading) {
     return (
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-blue-700">🔄 Loading company information...</p>
+      <div className="p-4 bg-bloom-green-50 border border-bloom-green-200 rounded-lg">
+        <p className="text-bloom-green-700">🔄 Loading company information...</p>
       </div>
     );
   }
@@ -105,7 +105,7 @@ const TestPublicData = () => {
               {companyInfo.specialize.map((spec, index) => (
                 <span 
                   key={index}
-                  className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                  className="px-3 py-1 bg-bloom-green-100 text-bloom-green-800 text-xs rounded-full"
                 >
                   {spec}
                 </span>
@@ -159,7 +159,7 @@ const TestPublicData = () => {
         
         <button 
           onClick={() => dispatch(fetchCompanyInfo())}
-          className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+          className="mt-3 px-4 py-2 bg-bloom-green-600 text-white rounded hover:bg-bloom-green-700 text-sm"
         >
           🔄 Refresh Data
         </button>

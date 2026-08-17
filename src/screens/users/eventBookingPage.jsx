@@ -732,9 +732,9 @@ const EventBookingPage = () => {
   // Show loading while initializing
   if (!initialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-bloom-green-50 px-4">
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 rounded-full mx-auto mb-4" />
+          <div className="animate-spin h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-bloom-green-600 rounded-full mx-auto mb-4" />
           <p className="text-gray-600 text-sm sm:text-base">
             Initializing booking...
           </p>
@@ -746,12 +746,12 @@ const EventBookingPage = () => {
   // ENHANCED: Success animation with multiple exit options
   if (showSuccessAnimation) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-bloom-ivory px-4">
         <div className="text-center max-w-lg mx-auto">
           {/* Animated Success Icon */}
           <div className="relative mb-8">
             <div className="animate-bounce">
-              <div className="w-20 h-20 sm:w-28 sm:h-28 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                 <Check className="w-10 h-10 sm:w-14 sm:h-14 text-white" />
               </div>
             </div>
@@ -766,7 +766,7 @@ const EventBookingPage = () => {
 
           {/* Success Message */}
           <div className="space-y-4">
-            <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            <h2 className="text-3xl sm:text-4xl font-bold bg-green-600 bg-clip-text text-transparent">
               Booking Sent 🎉
             </h2>
             <p className="text-gray-600 text-lg sm:text-xl leading-relaxed">
@@ -800,7 +800,7 @@ const EventBookingPage = () => {
                     window.location.replace("/");
                   }
                 }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:scale-105 transition-transform shadow-lg font-medium text-lg"
+                className="bg-bloom-green-600 text-white px-8 py-3 rounded-xl hover:scale-105 transition-transform shadow-lg font-medium text-lg"
               >
                 Continue to Home
               </button>
@@ -843,7 +843,7 @@ const EventBookingPage = () => {
   // Show empty cart state - ONLY SHOW IF NOT IN SUCCESS MODE
   if (!cartItems || (cartItems.length === 0 && !selectedItem)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-bloom-green-50 px-4">
         <div className="text-center max-w-md mx-auto">
           <div className="relative mb-6 sm:mb-8">
             <div className="text-6xl sm:text-8xl mb-4 animate-bounce">🛒</div>
@@ -859,7 +859,7 @@ const EventBookingPage = () => {
             onClick={() =>
               navigate("/", { state: { scrollToCategories: true } })
             }
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl transition hover:scale-105 shadow-lg font-medium text-sm sm:text-base w-full sm:w-auto"
+            className="bg-bloom-green-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl transition hover:scale-105 shadow-lg font-medium text-sm sm:text-base w-full sm:w-auto"
           >
             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2" />
             Browse Categories
@@ -871,7 +871,7 @@ const EventBookingPage = () => {
 
   return (
     <div
-      className={`min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 transition-opacity duration-500 ${
+      className={`min-h-screen bg-bloom-green-50 transition-opacity duration-500 ${
         fadingOut ? "opacity-0" : "opacity-100"
       }`}
     >
@@ -895,9 +895,9 @@ const EventBookingPage = () => {
               </button>
             </div>
             <div className="space-y-4">
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+              <div className="p-4 bg-bloom-green-50 rounded-lg">
                 <div className="text-sm text-gray-500 mb-1">Total Price</div>
-                <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                <div className="text-2xl font-bold bg-bloom-green-600 bg-clip-text text-transparent">
                   {formatPrice(cartTotal)}
                 </div>
                 <div className="text-sm text-gray-500 flex items-center mt-2">
@@ -911,7 +911,7 @@ const EventBookingPage = () => {
       )}
 
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-lg sticky top-0 z-40 border-b">
+      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           {/* Desktop Header */}
           <div className="hidden md:flex justify-between items-center">
@@ -923,7 +923,7 @@ const EventBookingPage = () => {
                 <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
               </button>
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl lg:text-3xl font-bold bg-bloom-green-600 bg-clip-text text-transparent">
                   Event Booking
                 </h1>
                 <p className="text-gray-600 text-sm lg:text-base">
@@ -933,7 +933,7 @@ const EventBookingPage = () => {
             </div>
             <div className="text-right">
               <div className="text-sm text-gray-500 mb-1">Total Price</div>
-              <div className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              <div className="text-2xl lg:text-3xl font-bold bg-bloom-green-600 bg-clip-text text-transparent">
                 {formatPrice(cartTotal)}
               </div>
               <div className="text-sm text-gray-500 flex items-center justify-end mt-1">
@@ -953,7 +953,7 @@ const EventBookingPage = () => {
                 <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
               </button>
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
+                <h1 className="text-xl font-bold bg-bloom-green-600 bg-clip-text text-transparent truncate">
                   Event Booking
                 </h1>
                 <p className="text-gray-600 text-sm truncate">
@@ -963,7 +963,7 @@ const EventBookingPage = () => {
             </div>
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <div className="text-lg font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                <div className="text-lg font-bold bg-bloom-green-600 bg-clip-text text-transparent">
                   {formatPrice(cartTotal)}
                 </div>
                 <div className="text-xs text-gray-500 flex items-center justify-end">
@@ -993,7 +993,7 @@ const EventBookingPage = () => {
                         isCompleted
                           ? "bg-green-500 border-green-600 text-white"
                           : isActive
-                          ? "bg-blue-500 border-blue-600 text-white animate-pulse"
+                          ? "bg-bloom-green-500 border-bloom-green-600 text-white animate-pulse"
                           : "border-gray-300 text-gray-400 bg-white"
                       }`}
                     >
@@ -1007,7 +1007,7 @@ const EventBookingPage = () => {
                       <div
                         className={`transition-colors ${
                           isActive
-                            ? "text-blue-600"
+                            ? "text-bloom-green-600"
                             : isCompleted
                             ? "text-green-600"
                             : "text-gray-400"
@@ -1046,7 +1046,7 @@ const EventBookingPage = () => {
                         isCompleted
                           ? "bg-green-500 border-green-600 text-white"
                           : isActive
-                          ? "bg-blue-500 border-blue-600 text-white animate-pulse"
+                          ? "bg-bloom-green-500 border-bloom-green-600 text-white animate-pulse"
                           : "border-gray-300 text-gray-400 bg-white"
                       }`}
                     >
@@ -1060,7 +1060,7 @@ const EventBookingPage = () => {
                       <div
                         className={`transition-colors ${
                           isActive
-                            ? "text-blue-600"
+                            ? "text-bloom-green-600"
                             : isCompleted
                             ? "text-green-600"
                             : "text-gray-400"
@@ -1093,7 +1093,7 @@ const EventBookingPage = () => {
       {(cartLoading || creatingBooking) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center max-w-sm mx-auto w-full">
-            <div className="animate-spin h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 rounded-full mx-auto mb-4" />
+            <div className="animate-spin h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-bloom-green-600 rounded-full mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-800 mb-2">
               {creatingBooking ? "Creating Your Booking..." : "Loading..."}
             </h3>

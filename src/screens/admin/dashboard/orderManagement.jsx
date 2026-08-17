@@ -300,8 +300,8 @@ const OrdersManagement = () => {
   const getStatusColor = (status) => {
     const colors = {
       pending: "bg-yellow-100 text-yellow-800",
-      confirmed: "bg-blue-100 text-blue-800",
-      in_progress: "bg-purple-100 text-purple-800",
+      confirmed: "bg-bloom-green-100 text-bloom-green-800",
+      in_progress: "bg-bloom-rose-100 text-bloom-rose-800",
       completed: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800",
     };
@@ -311,7 +311,7 @@ const OrdersManagement = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bloom-green-600"></div>
       </div>
     );
   }
@@ -363,7 +363,7 @@ const OrdersManagement = () => {
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-bloom-green-600 text-white rounded-lg hover:bg-bloom-green-700 transition-colors text-sm sm:text-base"
         >
           <Filter className="w-4 h-4" />
           Filters
@@ -382,7 +382,7 @@ const OrdersManagement = () => {
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange("status", e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500"
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -401,7 +401,7 @@ const OrdersManagement = () => {
                 onChange={(e) =>
                   handleFilterChange("dateRange", e.target.value)
                 }
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500"
               >
                 <option value="all">All Dates</option>
                 <option value="today">Today</option>
@@ -422,7 +422,7 @@ const OrdersManagement = () => {
                   onChange={(e) =>
                     handleFilterChange("searchTerm", e.target.value)
                   }
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500"
                 />
               </div>
             </div>
@@ -501,7 +501,7 @@ const OrdersManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-1">
                       {order.deliveryInfo.type === "delivery" ? (
-                        <Truck className="w-4 h-4 text-blue-600" />
+                        <Truck className="w-4 h-4 text-bloom-green-600" />
                       ) : (
                         <Warehouse className="w-4 h-4 text-green-600" />
                       )}
@@ -532,7 +532,7 @@ const OrdersManagement = () => {
                     <div className="flex items-center justify-center gap-1">
                       <button
                         onClick={() => handleViewOrder(order)}
-                        className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="bg-bloom-green-600 text-white p-2 rounded-lg hover:bg-bloom-green-700 transition-colors"
                         title="View Details"
                       >
                         <Eye className="w-4 h-4" />
@@ -546,7 +546,7 @@ const OrdersManagement = () => {
                       </button>
                       <button
                         onClick={() => handleDownloadInvoice(order)}
-                        className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors"
+                        className="bg-bloom-rose-600 text-white p-2 rounded-lg hover:bg-bloom-rose-700 transition-colors"
                         title="Download Invoice"
                       >
                         <Download className="w-4 h-4" />
@@ -600,7 +600,7 @@ const OrdersManagement = () => {
                 </div>
                 <div className="flex items-center">
                   {order.deliveryInfo.type === "delivery" ? (
-                    <Truck className="w-3 h-3 text-blue-600 mr-1" />
+                    <Truck className="w-3 h-3 text-bloom-green-600 mr-1" />
                   ) : (
                     <Warehouse className="w-3 h-3 text-green-600 mr-1" />
                   )}
@@ -613,7 +613,7 @@ const OrdersManagement = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleViewOrder(order)}
-                  className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center gap-1"
+                  className="flex-1 bg-bloom-green-600 text-white py-2 px-3 rounded-lg hover:bg-bloom-green-700 transition-colors text-sm font-medium flex items-center justify-center gap-1"
                 >
                   <Eye className="w-4 h-4" />
                   View
@@ -627,7 +627,7 @@ const OrdersManagement = () => {
                 </button>
                 <button
                   onClick={() => handleDownloadInvoice(order)}
-                  className="bg-purple-600 text-white py-2 px-3 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center justify-center gap-1"
+                  className="bg-bloom-rose-600 text-white py-2 px-3 rounded-lg hover:bg-bloom-rose-700 transition-colors text-sm font-medium flex items-center justify-center gap-1"
                 >
                   <Download className="w-4 h-4" />
                 </button>
@@ -683,7 +683,7 @@ const OrdersManagement = () => {
                     onChange={(e) =>
                       handleStatusChange(selectedOrder._id, e.target.value)
                     }
-                    className="flex-1 sm:flex-none px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="flex-1 sm:flex-none px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 text-sm"
                   >
                     <option value="pending">Pending</option>
                     <option value="confirmed">Confirmed</option>
@@ -745,7 +745,7 @@ const OrdersManagement = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       {selectedOrder.deliveryInfo.type === "delivery" ? (
-                        <Truck className="w-4 h-4 text-blue-600" />
+                        <Truck className="w-4 h-4 text-bloom-green-600" />
                       ) : (
                         <Warehouse className="w-4 h-4 text-green-600" />
                       )}
@@ -879,7 +879,7 @@ const OrdersManagement = () => {
                   <Calculator className="w-5 h-5" />
                   Additional Daily Rate
                 </h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-bloom-green-50 border border-bloom-green-200 rounded-lg p-4">
                   <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
                     <div className="flex-1">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -893,7 +893,7 @@ const OrdersManagement = () => {
                           step="0.01"
                           value={orderDailyRate}
                           onChange={(e) => setOrderDailyRate(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500"
                           placeholder="0.00"
                         />
                       </div>
@@ -924,7 +924,7 @@ const OrdersManagement = () => {
                         onClick={() => {
                           handleDownloadInvoice(selectedOrder, orderDailyRate);
                         }}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-1"
+                        className="px-4 py-2 bg-bloom-rose-600 text-white rounded-lg hover:bg-bloom-rose-700 transition-colors text-sm font-medium flex items-center gap-1"
                       >
                         <Download className="w-4 h-4" />
                         Download
@@ -934,8 +934,8 @@ const OrdersManagement = () => {
                   
                   {/* Preview calculation */}
                   {orderDailyRate > 0 && selectedOrder && (
-                    <div className="mt-4 p-3 bg-white rounded-lg border border-blue-200">
-                      <h4 className="text-sm font-medium text-blue-900 mb-2">Rate Preview</h4>
+                    <div className="mt-4 p-3 bg-white rounded-lg border border-bloom-green-200">
+                      <h4 className="text-sm font-medium text-bloom-green-900 mb-2">Rate Preview</h4>
                       <div className="text-sm text-gray-700 space-y-1">
                         <div className="flex justify-between">
                           <span>Daily Rate:</span>
@@ -992,7 +992,7 @@ const OrdersManagement = () => {
                         customerName: e.target.value,
                       }))
                     }
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500"
                   />
                 </div>
                 <div>
@@ -1008,7 +1008,7 @@ const OrdersManagement = () => {
                         customerEmail: e.target.value,
                       }))
                     }
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500"
                   />
                 </div>
               </div>
@@ -1031,7 +1031,7 @@ const OrdersManagement = () => {
                         dailyRate: e.target.value,
                       }))
                     }
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500"
                     placeholder="0.00"
                   />
                 </div>
@@ -1042,8 +1042,8 @@ const OrdersManagement = () => {
 
               {/* Invoice Preview */}
               {invoicePreview && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-medium text-blue-900 mb-3 flex items-center gap-2">
+                <div className="bg-bloom-green-50 border border-bloom-green-200 rounded-lg p-4">
+                  <h3 className="font-medium text-bloom-green-900 mb-3 flex items-center gap-2">
                     <Calculator className="w-4 h-4" />
                     Invoice Preview
                   </h3>
@@ -1070,7 +1070,7 @@ const OrdersManagement = () => {
                       <span>Tax (7.5%):</span>
                       <span>{formatCurrency(invoicePreview.tax)}</span>
                     </div>
-                    <div className="border-t border-blue-300 pt-2 flex justify-between font-bold">
+                    <div className="border-t border-bloom-green-300 pt-2 flex justify-between font-bold">
                       <span>Total:</span>
                       <span>{formatCurrency(invoicePreview.total)}</span>
                     </div>
@@ -1095,7 +1095,7 @@ const OrdersManagement = () => {
                       handleDownloadInvoice(orderForInvoice, invoiceData.dailyRate);
                     }
                   }}
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-bloom-rose-600 text-white rounded-lg hover:bg-bloom-rose-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <Download className="w-4 h-4" />
                   Download PDF

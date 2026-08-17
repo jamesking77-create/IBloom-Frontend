@@ -39,7 +39,7 @@ const AboutPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 overflow-hidden">
+      <section className="relative py-20 md:py-32 bg-bloom-green-600 overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative max-w-7xl mx-auto px-4">
           <div
@@ -79,7 +79,7 @@ const AboutPage = () => {
                 }`}
                 style={{ transitionDelay: `${index * 200}ms` }}
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-bloom-green-500 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
                   <stat.icon className="w-8 h-8 text-white" />
                 </div>
                 <div className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
@@ -142,12 +142,12 @@ const AboutPage = () => {
             >
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-4">
-                  <div className="h-40 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"></div>
-                  <div className="h-32 bg-gradient-to-br from-pink-400 to-red-500 rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"></div>
+                  <div className="h-40 bg-bloom-green-400 rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"></div>
+                  <div className="h-32 bg-bloom-rose-400 rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"></div>
                 </div>
                 <div className="space-y-4 mt-8">
-                  <div className="h-32 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"></div>
-                  <div className="h-40 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"></div>
+                  <div className="h-32 bg-bloom-rose-600 rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"></div>
+                  <div className="h-40 bg-bloom-gold rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"></div>
                 </div>
               </div>
             </div>
@@ -195,7 +195,7 @@ const AboutPage = () => {
                 }`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-12 h-12 bg-bloom-green-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <ArrowRight className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
@@ -212,7 +212,7 @@ const AboutPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className="py-16 md:py-20 bg-bloom-green-600">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div
             className={`transform transition-all duration-1000 ${
@@ -228,7 +228,7 @@ const AboutPage = () => {
               Let's work together to make your next event unforgettable.
             </p>
             <button
-              className="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg"
+              className="bg-white text-bloom-green-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg"
               onClick={() => {
                 navigate("/", { state: { scrollToCategories: true } });
               }}

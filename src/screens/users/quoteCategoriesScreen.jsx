@@ -157,14 +157,14 @@ const QuoteCategoriesScreen = () => {
   // Show error state
   if (error && !isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-bloom-ivory px-4">
         <div className="text-center max-w-md mx-auto">
           <div className="text-4xl sm:text-6xl mb-4">❌</div>
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Error Loading Categories</h2>
           <p className="text-gray-500 mb-6 text-sm sm:text-base">{error}</p>
           <button
             onClick={() => dispatch(fetchCategories())}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-300 text-sm sm:text-base"
+            className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-300 text-sm sm:text-base"
           >
             Try Again
           </button>
@@ -176,7 +176,7 @@ const QuoteCategoriesScreen = () => {
   // Show loading state
   if (isLoading && allCategories.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-bloom-ivory px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-4 border-emerald-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-base sm:text-lg">Loading quote categories...</p>
@@ -188,7 +188,7 @@ const QuoteCategoriesScreen = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Enhanced Hero Section */}
-      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-gradient-to-br from-emerald-600 via-blue-600 to-purple-600">
+      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-bloom-green-600">
         {/* Animated Background */}
         <div className="absolute inset-0">
           <div className="absolute top-4 left-4 sm:top-10 sm:left-10 w-24 h-24 sm:w-32 sm:h-32 lg:w-72 lg:h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
@@ -205,7 +205,7 @@ const QuoteCategoriesScreen = () => {
               <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
             </button>
             
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-semibold mb-3 sm:mb-4 text-white">
               Request a Quote
             </h1>
             
@@ -232,7 +232,7 @@ const QuoteCategoriesScreen = () => {
       </div>
 
       {/* Enhanced Search and Filter Section */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-40">
+      <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 lg:py-6">
           <div className="space-y-4">
             {/* Top Row - Search Bar */}
@@ -338,7 +338,7 @@ const QuoteCategoriesScreen = () => {
 
 
       {/* Enhanced Stats Section */}
-      <div className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-emerald-50 via-white to-blue-50">
+      <div className="py-8 sm:py-12 lg:py-16 bg-bloom-ivory">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {stats.map((stat, index) => (
@@ -347,7 +347,7 @@ const QuoteCategoriesScreen = () => {
                 className="text-center transform transition-all duration-700 hover:scale-105"
               >
                 <div className="text-2xl sm:text-3xl lg:text-4xl xl:text-6xl mb-1 sm:mb-2 lg:mb-4">{stat.icon}</div>
-                <div className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent mb-1 sm:mb-2">
+                <div className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-bloom-green-600 mb-1 sm:mb-2">
                   {stat.number}
                 </div>
                 <div className="text-gray-600 font-medium text-xs sm:text-sm lg:text-base">{stat.label}</div>
@@ -384,7 +384,7 @@ const QuoteCategoriesScreen = () => {
               ) : (
                 <button
                   onClick={() => navigate('/smartcategory')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-300 text-sm sm:text-base"
+                  className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-300 text-sm sm:text-base"
                 >
                   Browse All Categories
                 </button>
@@ -408,12 +408,12 @@ const QuoteCategoriesScreen = () => {
                     // Enhanced Grid View for Quotes
                     <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50 relative">
                       {/* Quote Badge */}
-                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-gradient-to-r from-emerald-600 to-blue-600 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-medium z-10">
+                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-bloom-green-600 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-medium z-10">
                         📋 Quote Available
                       </div>
                       
                       {/* Free Quote Badge */}
-                      <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-yellow-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         FREE QUOTE
                       </div>
                       
@@ -433,7 +433,7 @@ const QuoteCategoriesScreen = () => {
                       </div>
                       
                       <div className="p-3 sm:p-4 lg:p-6">
-                        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-emerald-600 group-hover:to-blue-600 group-hover:bg-clip-text transition-all duration-300 line-clamp-1">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 mb-2 group-hover:text-bloom-green-600 transition-all duration-300 line-clamp-1">
                           {category.name}
                         </h3>
                         <p className="text-gray-600 mb-3 sm:mb-4 line-clamp-2 text-xs sm:text-sm lg:text-base">
@@ -446,7 +446,7 @@ const QuoteCategoriesScreen = () => {
                             <Package className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                             <span>{category.itemCount || 0} items</span>
                           </div>
-                          <div className="flex items-center text-emerald-600 font-medium text-xs sm:text-sm group-hover:text-blue-600 transition-colors duration-300">
+                          <div className="flex items-center text-emerald-600 font-medium text-xs sm:text-sm group-hover:text-bloom-green-600 transition-colors duration-300">
                             <span className="hidden sm:inline">Get Quote</span>
                             <span className="sm:hidden">Quote</span>
                             <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
@@ -513,7 +513,7 @@ const QuoteCategoriesScreen = () => {
 
       {/* Enhanced Company Info Section */}
       {userData?.name && (
-        <div className="py-12 sm:py-16 bg-gradient-to-br from-emerald-50 to-blue-50">
+        <div className="py-12 sm:py-16 bg-bloom-green-50">
           <div className="max-w-4xl mx-auto px-4 text-center">
             <div className="mb-6 sm:mb-8">
               <Award className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-emerald-600 mb-3 sm:mb-4" />
@@ -536,7 +536,7 @@ const QuoteCategoriesScreen = () => {
                 </div>
               )}
               <div className="flex items-center bg-white/80 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full shadow-md">
-                <Quote className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-blue-600" />
+                <Quote className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-bloom-green-600" />
                 <span>Free Quote Service</span>
               </div>
               <div className="flex items-center bg-white/80 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full shadow-md">
@@ -549,17 +549,17 @@ const QuoteCategoriesScreen = () => {
       )}
 
       {/* Enhanced Call to Action Section */}
-      <div className="py-12 sm:py-16 bg-gradient-to-r from-gray-900 via-slate-900 to-gray-900 relative overflow-hidden">
+      <div className="py-12 sm:py-16 bg-gray-900 relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0">
-          <div className="absolute top-4 sm:top-10 left-4 sm:left-10 w-48 h-48 sm:w-72 sm:h-72 bg-gradient-to-r from-emerald-600/30 to-blue-600/30 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-4 sm:bottom-10 right-4 sm:right-10 w-64 h-64 sm:w-96 sm:h-96 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-4 sm:top-10 left-4 sm:left-10 w-48 h-48 sm:w-72 sm:h-72 bg-bloom-green-600/30 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-4 sm:bottom-10 right-4 sm:right-10 w-64 h-64 sm:w-96 sm:h-96 bg-bloom-green-600/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 sm:mb-6">
             Need Custom Pricing for
-            <span className="bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent block mt-1 sm:mt-2">Your Event?</span>
+            <span className="text-bloom-green-400 block mt-1 sm:mt-2">Your Event?</span>
           </h2>
           <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed max-w-2xl mx-auto px-4">
             Browse our quote-enabled categories, add items to your cart, and get personalized pricing within 24 hours. No commitment required.
@@ -568,7 +568,7 @@ const QuoteCategoriesScreen = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4">
             <button
               onClick={() => navigate('/eventbooking')}
-              className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center justify-center"
+              className="w-full sm:w-auto bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center justify-center"
             >
               <Calendar className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
               Standard Booking
@@ -592,14 +592,14 @@ const QuoteCategoriesScreen = () => {
               <p className="text-gray-400 text-sm">Choose items from quote-enabled categories</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 bg-bloom-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-white font-bold">2</span>
               </div>
               <h3 className="text-white font-semibold mb-2">Add to Cart</h3>
               <p className="text-gray-400 text-sm">Build your quote request without prices</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 bg-bloom-rose-600 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-white font-bold">3</span>
               </div>
               <h3 className="text-white font-semibold mb-2">Get Quote</h3>

@@ -137,7 +137,7 @@ const QuickCartModal = ({ cart, cartCount, updateQuantity, removeFromCart, isOpe
       <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl sm:mx-4 max-h-[95vh] sm:max-h-[90vh] overflow-hidden animate-slide-up shadow-2xl">
         
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b bg-gradient-to-r from-emerald-50 to-blue-50">
+        <div className="p-4 sm:p-6 border-b bg-bloom-green-50">
           {/* Mobile drag indicator */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4 sm:hidden"></div>
           
@@ -362,14 +362,14 @@ const QuoteCategoryItemsScreen = () => {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-bloom-ivory px-4">
         <div className="text-center max-w-md mx-auto">
           <div className="text-4xl sm:text-6xl mb-4">❌</div>
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Error Loading Category</h2>
           <p className="text-gray-500 mb-6 text-sm sm:text-base">{error}</p>
           <button
             onClick={() => navigate('/request-quote')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-300 text-sm sm:text-base"
+            className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-300 text-sm sm:text-base"
           >
             Back to Quote Categories
           </button>
@@ -381,7 +381,7 @@ const QuoteCategoryItemsScreen = () => {
   // Show loading state
   if (loading.fetchById || !category) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-bloom-ivory px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-4 border-emerald-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-base sm:text-lg">Loading category items...</p>
@@ -393,7 +393,7 @@ const QuoteCategoryItemsScreen = () => {
   return (
     <>
       {/* Enhanced Hero Section */}
-      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-gradient-to-br from-emerald-600 via-blue-600 to-purple-600">
+      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-bloom-ivory">
         {/* Category Background Image */}
         {category.image && (
           <div className="absolute inset-0 opacity-20">
@@ -447,7 +447,7 @@ const QuoteCategoryItemsScreen = () => {
       </div>
 
       {/* Enhanced Search and Filter Section */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-40">
+      <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 lg:py-6">
           <div className="space-y-4">
             {/* Top Row - Search Bar */}
@@ -576,7 +576,7 @@ const QuoteCategoryItemsScreen = () => {
               ) : (
                 <button
                   onClick={() => navigate('/request-quote')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-300 text-sm sm:text-base"
+                  className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-300 text-sm sm:text-base"
                 >
                   Back to Categories
                 </button>
@@ -601,13 +601,13 @@ const QuoteCategoryItemsScreen = () => {
                     // Enhanced Grid View for Quote Items
                     <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50 relative">
                       {/* Quote Badge */}
-                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-gradient-to-r from-emerald-600 to-blue-600 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-medium z-10">
+                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-bloom-green-600 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-medium z-10">
                         📋 Quote Item
                       </div>
                       
                       {/* Cart Status Badge */}
                       {isInCart(item.id) && (
-                        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold z-10 flex items-center">
+                        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold z-10 flex items-center">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           {getCartQuantity(item.id)}
                         </div>
@@ -638,7 +638,7 @@ const QuoteCategoryItemsScreen = () => {
                         
                         {/* No Price Display */}
                         <div className="mb-4">
-                          <div className="bg-gradient-to-r from-emerald-100 to-blue-100 text-emerald-700 px-3 py-2 rounded-lg text-sm font-medium text-center">
+                          <div className="bg-bloom-green-100 text-emerald-700 px-3 py-2 rounded-lg text-sm font-medium text-center">
                             💎 Custom Pricing Available
                           </div>
                         </div>
@@ -649,7 +649,7 @@ const QuoteCategoryItemsScreen = () => {
                           className={`w-full py-2 sm:py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center text-sm sm:text-base ${
                             isInCart(item.id)
                               ? 'bg-green-600 hover:bg-green-700 text-white'
-                              : 'bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white'
+                              : 'bg-bloom-green-600 hover:bg-bloom-green-700 text-white'
                           }`}
                         >
                           {isInCart(item.id) ? (
@@ -701,7 +701,7 @@ const QuoteCategoryItemsScreen = () => {
                               <Quote className="w-3 h-3 mr-1" />
                               <span className="text-xs font-medium">Quote Available</span>
                             </div>
-                            <div className="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                            <div className="flex items-center bg-bloom-green-100 text-bloom-green-700 px-2 py-1 rounded-full">
                               <span className="text-xs font-medium">Custom Pricing</span>
                             </div>
                           </div>
@@ -713,7 +713,7 @@ const QuoteCategoryItemsScreen = () => {
                             className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center text-sm ${
                               isInCart(item.id)
                                 ? 'bg-green-600 hover:bg-green-700 text-white'
-                                : 'bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white'
+                                : 'bg-bloom-green-600 hover:bg-bloom-green-700 text-white'
                             }`}
                           >
                             {isInCart(item.id) ? (
@@ -746,7 +746,7 @@ const QuoteCategoryItemsScreen = () => {
           {/* Preview Quote Button */}
           <button
             onClick={handlePreviewQuote}
-            className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-6 py-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-medium"
+            className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-6 py-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 flex items-center space-x-2 font-medium"
           >
             <Eye className="w-5 h-5" />
             <span> Continue  ({cartCount})</span>

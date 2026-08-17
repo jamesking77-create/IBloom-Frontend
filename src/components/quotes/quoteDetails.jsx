@@ -207,7 +207,7 @@ export function QuoteDetails({ quote, onClose }){
   const getStatusColor = (status) => {
     switch(status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'reviewed': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'reviewed': return 'bg-bloom-green-100 text-bloom-green-800 border-bloom-green-200';
       case 'responded': return 'bg-green-100 text-green-800 border-green-200';
       case 'accepted': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
@@ -518,7 +518,7 @@ export function QuoteDetails({ quote, onClose }){
                 {quote.response && !editingResponse && (
                   <button
                     onClick={handleSendResponse}
-                    className="flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                    className="flex items-center justify-center px-3 sm:px-4 py-2 bg-bloom-green-600 text-white rounded-md hover:bg-bloom-green-700 transition-colors text-sm"
                   >
                     <Send size={14} className="mr-2" />
                     Send Response
@@ -901,7 +901,7 @@ export function QuoteDetails({ quote, onClose }){
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
                       <div className="flex items-center space-x-2">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          comm.type === 'email' ? 'bg-blue-100 text-blue-800' :
+                          comm.type === 'email' ? 'bg-bloom-green-100 text-bloom-green-800' :
                           comm.type === 'phone' ? 'bg-green-100 text-green-800' :
                           comm.type === 'whatsapp' ? 'bg-emerald-100 text-emerald-800' :
                           'bg-gray-100 text-gray-800'

@@ -89,7 +89,7 @@ const FaqPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 overflow-hidden">
+      <section className="relative py-20 md:py-32 bg-bloom-rose-600 overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative max-w-4xl mx-auto px-4 text-center">
           <div className={`text-white transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
@@ -123,7 +123,7 @@ const FaqPage = () => {
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
                   {category.category}
                 </h2>
-                <div className="w-20 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
+                <div className="w-20 h-1 bg-bloom-green-500 rounded-full"></div>
               </div>
 
               {/* Questions */}
@@ -169,7 +169,7 @@ const FaqPage = () => {
       <section className="py-16 md:py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div className={`transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-            <MessageCircle className="w-12 h-12 mx-auto mb-6 text-blue-600" />
+            <MessageCircle className="w-12 h-12 mx-auto mb-6 text-bloom-green-600" />
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
               Still Have Questions?
             </h2>
@@ -180,7 +180,7 @@ const FaqPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
               <a
                 href="tel:0817-225-8085"
-                className="flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                className="flex items-center justify-center bg-bloom-green-600 text-white px-6 py-4 rounded-xl hover:bg-bloom-green-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
               >
                 <Phone className="w-5 h-5 mr-3" />
                 Call Us Now
@@ -188,7 +188,7 @@ const FaqPage = () => {
               
               <a
                 href="mailto:ibloomrentals@gmail.com"
-                className="flex items-center justify-center bg-white text-gray-800 px-6 py-4 rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                className="flex items-center justify-center bg-white text-gray-800 px-6 py-4 rounded-xl border-2 border-gray-200 hover:border-bloom-green-300 hover:bg-bloom-green-50 transform hover:scale-105 transition-all duration-300 shadow-lg"
               >
                 <Mail className="w-5 h-5 mr-3" />
                 Send Email
@@ -199,7 +199,7 @@ const FaqPage = () => {
       </section>
 
       {/* Quick Tips Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-br from-gray-100 to-gray-200">
+      <section className="py-16 md:py-20 bg-gray-100">
         <div className="max-w-6xl mx-auto px-4">
           <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">

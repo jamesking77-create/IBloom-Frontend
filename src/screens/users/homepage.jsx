@@ -10,8 +10,6 @@ import dayjs from "dayjs";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  ChevronLeft,
-  ChevronRight,
   Quote,
   MapPin,
   Star,
@@ -118,7 +116,7 @@ const HeroSlide = memo(({ slide, isActive, style }) => {
       style={style}
     >
       {!imageLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
+        <div className="absolute inset-0 bg-gray-800">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
         </div>
       )}
@@ -136,37 +134,11 @@ const HeroSlide = memo(({ slide, isActive, style }) => {
       />
 
       {imageLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/40 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bloom-charcoal/70 via-bloom-charcoal/30 to-bloom-charcoal/10" />
       )}
     </div>
   );
 });
-
-// Optimized floating item component
-const FloatingItem = memo(({ item, index, style }) => (
-  <div
-    className={`absolute floating-item ${
-      index % 2 === 0 ? "animate-float" : "animate-float-reverse"
-    }`}
-    style={style}
-  >
-    <div className="group relative">
-      <div className="w-32 h-32 md:w-40 md:h-40 rounded-xl overflow-hidden shadow-xl transform rotate-6 group-hover:rotate-0 transition-all duration-300 bg-white/10 backdrop-blur-sm border border-white/20">
-        <img
-          src={item.image}
-          alt={item.name}
-          className="w-full h-full object-cover transition-transform duration-300 opacity-80 group-hover:scale-105"
-          loading="lazy"
-          decoding="async"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-        <div className="absolute bottom-1 left-1 right-1 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 truncate">
-          {item.name}
-        </div>
-      </div>
-    </div>
-  </div>
-));
 
 const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -183,27 +155,6 @@ const HomePage = () => {
   const { companyInfo, companyInfoLoading } = useSelector(
     (state) => state.public
   );
-
-  // useEffect(() => {
-  //   console.log("🏠 HomePage mounted");
-  //   console.log("📊 Public state:", publicState);
-  //   console.log("🚀 Dispatching fetchCompanyInfo...");
-
-  //   dispatch(fetchCompanyInfo())
-  //     .then((result) => {
-  //       console.log("✅ Dispatch successful:", result);
-  //     })
-  //     .catch((error) => {
-  //       console.error("❌ Dispatch failed:", error);
-  //     });
-  // }, [dispatch]);
-
-  // // Log state changes
-  // useEffect(() => {
-  //   console.log("🔄 Public state changed:", publicState);
-  // }, [publicState]);
-
-
 
   const { userData, loading: profileLoading } = useSelector(
     (state) => state.profile
@@ -276,35 +227,22 @@ const HomePage = () => {
     [categories]
   );
 
-  const rentalItems = useMemo(
+  const valueProps = useMemo(
     () => [
       {
-        id: 1,
-        name: "Elegant Chairs",
-        image:
-          "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=300&h=300&fit=crop",
-        category: "Furniture",
+        icon: Sparkles,
+        title: "Premium Quality",
+        desc: "Every piece inspected and styled before it leaves our warehouse",
       },
       {
-        id: 2,
-        name: "Wedding Tent",
-        image:
-          "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=300&h=300&fit=crop",
-        category: "Tents",
+        icon: Calendar,
+        title: "Flexible Booking",
+        desc: "Reserve by date or build your event now — your call",
       },
       {
-        id: 3,
-        name: "Sound System",
-        image:
-          "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop",
-        category: "Audio",
-      },
-      {
-        id: 4,
-        name: "Dining Table",
-        image:
-          "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300&h=300&fit=crop",
-        category: "Tables",
+        icon: Users,
+        title: "Expert Setup",
+        desc: "Our team delivers, installs, and strikes down after",
       },
     ],
     []
@@ -470,21 +408,6 @@ const HomePage = () => {
     }
   }, [scrollY, heroReady]);
 
-  // Floating items positioning
-  const floatingItemsStyle = useMemo(() => {
-    const offset = scrollY * 0.05; // Reduced for better performance
-    return rentalItems.map((_, index) => ({
-      left:
-        index === 0 ? "5%" : index === 1 ? "85%" : index === 2 ? "10%" : "80%",
-      top:
-        index === 0 ? "15%" : index === 1 ? "20%" : index === 2 ? "75%" : "70%",
-      transform: `translate3d(0, ${
-        offset * (index % 2 === 0 ? 1 : -1) * 0.5
-      }px, 0)`,
-      animationDelay: `${index * 1.2}s`,
-    }));
-  }, [scrollY, rentalItems]);
-
   return (
     <>
       <style>
@@ -494,85 +417,70 @@ const HomePage = () => {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
           }
-          
-          @keyframes float {
-            0%, 100% { transform: translate3d(0, 0px, 0) rotate(0deg); }
-            50% { transform: translate3d(0, -20px, 0) rotate(2deg); }
-          }
-          
-          @keyframes float-reverse {
-            0%, 100% { transform: translate3d(0, 0px, 0) rotate(0deg); }
-            50% { transform: translate3d(0, -15px, 0) rotate(-2deg); }
-          }
-          
+
           @keyframes fadeInUp {
             0% { opacity: 0; transform: translate3d(0, 20px, 0); }
             100% { opacity: 1; transform: translate3d(0, 0, 0); }
           }
-          
+
           @keyframes scaleIn {
             0% { opacity: 0; transform: scale3d(0.95, 0.95, 1); }
             100% { opacity: 1; transform: scale3d(1, 1, 1); }
           }
-          
+
           @keyframes slideInLeft {
             0% { opacity: 0; transform: translate3d(-30px, 0, 0); }
             100% { opacity: 1; transform: translate3d(0, 0, 0); }
           }
-          
+
           @keyframes slideInRight {
             0% { opacity: 0; transform: translate3d(30px, 0, 0); }
             100% { opacity: 1; transform: translate3d(0, 0, 0); }
           }
-          
+
           /* Apply optimized animations */
-          .animate-slide-left { 
-            animation: slide-left 20s linear infinite; 
+          .animate-slide-left {
+            animation: slide-left 20s linear infinite;
             will-change: transform;
           }
-          .animate-float { 
-            animation: float 6s ease-in-out infinite; 
-            will-change: transform;
+          .marquee-pause-group:hover .animate-slide-left {
+            animation-play-state: paused;
           }
-          .animate-float-reverse { 
-            animation: float-reverse 8s ease-in-out infinite; 
-            will-change: transform;
+          .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
           }
-          .animate-fade-in-up { 
-            animation: fadeInUp 0.6s ease-out forwards; 
+          .animate-scale-in {
+            animation: scaleIn 0.5s ease-out forwards;
           }
-          .animate-scale-in { 
-            animation: scaleIn 0.5s ease-out forwards; 
+          .animate-slide-in-left {
+            animation: slideInLeft 0.6s ease-out forwards;
           }
-          .animate-slide-in-left { 
-            animation: slideInLeft 0.6s ease-out forwards; 
+          .animate-slide-in-right {
+            animation: slideInRight 0.6s ease-out forwards;
           }
-          .animate-slide-in-right { 
-            animation: slideInRight 0.6s ease-out forwards; 
+
+          .text-brand {
+            color: #A32B5E;
           }
-          
-          .floating-item {
-            will-change: transform;
-          }
-          
-          .text-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-          }
-          
+
           .glass-effect {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
           }
 
+          .glass-panel-light {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(47, 93, 58, 0.1);
+            box-shadow: 0 4px 24px rgba(36, 26, 32, 0.06);
+          }
+
           /* Performance optimizations */
           .hero-section {
             contain: layout style paint;
           }
-          
+
           .section-content {
             content-visibility: auto;
             contain-intrinsic-size: 1px 400px;
@@ -600,41 +508,52 @@ const HomePage = () => {
           />
         ))}
 
+        {/* Organic accent shapes */}
+        <div className="blob blob-a absolute -top-10 -left-16 w-80 h-80 bg-bloom-rose/20 z-10 pointer-events-none" />
+        <div className="blob blob-b absolute bottom-24 -right-10 w-64 h-64 bg-bloom-gold/20 z-10 pointer-events-none" />
+
         {/* Hero Content */}
         <div
-          className={`absolute inset-0 flex items-center justify-center text-center text-white z-20 transition-opacity duration-300 ${
+          className={`absolute inset-0 flex items-center justify-center text-center text-white z-20 px-4 transition-opacity duration-300 ${
             heroReady ? "opacity-100" : "opacity-0"
           }`}
         >
-          <div className="max-w-4xl mx-auto px-4">
-            <div ref={heroContentRef} style={{ willChange: "transform" }}>
-              <h1 className="text-5xl md:text-7xl font-bold mb-6 text-gray-300 animate-fade-in-up">
-                {heroSlides[currentSlide]?.title}
-              </h1>
-              <p
-                className="text-xl md:text-2xl mb-4 text-white animate-fade-in-up"
-                style={{ animationDelay: "0.1s" }}
-              >
-                {heroSlides[currentSlide]?.subtitle}
-              </p>
-              {companyInfo?.bio && (
-                <p
-                  className="text-lg mb-8 text-white max-w-2xl mx-auto animate-fade-in-up"
-                  style={{ animationDelay: "0.2s" }}
-                >
-                  {userData.bio}
-                </p>
-              )}
-
-              <button
-                onClick={() => navigate("/request-quote")}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center mx-auto animate-scale-in"
-                style={{ animationDelay: "0.3s" }}
-              >
-                <Quote className="mr-2 w-5 h-5" />
-                Get Your Quote
-              </button>
+          <div
+            ref={heroContentRef}
+            className="glass-effect max-w-3xl w-full mx-auto px-6 py-10 md:px-14 md:py-14 rounded-[2rem]"
+            style={{ willChange: "transform" }}
+          >
+            <div className="inline-flex items-center gap-2 text-xs font-medium tracking-wide uppercase text-white/70 mb-5 animate-fade-in-up">
+              <span className="w-1.5 h-1.5 rounded-full bg-bloom-green-light" />
+              {companyInfo?.location || "Premium Event Rentals"}
             </div>
+
+            <h1 className="font-display text-4xl md:text-6xl font-semibold mb-5 text-white animate-fade-in-up">
+              {heroSlides[currentSlide]?.title}
+            </h1>
+            <p
+              className="text-lg md:text-xl mb-3 text-white/85 animate-fade-in-up"
+              style={{ animationDelay: "0.1s" }}
+            >
+              {heroSlides[currentSlide]?.subtitle}
+            </p>
+            {companyInfo?.bio && (
+              <p
+                className="text-base mb-8 text-white/70 max-w-xl mx-auto animate-fade-in-up"
+                style={{ animationDelay: "0.2s" }}
+              >
+                {userData.bio}
+              </p>
+            )}
+
+            <button
+              onClick={() => navigate("/request-quote")}
+              className="bg-bloom-rose hover:bg-bloom-rose-dark text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 hover:scale-105 shadow-2xl inline-flex items-center animate-scale-in"
+              style={{ animationDelay: "0.3s" }}
+            >
+              <Quote className="mr-2 w-5 h-5" />
+              Get Your Quote
+            </button>
           </div>
         </div>
 
@@ -650,7 +569,7 @@ const HomePage = () => {
               onClick={() => setCurrentSlide(index)}
               className={`h-2 rounded-full transition-all duration-300 ${
                 index === currentSlide
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 w-8 shadow-lg"
+                  ? "bg-bloom-rose w-8 shadow-lg"
                   : "bg-white/50 hover:bg-white/70 w-2"
               }`}
             />
@@ -660,60 +579,83 @@ const HomePage = () => {
 
       <QuickActionsSection navigate={navigate} />
 
-      {/* 3D Floating Items Section */}
-      <div className="section-content relative py-32 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
-        {/* Background gradients */}
-        <div className="absolute inset-0 opacity-50">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-full blur-3xl"></div>
-        </div>
+      {/* Value Proposition Section */}
+      <div className="section-content relative py-32 md:py-36 bg-bloom-charcoal overflow-hidden">
+        {/* Wobbly, hand-drawn edges instead of a straight cut into the ivory sections above/below */}
+        <svg
+          className="absolute top-0 left-0 w-full h-14 md:h-20 z-10"
+          viewBox="0 0 1440 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M0,0 L0,42 C90,78 180,8 290,38 C400,68 470,14 580,52 C690,90 780,22 900,58 C1020,94 1110,26 1230,50 C1320,68 1380,34 1440,48 L1440,0 Z"
+            className="fill-bloom-ivory"
+          />
+        </svg>
+        <svg
+          className="absolute bottom-0 left-0 w-full h-14 md:h-20 z-10 rotate-180"
+          viewBox="0 0 1440 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M0,0 L0,50 C100,20 190,88 300,54 C410,20 500,80 610,42 C720,4 820,72 940,40 C1060,8 1150,66 1260,38 C1340,18 1400,44 1440,32 L1440,0 Z"
+            className="fill-bloom-ivory"
+          />
+        </svg>
 
-        {/* Floating Items */}
-        <div className="absolute inset-0 overflow-hidden">
-          {rentalItems.map((item, index) => (
-            <FloatingItem
-              key={item.id}
-              item={item}
-              index={index}
-              style={floatingItemsStyle[index]}
-            />
-          ))}
-        </div>
+        <div className="blob blob-a absolute top-10 -left-10 w-80 h-80 bg-bloom-green/25" />
+        <div className="blob blob-b absolute bottom-0 right-0 w-96 h-96 bg-bloom-rose/15" />
+        <div className="blob blob-c absolute top-1/2 left-1/2 w-56 h-56 bg-bloom-gold/10" />
 
-        {/* Central Content */}
-        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
+        <div className="relative z-10 max-w-6xl mx-auto px-4">
           <div
             data-animate="floating-section"
-            className={`transition-all duration-800 ${
+            className={`text-center mb-16 transition-all duration-800 ${
               isVisible["floating-section"] ? "animate-fade-in-up" : "opacity-0"
             }`}
           >
-            <h2 className="text-5xl md:text-7xl font-bold text-white mb-6">
-              <span className="text-gray-200">Everything</span> You Need
+            <h2 className="font-display text-5xl md:text-7xl font-semibold text-white mb-6">
+              <span className="text-white/50">Everything</span> You Need
             </h2>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed">
+            <p className="text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
               From intimate gatherings to grand celebrations, we bring your
               vision to life with our premium rental collection
             </p>
+          </div>
 
-            <div className="flex flex-wrap justify-center gap-4 mb-12">
-              <div className="bg-white/80 backdrop-blur-lg border border-gray-200/50 shadow-lg px-6 py-3 rounded-full text-gray-700 font-medium transform hover:scale-105 transition-all duration-300">
-                <Sparkles className="inline-block w-5 h-5 mr-2" />
-                Premium Quality
-              </div>
-              <div className="bg-white/80 backdrop-blur-lg border border-gray-200/50 shadow-lg px-6 py-3 rounded-full text-gray-700 font-medium transform hover:scale-105 transition-all duration-300">
-                <Calendar className="inline-block w-5 h-5 mr-2" />
-                Flexible Booking
-              </div>
-              <div className="bg-white/80 backdrop-blur-lg border border-gray-200/50 shadow-lg px-6 py-3 rounded-full text-gray-700 font-medium transform hover:scale-105 transition-all duration-300">
-                <Users className="inline-block w-5 h-5 mr-2" />
-                Expert Setup
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
+            {valueProps.map((prop, i) => {
+              const Icon = prop.icon;
+              return (
+                <div
+                  key={prop.title}
+                  className={`glass-effect rounded-2xl p-8 text-center transition-all duration-500 hover:-translate-y-1 hover:bg-white/[0.15] ${
+                    isVisible["floating-section"]
+                      ? "animate-fade-in-up"
+                      : "opacity-0"
+                  }`}
+                  style={{ animationDelay: `${0.1 + i * 0.1}s` }}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-bloom-green flex items-center justify-center mx-auto mb-5">
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-display text-lg font-semibold text-white mb-2">
+                    {prop.title}
+                  </h3>
+                  <p className="text-white/60 text-sm leading-relaxed">
+                    {prop.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
 
+          <div className="text-center">
             <button
               onClick={() => navigate("/eventbooking")}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl"
+              className="bg-bloom-rose hover:bg-bloom-rose-dark text-white px-10 py-4 rounded-full text-lg font-semibold transition-all duration-300 hover:scale-105 shadow-2xl"
             >
               Explore Our Collection
             </button>
@@ -724,14 +666,17 @@ const HomePage = () => {
       {/* Stats Section */}
       <div
         data-animate="stats"
-        className="section-content py-20 bg-white relative overflow-hidden"
+        className="section-content py-20 bg-bloom-ivory relative overflow-hidden"
       >
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="blob blob-c absolute -top-16 right-1/4 w-72 h-72 bg-bloom-blush/50" />
+        <div className="blob blob-a absolute bottom-0 -left-16 w-64 h-64 bg-bloom-green/10" />
+
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
               <div
                 key={index}
-                className={`text-center transform transition-all duration-600 ${
+                className={`glass-panel-light rounded-2xl py-8 text-center transition-all duration-500 ${
                   isVisible["stats"]
                     ? index % 2 === 0
                       ? "animate-slide-in-left"
@@ -740,11 +685,13 @@ const HomePage = () => {
                 }`}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div className="text-6xl mb-4">{stat.icon}</div>
-                <div className="text-4xl font-bold text-gradient mb-2">
+                <div className="text-4xl mb-3">{stat.icon}</div>
+                <div className="font-display text-4xl font-semibold text-brand mb-1">
                   {stat.number}
                 </div>
-                <div className="text-gray-600 font-medium">{stat.label}</div>
+                <div className="text-gray-500 text-sm font-medium">
+                  {stat.label}
+                </div>
               </div>
             ))}
           </div>
@@ -754,14 +701,13 @@ const HomePage = () => {
       {/* Categories Section */}
       <div
         ref={categoriesRef}
-        className="section-content py-20 bg-gradient-to-br from-gray-50 to-white"
+        className="section-content py-20 bg-bloom-ivory relative overflow-hidden"
         style={{
-          backgroundImage: `
-      radial-gradient(circle at 30% 70%, rgba(173, 216, 230, 0.35), transparent 60%),
-      radial-gradient(circle at 70% 30%, rgba(255, 182, 193, 0.4), transparent 60%)`,
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='1.5' cy='1.5' r='1.5' fill='%232F5D3A' fill-opacity='0.12'/%3E%3C/svg%3E\")",
         }}
       >
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div
             data-animate="categories-header"
             className={`text-center mb-16 transition-all duration-800 ${
@@ -770,13 +716,13 @@ const HomePage = () => {
                 : "opacity-0"
             }`}
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+            <h2 className="font-display text-4xl md:text-5xl font-semibold text-gray-800 mb-4">
               Our Rental Categories
             </h2>
             <p className="text-xl text-gray-600">
               Everything you need for your perfect event
             </p>
-            <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto mt-8 rounded-full"></div>
+            <div className="w-16 h-1 bg-bloom-rose mx-auto mt-8 rounded-full"></div>
           </div>
 
           {/* Categories Grid */}
@@ -806,174 +752,152 @@ const HomePage = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
               {categories.map((category, index) => {
-                // Check if category has any items that are in stock
-                const hasInStockItems =
-                  category.items?.some((item) => !item.outOfStock) || false;
+                // Check if category (including items nested in subcategories) has any in stock.
+                // Was only looking at category.items, so a category with all its real items
+                // living in subCategories had an empty items array — and [].every() is
+                // vacuously true, so it always showed "Out of Stock" no matter what.
+                const allCategoryItems = [
+                  ...(category.items || []),
+                  ...(category.subCategories?.flatMap((sub) => sub.items || []) || []),
+                ];
+                const hasInStockItems = allCategoryItems.some(
+                  (item) => !item.outOfStock
+                );
                 const allOutOfStock =
-                  category.items?.every((item) => item.outOfStock) || false;
+                  allCategoryItems.length > 0 &&
+                  allCategoryItems.every((item) => item.outOfStock);
+
+                const stockBadge =
+                  category.itemCount === 0
+                    ? { label: "Coming Soon", dot: "bg-gray-400" }
+                    : allOutOfStock
+                    ? { label: "Out of Stock", dot: "bg-red-500" }
+                    : hasInStockItems
+                    ? { label: "In Stock", dot: "bg-emerald-500" }
+                    : { label: "Limited Stock", dot: "bg-amber-500" };
+
+                const extraColors = category.colors?.length
+                  ? category.colors.length - 4
+                  : 0;
 
                 return (
                   <div
                     key={category.id}
                     data-animate={`category-${index}`}
-                    className={`group cursor-pointer transform transition-all duration-600 hover:scale-105 ${
+                    className={`group h-full cursor-pointer transform transition-all duration-500 hover:-translate-y-1 ${
                       isVisible[`category-${index}`]
                         ? "animate-fade-in-up"
                         : "opacity-0"
                     }`}
                     style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => handleCategoryClick(category)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleCategoryClick(category)
+                    }
                   >
-                    <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-200/50 relative">
-                      {/* Stock Status Badge */}
-                      <div className="absolute top-4 left-4 z-10">
-                        {category.itemCount === 0 ? (
-                          <span className="bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Coming Soon
-                          </span>
-                        ) : allOutOfStock ? (
-                          <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Out of Stock
-                          </span>
-                        ) : hasInStockItems ? (
-                          <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            In Stock
-                          </span>
-                        ) : (
-                          <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Limited Stock
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Subcategory Badge */}
-                      {category.subCategories &&
-                        category.subCategories.length > 0 && (
-                          <div className="absolute top-4 right-4 z-10">
-                            <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                              {category.subCategories.length} Sub
-                              {category.subCategories.length > 1 ? "s" : ""}
-                            </span>
-                          </div>
-                        )}
-
-                      {/* View Items Badge on Hover */}
-                      <div className="absolute inset-x-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-center font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                        View Items
-                      </div>
-
-                      <div className="relative overflow-hidden">
+                    <div className="h-full flex flex-col bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-500 overflow-hidden border border-gray-100">
+                      {/* Image */}
+                      <div className="relative overflow-hidden h-48 shrink-0">
                         <img
                           src={
                             category.image ||
                             `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`
                           }
                           alt={category.name}
-                          className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           loading="lazy"
                           decoding="async"
                           onError={(e) => {
                             e.target.src = `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`;
                           }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                        {/* Stock Status */}
+                        <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${stockBadge.dot}`}
+                          />
+                          {stockBadge.label}
+                        </div>
+
+                        {/* Subcategory Badge */}
+                        {category.subCategories?.length > 0 && (
+                          <div className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm text-gray-700 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">
+                            {category.subCategories.length} sub
+                            {category.subCategories.length > 1 ? "s" : ""}
+                          </div>
+                        )}
+
+                        {/* Hover reveal: view items + extra detail */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-bloom-charcoal/75 via-bloom-charcoal/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                          {(category.colors?.length > 0 ||
+                            category.sizes?.length > 0) && (
+                            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                              {category.colors?.slice(0, 4).map((color, i) => (
+                                <span
+                                  key={i}
+                                  title={color}
+                                  className="w-4 h-4 rounded-full border border-white/60 shadow-sm"
+                                  style={{
+                                    backgroundColor: getColorHex(color),
+                                  }}
+                                />
+                              ))}
+                              {extraColors > 0 && (
+                                <span className="text-[11px] text-white/80">
+                                  +{extraColors}
+                                </span>
+                              )}
+                              {category.sizes?.length > 0 && (
+                                <span className="text-[11px] text-white/80 ml-1">
+                                  {category.sizes.length} size
+                                  {category.sizes.length > 1 ? "s" : ""}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <span className="inline-flex items-center justify-center bg-bloom-rose text-white px-4 py-2 rounded-full text-sm font-medium self-start">
+                            View Items
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="p-6">
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all duration-300">
+                      {/* Content */}
+                      <div className="flex flex-col flex-1 p-6">
+                        <h3 className="font-display text-lg font-semibold text-gray-800 mb-1.5 line-clamp-1 group-hover:text-bloom-green transition-colors duration-300">
                           {category.name}
                         </h3>
 
-                        <p className="text-gray-600 mb-3 text-sm">
+                        <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 min-h-[2.6em]">
                           {category.description ||
                             "Premium quality rentals for your special event"}
                         </p>
 
-                        {/* Item Count */}
-                        <div className="mb-3">
+                        {/* Spacer pushes footer to the bottom so every card aligns */}
+                        <div className="flex-1" />
+
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                           {category.itemCount > 0 ? (
-                            <p className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            <span className="text-sm font-medium text-bloom-green">
                               {category.itemCount} item
                               {category.itemCount !== 1 ? "s" : ""} available
-                            </p>
+                            </span>
                           ) : (
-                            <p className="text-sm text-gray-400">
+                            <span className="text-sm text-gray-400">
                               Items coming soon
-                            </p>
+                            </span>
+                          )}
+
+                          {category.hasQuotes && (
+                            <span className="text-xs font-medium text-bloom-rose">
+                              Custom quotes
+                            </span>
                           )}
                         </div>
-
-                        {/* Colors Display */}
-                        {category.colors && category.colors.length > 0 && (
-                          <div className="mb-3">
-                            <p className="text-xs font-medium text-gray-700 mb-2">
-                              Available Colors:
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {category.colors
-                                .slice(0, 4)
-                                .map((color, colorIndex) => (
-                                  <div
-                                    key={colorIndex}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <div
-                                      className="w-4 h-4 rounded-full border-2 border-gray-300 shadow-sm"
-                                      style={{
-                                        backgroundColor: getColorHex(color),
-                                      }}
-                                      title={color}
-                                    ></div>
-                                    <span className="text-xs text-gray-600 capitalize">
-                                      {color}
-                                    </span>
-                                  </div>
-                                ))}
-                              {category.colors.length > 4 && (
-                                <span className="text-xs text-gray-400 px-2 py-1">
-                                  +{category.colors.length - 4} more
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Sizes Display */}
-                        {category.sizes && category.sizes.length > 0 && (
-                          <div className="mb-3">
-                            <p className="text-xs font-medium text-gray-700 mb-2">
-                              Available Sizes:
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {category.sizes
-                                .slice(0, 5)
-                                .map((size, sizeIndex) => (
-                                  <span
-                                    key={sizeIndex}
-                                    className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium"
-                                  >
-                                    {size}
-                                  </span>
-                                ))}
-                              {category.sizes.length > 5 && (
-                                <span className="text-xs text-gray-400 px-2 py-1">
-                                  +{category.sizes.length - 5}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Quotes Badge */}
-                        {category.hasQuotes && (
-                          <div className="mt-3">
-                            <span className="inline-flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                              💬 Custom Quotes Available
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -984,11 +908,34 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Auto-sliding Cards Section */}
-      <div className="section-content py-16 bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-transparent to-cyan-500/20"></div>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-gradient-to-r from-green-400/30 to-blue-500/30 rounded-full blur-3xl opacity-50"></div>
+      {/* Why Choose Us — auto-sliding cards */}
+      <div className="section-content py-24 md:py-28 bg-bloom-rose-dark relative overflow-hidden marquee-pause-group">
+        {/* Bold, irregular wobble — deliberately a different rhythm from the value-prop section's edge */}
+        <svg
+          className="absolute top-0 left-0 w-full h-16 md:h-24 z-10"
+          viewBox="0 0 1440 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M0,0 L0,60 C160,10 260,95 420,45 C560,2 660,80 820,55 C980,28 1100,90 1260,35 C1350,4 1400,55 1440,30 L1440,0 Z"
+            className="fill-bloom-ivory"
+          />
+        </svg>
+        <svg
+          className="absolute bottom-0 left-0 w-full h-16 md:h-24 z-10 rotate-180"
+          viewBox="0 0 1440 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M0,0 L0,35 C140,85 240,5 400,50 C540,90 650,15 810,48 C970,80 1080,8 1240,52 C1330,80 1390,20 1440,45 L1440,0 Z"
+            className="fill-bloom-ivory"
+          />
+        </svg>
+
+        <div className="blob blob-a absolute top-0 left-1/4 w-96 h-96 bg-white/10" />
+        <div className="blob blob-c absolute bottom-0 right-1/4 w-80 h-80 bg-bloom-gold/15" />
 
         <div
           data-animate="specializations"
@@ -996,28 +943,30 @@ const HomePage = () => {
             isVisible["specializations"] ? "animate-fade-in-up" : "opacity-0"
           }`}
         >
-          <h2 className="text-4xl font-bold text-center text-white mb-4 drop-shadow-lg">
+          <h2 className="font-display text-4xl md:text-5xl font-semibold text-center text-white mb-4">
             {companyInfo?.specialize?.length > 0
               ? "Our Specializations"
               : "Why Choose Us"}
           </h2>
-          <p className="text-xl text-center text-white/90 drop-shadow-md">
+          <p className="text-lg text-center text-white/80">
             Experience the difference with our premium service
           </p>
         </div>
 
         <div className="relative z-10">
-          <div className="flex animate-slide-left space-x-8">
+          <div className="flex animate-slide-left space-x-6">
             {[...autoSlideCards, ...autoSlideCards].map((card, index) => (
               <div
                 key={`${card.id}-${index}`}
-                className="flex-shrink-0 w-80 glass-effect rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-all duration-300 hover:bg-white/15"
+                className="flex-shrink-0 w-80 glass-effect rounded-2xl p-6 transition-all duration-300 hover:bg-white/[0.18] hover:-translate-y-1"
               >
                 <div className="text-4xl mb-4">{card.icon}</div>
-                <h3 className="text-xl font-semibold text-white/90 mb-2">
+                <h3 className="font-display text-lg font-semibold text-white mb-2">
                   {card.title}
                 </h3>
-                <p className="text-white/70">{card.desc}</p>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  {card.desc}
+                </p>
               </div>
             ))}
           </div>
@@ -1027,59 +976,74 @@ const HomePage = () => {
       {/* Company Location Map Section */}
       <div
         data-animate="location-map"
-        className={`section-content py-16 bg-gradient-to-br from-gray-100 to-gray-50 relative overflow-hidden ${
+        className={`section-content py-20 bg-bloom-ivory relative overflow-hidden ${
           isVisible["location-map"] ? "animate-fade-in-up" : "opacity-0"
         }`}
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='1.5' cy='1.5' r='1.5' fill='%232F5D3A' fill-opacity='0.12'/%3E%3C/svg%3E\")",
+        }}
       >
-        <div className="max-w-7xl mx-auto px-4">
+
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+            <h2 className="font-display text-4xl md:text-5xl font-semibold text-gray-800 mb-4">
               Find Us Here
             </h2>
             <p className="text-xl text-gray-600">
               Visit our location or get in touch with us
             </p>
-            <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto mt-4 rounded-full"></div>
+            <div className="w-16 h-1 bg-bloom-rose mx-auto mt-4 rounded-full"></div>
           </div>
 
           {/* Full Width Map */}
-          <div className="w-full h-96 rounded-2xl overflow-hidden shadow-2xl border border-gray-200/50 relative mb-12">
-            <iframe
-              src={getMapUrl(companyInfo?.location)}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen=""
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="w-full h-full"
-              title={`Company Location - ${
-                companyInfo?.location || "Default Location"
-              }`}
-            ></iframe>
+          <div className="relative mb-12">
+            <div className="blob blob-a absolute -top-10 -left-10 w-56 h-56 bg-bloom-rose/20 -z-10" />
+            <div className="blob blob-b absolute -bottom-10 -right-10 w-64 h-64 bg-bloom-green/20 -z-10" />
 
-            <div className="absolute top-4 left-4 glass-effect px-4 py-2 rounded-full text-sm font-medium text-gray-700">
-              📍{" "}
-              {companyInfo?.location ||
-                "178B Corporation Drive, Dolphin Estate, Ikoyi"}
-            </div>
+            {/* Photo-mat frame around the map */}
+            <div className="bg-white p-3 md:p-4 rounded-[2.5rem] shadow-2xl">
+              <div className="w-full h-80 md:h-96 rounded-[2rem] rounded-tr-[3.5rem] overflow-hidden relative">
+                <iframe
+                  src={getMapUrl(companyInfo?.location)}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full grayscale-[15%]"
+                  title={`Company Location - ${
+                    companyInfo?.location || "Default Location"
+                  }`}
+                ></iframe>
+              </div>
 
-            <div className="absolute bottom-4 right-4 glass-effect px-3 py-1 rounded-full text-xs text-gray-600">
-              <a
-                href={getDirectionsUrl(companyInfo?.location)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-blue-600 transition-colors"
-              >
-                Get Directions →
-              </a>
+              {/* Caption bar — kept off the map itself so it never collides with Google's own labels */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-2 pt-4 pb-1">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700 min-w-0">
+                  <MapPin className="w-4 h-4 text-bloom-rose shrink-0" />
+                  <span className="truncate">
+                    {companyInfo?.location ||
+                      "178B Corporation Drive, Dolphin Estate, Ikoyi"}
+                  </span>
+                </div>
+                <a
+                  href={getDirectionsUrl(companyInfo?.location)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-bloom-green-600 hover:text-bloom-green-700 transition-colors shrink-0"
+                >
+                  Get Directions →
+                </a>
+              </div>
             </div>
           </div>
 
           {/* Additional Info Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="glass-effect p-6 rounded-xl backdrop-blur-lg border border-gray-200/50 text-center transform hover:scale-105 transition-all duration-300">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="glass-panel-light rounded-2xl p-6 text-center transition-all duration-300 hover:-translate-y-1">
+              <div className="w-12 h-12 bg-bloom-green rounded-full flex items-center justify-center mx-auto mb-4">
                 <MapPin className="w-6 h-6 text-white" />
               </div>
               <h4 className="font-semibold text-gray-800 mb-2">Easy to Find</h4>
@@ -1088,8 +1052,8 @@ const HomePage = () => {
               </p>
             </div>
 
-            <div className="glass-effect p-6 rounded-xl backdrop-blur-lg border border-gray-200/50 text-center transform hover:scale-105 transition-all duration-300">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="glass-panel-light rounded-2xl p-6 text-center transition-all duration-300 hover:-translate-y-1">
+              <div className="w-12 h-12 bg-bloom-rose rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-white" />
               </div>
               <h4 className="font-semibold text-gray-800 mb-2">
@@ -1100,8 +1064,8 @@ const HomePage = () => {
               </p>
             </div>
 
-            <div className="glass-effect p-6 rounded-xl backdrop-blur-lg border border-gray-200/50 text-center transform hover:scale-105 transition-all duration-300">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="glass-panel-light rounded-2xl p-6 text-center transition-all duration-300 hover:-translate-y-1">
+              <div className="w-12 h-12 bg-bloom-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-6 h-6 text-white" />
               </div>
               <h4 className="font-semibold text-gray-800 mb-2">
@@ -1115,49 +1079,73 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Company Info Section */}
-      {companyInfo?.joinDate && (
+      {/* Company Info Section — blended into the ivory zone above it, no seam */}
+      {userData?.name && (
         <div
           data-animate="company-info"
-          className={`section-content py-16 bg-white transition-all duration-800 ${
+          className={`section-content pt-4 pb-24 bg-bloom-ivory relative overflow-hidden transition-all duration-800 ${
             isVisible["company-info"] ? "animate-fade-in-up" : "opacity-0"
           }`}
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='1.5' cy='1.5' r='1.5' fill='%232F5D3A' fill-opacity='0.12'/%3E%3C/svg%3E\")",
+          }}
         >
-          <div className="max-w-4xl mx-auto px-4 text-center">
+          <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
             <div className="mb-8">
-              <Award className="w-16 h-16 mx-auto text-gradient mb-4" />
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              <Award className="w-14 h-14 mx-auto text-brand mb-4" />
+              <h2 className="font-display text-3xl font-semibold text-gray-800 mb-4">
                 About {userData.name}
               </h2>
             </div>
             <p className="text-lg text-gray-600 mb-6 leading-relaxed">
               {userData.bio}
             </p>
-            <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
-              <div className="flex items-center glass-effect px-4 py-2 rounded-full">
-                <span className="font-semibold">Established:</span>
-                <span className="ml-2">
-                  {dayjs(userData.joinDate).format("DD/MM/YYYY")}
-                </span>
-              </div>
+            <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-600">
+              {userData.joinDate && dayjs(userData.joinDate).isValid() && (
+                <div className="flex items-center glass-panel-light px-4 py-2 rounded-full">
+                  <span className="font-semibold">Established:</span>
+                  <span className="ml-2">
+                    {dayjs(userData.joinDate).format("DD/MM/YYYY")}
+                  </span>
+                </div>
+              )}
               {userData.location && (
-                <div className="flex items-center glass-effect px-4 py-2 rounded-full">
+                <div className="flex items-center glass-panel-light px-4 py-2 rounded-full">
                   <MapPin className="w-4 h-4 mr-1" />
                   <span>{userData.location}</span>
                 </div>
               )}
+              {companyInfo?.specialize?.slice(0, 4).map((spec) => (
+                <div
+                  key={spec}
+                  className="flex items-center glass-panel-light px-4 py-2 rounded-full"
+                >
+                  <span>{spec}</span>
+                </div>
+              ))}
             </div>
           </div>
+
+          {/* Wobbly bookend into the dark CTA section below */}
+          <svg
+            className="absolute bottom-0 left-0 w-full h-14 md:h-20 rotate-180"
+            viewBox="0 0 1440 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M0,0 L0,42 C90,78 180,8 290,38 C400,68 470,14 580,52 C690,90 780,22 900,58 C1020,94 1110,26 1230,50 C1320,68 1380,34 1440,48 L1440,0 Z"
+              className="fill-bloom-charcoal"
+            />
+          </svg>
         </div>
       )}
 
       {/* Call to Action Section */}
-      <div className="section-content py-20 bg-gradient-to-r from-gray-900 via-slate-900 to-gray-900 relative overflow-hidden">
-        {/* Background Effects */}
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-gradient-to-r from-purple-600/30 to-pink-600/30 rounded-full blur-3xl"></div>
-        </div>
+      <div className="section-content py-24 bg-bloom-charcoal relative overflow-hidden">
+        <div className="blob blob-a absolute top-10 left-10 w-72 h-72 bg-bloom-green/25" />
+        <div className="blob blob-b absolute bottom-10 right-10 w-96 h-96 bg-bloom-rose/20" />
 
         <div
           data-animate="cta-section"
@@ -1165,11 +1153,13 @@ const HomePage = () => {
             isVisible["cta-section"] ? "animate-fade-in-up" : "opacity-0"
           }`}
         >
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6">
+          <h2 className="font-display text-4xl md:text-6xl font-semibold text-white mb-6">
             Ready to Create Your
-            <span className="text-gradient block mt-2">Perfect Event?</span>
+            <span className="block mt-2 text-bloom-rose-light">
+              Perfect Event?
+            </span>
           </h2>
-          <p className="text-xl text-gray-300 mb-8 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-xl text-white/70 mb-8 leading-relaxed max-w-2xl mx-auto">
             Join thousands of satisfied customers who trust us with their most
             important moments. Let's make your next event unforgettable.
           </p>
@@ -1177,7 +1167,7 @@ const HomePage = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={() => navigate("/eventbooking")}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center"
+              className="bg-bloom-rose hover:bg-bloom-rose-dark text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center"
             >
               <Calendar className="mr-2 w-5 h-5" />
               Book Your Event
@@ -1193,15 +1183,15 @@ const HomePage = () => {
 
           {/* Trust Indicators */}
           <div className="mt-12 flex flex-wrap justify-center items-center gap-8 opacity-70">
-            <div className="flex items-center text-gray-400">
-              <Star className="w-5 h-5 text-yellow-400 mr-2" />
+            <div className="flex items-center text-white/60">
+              <Star className="w-5 h-5 text-bloom-gold mr-2" />
               <span className="text-sm">4.9/5 Rating</span>
             </div>
-            <div className="flex items-center text-gray-400">
+            <div className="flex items-center text-white/60">
               <Users className="w-5 h-5 mr-2" />
               <span className="text-sm">500+ Happy Clients</span>
             </div>
-            <div className="flex items-center text-gray-400">
+            <div className="flex items-center text-white/60">
               <Award className="w-5 h-5 mr-2" />
               <span className="text-sm">Premium Quality</span>
             </div>

@@ -513,7 +513,7 @@ const FloatingChatBox = ({ emailServiceUrl = "/api/mailer/send-email" }) => {
           <button
             onClick={!isMobile ? handleButtonClick : undefined}
             onTouchEnd={isMobile ? handleButtonTouch : undefined}
-            className={`relative group pulse-ring bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white ${
+            className={`relative group pulse-ring bg-bloom-green-500 hover:bg-bloom-green-600 text-white ${
               isMobile ? "p-3" : "p-4"
             } rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 ${
               !isDragging ? "animate-float" : ""
@@ -564,7 +564,7 @@ const FloatingChatBox = ({ emailServiceUrl = "/api/mailer/send-email" }) => {
         >
           <div className="glass-morphism rounded-2xl shadow-2xl overflow-hidden mobile-safe-area">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 sm:p-4 text-white relative overflow-hidden drag-handle">
+            <div className="bg-bloom-green-500 p-3 sm:p-4 text-white relative overflow-hidden drag-handle">
               <div className="absolute inset-0 bg-black/10"></div>
               <div className="relative flex items-center justify-between">
                 <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
@@ -586,7 +586,7 @@ const FloatingChatBox = ({ emailServiceUrl = "/api/mailer/send-email" }) => {
                     <p
                       className={`${
                         isMobile ? "text-xs" : "text-sm"
-                      } text-blue-100 truncate`}
+                      } text-bloom-green-100 truncate`}
                     >
                       We'll get back to you soon!
                     </p>
@@ -679,7 +679,7 @@ const FloatingChatBox = ({ emailServiceUrl = "/api/mailer/send-email" }) => {
                       <User
                         className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
                           isMobile ? "w-4 h-4" : "w-5 h-5"
-                        } text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200`}
+                        } text-gray-400 group-focus-within:text-bloom-green-500 transition-colors duration-200`}
                       />
                       <input
                         ref={nameInputRef}
@@ -702,7 +702,7 @@ const FloatingChatBox = ({ emailServiceUrl = "/api/mailer/send-email" }) => {
                       <Mail
                         className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
                           isMobile ? "w-4 h-4" : "w-5 h-5"
-                        } text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200`}
+                        } text-gray-400 group-focus-within:text-bloom-green-500 transition-colors duration-200`}
                       />
                       <input
                         type="email"

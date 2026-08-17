@@ -153,7 +153,7 @@ const ContactPage = () => {
       title: "Email",
       details: companyInfo?.email || "No email available",
       href: companyInfo?.email ? `mailto:${companyInfo.email}` : "#",
-      color: "text-blue-600",
+      color: "text-bloom-green-600",
       available: !!companyInfo?.email,
     },
     {
@@ -169,7 +169,7 @@ const ContactPage = () => {
       title: "Business Hours",
       details: "Mon - Sat: 8AM - 8PM",
       href: "#",
-      color: "text-purple-600",
+      color: "text-bloom-rose-600",
       available: true,
     }
   ];
@@ -189,7 +189,7 @@ const ContactPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-bloom-green-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading contact information...</p>
         </div>
       </div>
@@ -199,7 +199,7 @@ const ContactPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 bg-gradient-to-br from-teal-600 via-blue-600 to-indigo-700 overflow-hidden">
+      <section className="relative py-20 md:py-32 bg-bloom-ivory overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative max-w-4xl mx-auto px-4 text-center">
           <div
@@ -253,7 +253,7 @@ const ContactPage = () => {
                     href={info.href}
                     target={info.title === "Location" ? "_blank" : "_self"}
                     rel={info.title === "Location" ? "noopener noreferrer" : ""}
-                    className="text-gray-800 hover:text-blue-600 transition-colors duration-200 text-sm break-words font-semibold"
+                    className="text-gray-800 hover:text-bloom-green-600 transition-colors duration-200 text-sm break-words font-semibold"
                   >
                     {info.details}
                   </a>
@@ -316,7 +316,7 @@ const ContactPage = () => {
                         value={formData.name}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent transition-all duration-200"
                         placeholder="Enter your full name"
                       />
                     </div>
@@ -330,7 +330,7 @@ const ContactPage = () => {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent transition-all duration-200"
                         placeholder="Enter your email"
                       />
                     </div>
@@ -346,7 +346,7 @@ const ContactPage = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent transition-all duration-200"
                         placeholder="Enter your phone number"
                       />
                     </div>
@@ -358,7 +358,7 @@ const ContactPage = () => {
                         name="eventType"
                         value={formData.eventType}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent transition-all duration-200"
                       >
                         <option value="">Select event type</option>
                         {eventTypes.map((type) => (
@@ -379,7 +379,7 @@ const ContactPage = () => {
                       name="eventDate"
                       value={formData.eventDate}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent transition-all duration-200"
                     />
                   </div>
 
@@ -393,7 +393,7 @@ const ContactPage = () => {
                       onChange={handleInputChange}
                       required
                       rows={5}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent transition-all duration-200 resize-none"
                       placeholder="Tell us about your event requirements..."
                     />
                   </div>
@@ -401,7 +401,7 @@ const ContactPage = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-8 py-4 rounded-lg font-semibold text-lg transform hover:scale-105 disabled:scale-100 transition-all duration-300 shadow-lg flex items-center justify-center"
+                    className="w-full bg-bloom-green-600 hover:bg-bloom-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-8 py-4 rounded-lg font-semibold text-lg transform hover:scale-105 disabled:scale-100 transition-all duration-300 shadow-lg flex items-center justify-center"
                   >
                     {isSubmitting ? (
                       <>
@@ -473,7 +473,7 @@ const ContactPage = () => {
                     href={getDirectionsUrl(companyInfo?.location)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center transform hover:scale-105 transition-all duration-300 shadow-lg ${
+                    className={`w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center transform hover:scale-105 transition-all duration-300 shadow-lg ${
                       !companyInfo?.location ? "opacity-60 cursor-not-allowed" : ""
                     }`}
                   >
@@ -484,7 +484,7 @@ const ContactPage = () => {
 
                 {/* Additional Info Cards */}
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl border border-blue-100">
+                  <div className="bg-bloom-green-50 p-6 rounded-2xl border border-bloom-green-100">
                     <h3 className="text-xl font-semibold text-gray-800 mb-3">
                       Quick Response Guarantee
                     </h3>
@@ -506,7 +506,7 @@ const ContactPage = () => {
                     </p>
                   </div>
 
-                  <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-2xl border border-green-100">
+                  <div className="bg-green-50 p-6 rounded-2xl border border-green-100">
                     <h3 className="text-xl font-semibold text-gray-800 mb-3">
                       Free Consultation
                     </h3>
@@ -526,7 +526,7 @@ const ContactPage = () => {
                         href="https://facebook.com/ibloomrentals"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transform hover:scale-110 transition-all duration-300"
+                        className="w-10 h-10 bg-bloom-green-600 rounded-full flex items-center justify-center hover:bg-bloom-green-700 transform hover:scale-110 transition-all duration-300"
                       >
                         <Facebook className="w-5 h-5 text-white" />
                       </a>
@@ -534,7 +534,7 @@ const ContactPage = () => {
                         href="https://instagram.com/ibloomrentals"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 bg-pink-600 rounded-full flex items-center justify-center hover:bg-pink-700 transform hover:scale-110 transition-all duration-300"
+                        className="w-10 h-10 bg-bloom-rose-600 rounded-full flex items-center justify-center hover:bg-bloom-rose-700 transform hover:scale-110 transition-all duration-300"
                       >
                         <Instagram className="w-5 h-5 text-white" />
                       </a>
@@ -542,7 +542,7 @@ const ContactPage = () => {
                         href="https://twitter.com/ibloomrentals"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center hover:bg-blue-500 transform hover:scale-110 transition-all duration-300"
+                        className="w-10 h-10 bg-bloom-green-400 rounded-full flex items-center justify-center hover:bg-bloom-green-500 transform hover:scale-110 transition-all duration-300"
                       >
                         <Twitter className="w-5 h-5 text-white" />
                       </a>
@@ -572,12 +572,12 @@ const ContactPage = () => {
               Check out our frequently asked questions or get in touch directly.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-white text-gray-800 px-6 py-3 rounded-lg border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 font-medium">
+              <button className="bg-white text-gray-800 px-6 py-3 rounded-lg border-2 border-gray-200 hover:border-bloom-green-300 hover:bg-bloom-green-50 transform hover:scale-105 transition-all duration-300 font-medium">
                 View FAQ
               </button>
               <a
                 href={companyInfo?.email ? `mailto:${companyInfo.email}` : "mailto:ibloomrentals@gmail.com"}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 font-medium inline-block"
+                className="bg-bloom-green-600 text-white px-6 py-3 rounded-lg hover:bg-bloom-green-700 transform hover:scale-105 transition-all duration-300 font-medium inline-block"
               >
                 Send MSG
               </a>

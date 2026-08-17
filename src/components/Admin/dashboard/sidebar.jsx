@@ -372,16 +372,17 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
 
       {/* Enhanced Logout Modal with smooth animations */}
       {showLogoutModal && (
-        <>
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={closeLogoutModal}
+        >
           <div
-            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fadeIn"
-            onClick={closeLogoutModal}
-          />
-
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md mx-4 animate-scaleIn">
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-md animate-scaleIn overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="font-display text-lg font-semibold text-gray-900">
                   Confirm Logout
                 </h3>
                 <button
@@ -414,7 +415,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Add custom animations via CSS */}

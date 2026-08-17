@@ -279,10 +279,10 @@ View item: ${shareUrl}`;
                 <span
                   className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium inline-block w-fit ${
                     fromOrderProcess
-                      ? "bg-purple-100 text-purple-800"
+                      ? "bg-bloom-rose-100 text-bloom-rose-800"
                       : fromEventBooking
                         ? "bg-green-100 text-green-800"
-                        : "bg-blue-100 text-blue-800"
+                        : "bg-bloom-green-100 text-bloom-green-800"
                   }`}
                 >
                   {category.name}
@@ -293,7 +293,7 @@ View item: ${shareUrl}`;
                 <span
                   className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium inline-block w-fit ${
                     fromOrderProcess
-                      ? "bg-purple-100 text-purple-800"
+                      ? "bg-bloom-rose-100 text-bloom-rose-800"
                       : "bg-green-100 text-green-800"
                   }`}
                 >
@@ -324,7 +324,7 @@ View item: ${shareUrl}`;
               </button>
               <button
                 onClick={handleShare}
-                className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                className="p-2 text-gray-400 hover:text-bloom-green-500 hover:bg-bloom-green-50 rounded-full transition-colors duration-200"
               >
                 <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -359,18 +359,9 @@ View item: ${shareUrl}`;
                 />
 
                 {/* Stock Status Overlay */}
-                <div className="absolute top-4 left-4">
-                  {item.outOfStock ? (
-                    <div className="bg-red-500/90 backdrop-blur-sm text-white rounded-full px-3 py-1 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      <span className="font-medium">Out of Stock</span>
-                    </div>
-                  ) : (
-                    <div className="bg-green-500/90 backdrop-blur-sm text-white rounded-full px-3 py-1 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" />
-                      <span className="font-medium">In Stock</span>
-                    </div>
-                  )}
+                <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 shadow-sm">
+                  <span className={`w-1.5 h-1.5 rounded-full ${item.outOfStock ? "bg-red-500" : "bg-emerald-500"}`} />
+                  {item.outOfStock ? "Out of Stock" : "In Stock"}
                 </div>
 
                 {/* Image Navigation */}
@@ -413,7 +404,7 @@ View item: ${shareUrl}`;
                       onClick={() => goToImage(index)}
                       className={`flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
                         selectedImageIndex === index
-                          ? "border-blue-500 ring-2 ring-blue-200"
+                          ? "border-bloom-green-500 ring-2 ring-bloom-green-200"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
@@ -433,7 +424,7 @@ View item: ${shareUrl}`;
             <div className="space-y-4 sm:space-y-6 order-2">
               {/* Title and Rating */}
               <div>
-                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2 leading-tight">
+                <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-800 mb-2 leading-tight">
                   {item.name}
                 </h2>
                 <div className="flex items-center justify-between sm:justify-start sm:space-x-4">
@@ -443,14 +434,14 @@ View item: ${shareUrl}`;
                         key={i}
                         className={`w-4 h-4 ${
                           i < (item.rating || 5)
-                            ? "text-yellow-400 fill-current"
+                            ? "text-bloom-gold fill-current"
                             : "text-gray-300"
                         }`}
                       />
                     ))}
                   </div>
                   {item.featured && (
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium flex items-center">
+                    <span className="px-2 py-1 bg-bloom-gold/15 text-bloom-gold rounded-full text-xs font-medium flex items-center">
                       <Award className="w-3 h-3 mr-1" />
                       Featured
                     </span>
@@ -462,19 +453,13 @@ View item: ${shareUrl}`;
               <div
                 className={`p-3 sm:p-4 rounded-xl border ${
                   fromOrderProcess
-                    ? "bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200"
-                    : fromEventBooking
-                      ? "bg-gradient-to-r from-green-50 to-blue-50 border-green-200"
-                      : "bg-gradient-to-r from-green-50 to-blue-50 border-green-200"
+                    ? "bg-bloom-rose-50 border-bloom-rose-200"
+                    : "bg-bloom-green-50 border-bloom-green-200"
                 }`}
               >
                 <div
-                  className={`text-2xl sm:text-3xl font-bold mb-1 ${
-                    fromOrderProcess
-                      ? "text-purple-600"
-                      : fromEventBooking
-                        ? "text-green-600"
-                        : "text-green-600"
+                  className={`font-display text-2xl sm:text-3xl font-semibold mb-1 ${
+                    fromOrderProcess ? "text-bloom-rose-600" : "text-bloom-green-600"
                   }`}
                 >
                   {formatPrice(item.price)}
@@ -496,14 +481,14 @@ View item: ${shareUrl}`;
               <div className="space-y-4">
                 {/* Colors */}
                 {item.colors && item.colors.length > 0 && (
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border-2 border-purple-200">
+                  <div className="bg-bloom-rose-50 rounded-xl p-4 border-2 border-bloom-rose-200">
                     <div className="flex items-center gap-2 mb-3">
-                      <Palette className="w-5 h-5 text-purple-600" />
+                      <Palette className="w-5 h-5 text-bloom-rose-600" />
                       <h3 className="font-bold text-gray-900">
                         Select Color *
                       </h3>
                       {selectedColor && (
-                        <span className="ml-auto text-sm font-medium text-purple-600">
+                        <span className="ml-auto text-sm font-medium text-bloom-rose-600">
                           Selected: {selectedColor}
                         </span>
                       )}
@@ -519,8 +504,8 @@ View item: ${shareUrl}`;
                           }}
                           className={`px-4 py-2 rounded-lg font-bold transition-all transform hover:scale-105 active:scale-95 ${
                             selectedColor === color
-                              ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg ring-4 ring-blue-300"
-                              : "bg-white border-2 border-gray-300 text-gray-700 hover:border-purple-400 hover:bg-purple-50"
+                              ? "bg-bloom-green-600 text-white shadow-lg ring-4 ring-bloom-green-300"
+                              : "bg-white border-2 border-gray-300 text-gray-700 hover:border-bloom-rose-400 hover:bg-bloom-rose-50"
                           }`}
                           type="button"
                         >
@@ -532,7 +517,7 @@ View item: ${shareUrl}`;
                       ))}
                     </div>
                     {item.colors.length > 0 && !selectedColor && (
-                      <p className="text-xs text-purple-600 mt-2 font-medium">
+                      <p className="text-xs text-bloom-rose-600 mt-2 font-medium">
                         ⚠️ Please select a color before adding to cart
                       </p>
                     )}
@@ -571,7 +556,7 @@ View item: ${shareUrl}`;
                   {item.features ? (
                     item.features.map((feature, index) => (
                       <div key={index} className="flex items-start">
-                        <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                        <Check className="w-4 h-4 text-bloom-green-500 mr-2 flex-shrink-0 mt-0.5" />
                         <span className="text-gray-600 text-sm sm:text-base">
                           {feature}
                         </span>
@@ -580,25 +565,25 @@ View item: ${shareUrl}`;
                   ) : (
                     <>
                       <div className="flex items-center">
-                        <Zap className="w-4 h-4 text-blue-500 mr-2" />
+                        <Zap className="w-4 h-4 text-bloom-green-500 mr-2" />
                         <span className="text-gray-600 text-sm sm:text-base">
                           Professional Quality
                         </span>
                       </div>
                       <div className="flex items-center">
-                        <Clock className="w-4 h-4 text-blue-500 mr-2" />
+                        <Clock className="w-4 h-4 text-bloom-green-500 mr-2" />
                         <span className="text-gray-600 text-sm sm:text-base">
                           Quick Setup
                         </span>
                       </div>
                       <div className="flex items-center">
-                        <Package className="w-4 h-4 text-blue-500 mr-2" />
+                        <Package className="w-4 h-4 text-bloom-green-500 mr-2" />
                         <span className="text-gray-600 text-sm sm:text-base">
                           Complete Package
                         </span>
                       </div>
                       <div className="flex items-center">
-                        <Award className="w-4 h-4 text-blue-500 mr-2" />
+                        <Award className="w-4 h-4 text-bloom-green-500 mr-2" />
                         <span className="text-gray-600 text-sm sm:text-base">
                           Premium Support
                         </span>
@@ -738,10 +723,10 @@ View item: ${shareUrl}`;
                           !selectedColor)
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : fromOrderProcess
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                        ? "bg-bloom-rose-600 hover:bg-bloom-rose-700 text-white"
                         : fromEventBooking
-                          ? "bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
-                          : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                          ? "bg-bloom-green-600 hover:bg-bloom-green-700 text-white"
+                          : "bg-bloom-green-600 hover:bg-bloom-green-700 text-white"
                 }`}
                 type="button"
               >

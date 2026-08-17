@@ -154,9 +154,9 @@ const GalleryPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex flex-col items-center justify-center relative overflow-hidden">
         {/* Background Elements */}
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500/10 rounded-full animate-pulse"></div>
-          <div className="absolute bottom-32 right-32 w-24 h-24 bg-purple-500/10 rounded-full animate-bounce"></div>
-          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-pink-500/10 rounded-full animate-ping"></div>
+          <div className="absolute top-20 left-20 w-32 h-32 bg-bloom-green-500/10 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-32 right-32 w-24 h-24 bg-bloom-rose-500/10 rounded-full animate-bounce"></div>
+          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-bloom-rose-500/10 rounded-full animate-ping"></div>
           <div className="absolute bottom-1/4 left-1/3 w-20 h-20 bg-green-500/10 rounded-full animate-pulse"></div>
         </div>
 
@@ -182,7 +182,7 @@ const GalleryPage = () => {
             </div>
             <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-300 ease-out"
+                className="h-full bg-bloom-green-500 transition-all duration-300 ease-out"
                 style={{ width: `${loadingProgress}%` }}
               ></div>
             </div>
@@ -193,14 +193,14 @@ const GalleryPage = () => {
 
           {/* Social Media Icons */}
           <div className="flex justify-center space-x-8">
-            <div className="w-12 h-12 border-2 border-gray-600 rounded-full flex items-center justify-center hover:border-blue-500 transition-colors duration-300 cursor-pointer group">
-              <Facebook className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors" />
+            <div className="w-12 h-12 border-2 border-gray-600 rounded-full flex items-center justify-center hover:border-bloom-green-500 transition-colors duration-300 cursor-pointer group">
+              <Facebook className="w-6 h-6 text-gray-400 group-hover:text-bloom-green-500 transition-colors" />
             </div>
-            <div className="w-12 h-12 border-2 border-gray-600 rounded-full flex items-center justify-center hover:border-pink-500 transition-colors duration-300 cursor-pointer group">
-              <Instagram className="w-6 h-6 text-gray-400 group-hover:text-pink-500 transition-colors" />
+            <div className="w-12 h-12 border-2 border-gray-600 rounded-full flex items-center justify-center hover:border-bloom-rose-500 transition-colors duration-300 cursor-pointer group">
+              <Instagram className="w-6 h-6 text-gray-400 group-hover:text-bloom-rose-500 transition-colors" />
             </div>
-            <div className="w-12 h-12 border-2 border-gray-600 rounded-full flex items-center justify-center hover:border-blue-400 transition-colors duration-300 cursor-pointer group">
-              <Twitter className="w-6 h-6 text-gray-400 group-hover:text-blue-400 transition-colors" />
+            <div className="w-12 h-12 border-2 border-gray-600 rounded-full flex items-center justify-center hover:border-bloom-green-400 transition-colors duration-300 cursor-pointer group">
+              <Twitter className="w-6 h-6 text-gray-400 group-hover:text-bloom-green-400 transition-colors" />
             </div>
           </div>
         </div>
@@ -211,8 +211,9 @@ const GalleryPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
+      <section className="relative py-20 md:py-32 bg-bloom-charcoal overflow-hidden">
+        <div className="blob blob-a absolute top-10 -left-10 w-72 h-72 bg-bloom-rose/25" />
+        <div className="blob blob-b absolute bottom-10 right-0 w-80 h-80 bg-bloom-green/20" />
         <div className="relative max-w-4xl mx-auto px-4 text-center">
           <div
             className={`text-white transform transition-all duration-1000 ${
@@ -222,7 +223,7 @@ const GalleryPage = () => {
             }`}
           >
             <Camera className="w-16 h-16 mx-auto mb-6 animate-pulse" />
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="font-display text-4xl md:text-6xl font-semibold mb-6">
               Event Gallery
             </h1>
             <p className="text-xl md:text-2xl leading-relaxed">
@@ -253,7 +254,7 @@ const GalleryPage = () => {
                 onClick={() => setSelectedCategory(category.id)}
                 className={`px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 ${
                   selectedCategory === category.id
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
+                    ? "bg-bloom-rose-600 text-white shadow-lg"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -402,7 +403,7 @@ const GalleryPage = () => {
       )}
 
       {/* CTA Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-r from-purple-600 to-pink-600">
+      <section className="py-16 md:py-20 bg-bloom-rose-600">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div
             className={`transform transition-all duration-1000 ${
@@ -419,7 +420,7 @@ const GalleryPage = () => {
               services.
             </p>
             <button
-              className="bg-white text-purple-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg"
+              className="bg-white text-bloom-rose-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg"
               onClick={() => {
                 navigate("/", { state: { scrollToCategories: true } });
               }}

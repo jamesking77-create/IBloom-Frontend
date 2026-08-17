@@ -125,9 +125,9 @@ const OrderProcess = () => {
   const currentStepIndex = steps.findIndex(step => step.key === currentStep);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-bloom-ivory">
       {/* Header with Progress Indicator */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-50">
+      <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
           {/* Back Button and Title */}
           <div className="flex items-center justify-between mb-6">
@@ -160,7 +160,7 @@ const OrderProcess = () => {
                     <div
                       className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
                         isActive
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-110'
+                          ? 'bg-bloom-green-600 text-white shadow-lg scale-110'
                           : isCompleted || isPast
                           ? 'bg-green-500 text-white'
                           : 'bg-gray-200 text-gray-500'
@@ -177,7 +177,7 @@ const OrderProcess = () => {
                     <span
                       className={`mt-2 text-xs sm:text-sm font-medium text-center transition-colors duration-300 ${
                         isActive
-                          ? 'text-blue-600'
+                          ? 'text-bloom-green-600'
                           : isCompleted || isPast
                           ? 'text-green-600'
                           : 'text-gray-500'
@@ -193,7 +193,7 @@ const OrderProcess = () => {
                       <div
                         className={`h-full transition-all duration-500 ${
                           index < currentStepIndex
-                            ? 'bg-gradient-to-r from-green-500 to-blue-500 w-full'
+                            ? 'bg-bloom-green-500 w-full'
                             : 'bg-gray-200 w-0'
                         }`}
                       />
@@ -210,7 +210,7 @@ const OrderProcess = () => {
       <div className="flex-1">
         {currentStep === 'categories' && (
           <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-            <Package className="w-16 h-16 mx-auto text-blue-600 mb-6" />
+            <Package className="w-16 h-16 mx-auto text-bloom-green-600 mb-6" />
             <h2 className="text-3xl font-bold text-gray-800 mb-4">
               Browse Our Categories
             </h2>
@@ -219,7 +219,7 @@ const OrderProcess = () => {
             </p>
             <button
               onClick={handleAddMoreItems}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
+              className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               Browse Categories
             </button>
@@ -261,7 +261,7 @@ const OrderProcess = () => {
               </button>
               <button
                 onClick={handleNext}
-                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 Proceed to Payment
               </button>
@@ -271,7 +271,7 @@ const OrderProcess = () => {
 
         {currentStep === 'payment' && (
           <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-            <CreditCard className="w-16 h-16 mx-auto text-purple-600 mb-6" />
+            <CreditCard className="w-16 h-16 mx-auto text-bloom-rose-600 mb-6" />
             <h2 className="text-3xl font-bold text-gray-800 mb-4">
               Payment
             </h2>
@@ -293,7 +293,7 @@ const OrderProcess = () => {
                   // Handle order completion
                   console.log('Order completed!');
                 }}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                className="bg-bloom-rose-600 hover:bg-bloom-rose-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 Complete Order
               </button>

@@ -126,10 +126,14 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen flex items-center justify-center bg-[#DDFFD5]">
-      <div className="w-full max-w-md p-8 rounded-2xl shadow-2xl bg-white">
+    <div className="min-h-screen w-screen flex items-center justify-center relative overflow-hidden bg-bloom-charcoal px-4 py-12">
+      <div className="blob blob-a absolute top-0 -left-16 w-80 h-80 bg-bloom-green/30" />
+      <div className="blob blob-b absolute bottom-0 -right-16 w-96 h-96 bg-bloom-rose/20" />
+      <div className="blob blob-c absolute top-1/2 left-1/2 w-56 h-56 bg-bloom-gold/10" />
+
+      <div className="relative w-full max-w-md p-8 rounded-3xl shadow-2xl bg-white">
         <div className="flex justify-center mb-8">
-          <img src={logoimg} alt="Logo" />
+          <img src={logoimg} alt="Logo" className="h-12 w-auto" />
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -144,7 +148,7 @@ const Login = () => {
               onChange={handleEmailChange}
               onBlur={handleEmailBlur}
               disabled={loading}
-              className={`w-full px-4 py-3 rounded-md border text-lg font-semibold border-gray-300 focus:outline-none focus:ring-2 ${emailError ? "border-red-500 focus:ring-red-500" : "focus:ring-[#468E36]"
+              className={`w-full px-4 py-3 rounded-xl border bg-white text-base font-medium border-gray-300 focus:outline-none focus:ring-2 ${emailError ? "border-red-500 focus:ring-red-500" : "focus:ring-bloom-green-500 focus:border-bloom-green-500"
                 }`}
               placeholder="Enter your email"
             />
@@ -164,7 +168,7 @@ const Login = () => {
                 value={password}
                 onChange={handlePasswordChange}
                 disabled={loading}
-                className={`w-full px-4 py-3 rounded-md border text-lg font-semibold border-gray-300 focus:outline-none focus:ring-2 ${passwordError ? "border-red-500 focus:ring-red-500" : "focus:ring-[#468E36]"
+                className={`w-full px-4 py-3 rounded-xl border bg-white text-base font-medium border-gray-300 focus:outline-none focus:ring-2 ${passwordError ? "border-red-500 focus:ring-red-500" : "focus:ring-bloom-green-500 focus:border-bloom-green-500"
                   }`}
                 placeholder="Enter your password"
               />
@@ -184,7 +188,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-[#468E36] hover:bg-[#2C5D22] text-white font-medium py-3 px-4 rounded-md transition duration-300 ${loading ? "opacity-75 cursor-not-allowed" : ""
+            className={`w-full bg-bloom-green-600 hover:bg-bloom-green-700 text-white font-medium py-3 px-4 rounded-xl transition duration-300 ${loading ? "opacity-75 cursor-not-allowed" : ""
               }`}
           >
             {loading ? "Logging in..." : "Log In"}
@@ -192,7 +196,7 @@ const Login = () => {
         </form>
 
         <div className="mt-6 text-center">
-          <a href="/forgotPassword" className="text-sm text-[#A61A5A] hover:text-[#468E36]">
+          <a href="/forgotPassword" className="text-sm text-bloom-rose-600 hover:text-bloom-green-600">
             Forgot password?
           </a>
         </div>

@@ -58,7 +58,7 @@ const GlobalNotificationDisplay = () => {
   const getTypeColor = (type) => {
     switch (type) {
       case 'success': return 'text-green-600 bg-green-50 border-green-200';
-      case 'info': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'info': return 'text-bloom-green-600 bg-bloom-green-50 border-bloom-green-200';
       case 'warning': return 'text-amber-600 bg-amber-50 border-amber-200';
       case 'error': return 'text-red-600 bg-red-50 border-red-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
@@ -143,10 +143,10 @@ const GlobalNotificationDisplay = () => {
                 <span className="text-green-600">
                   📅 {unreadCounts.bookings}
                 </span>
-                <span className="text-blue-600">
+                <span className="text-bloom-green-600">
                   📦 {unreadCounts.orders}
                 </span>
-                <span className="text-purple-600">
+                <span className="text-bloom-rose-600">
                   💰 {unreadCounts.quotes}
                 </span>
               </div>
@@ -164,7 +164,7 @@ const GlobalNotificationDisplay = () => {
                 </button>
                 <button
                   onClick={requestNotificationPermission}
-                  className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 text-xs bg-bloom-green-100 hover:bg-bloom-green-200 text-bloom-green-700 rounded transition-colors"
                 >
                   <Bell size={12} />
                   Enable Browser Notifications

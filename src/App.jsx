@@ -94,7 +94,7 @@ const InactivityModal = ({ isOpen, countdown, onStayLoggedIn, onLogout }) => {
           <div className="flex space-x-4 justify-center">
             <button
               onClick={onStayLoggedIn}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-bloom-green-500 text-white rounded hover:bg-bloom-green-600 transition-colors"
             >
               Stay Logged In
             </button>
@@ -166,7 +166,7 @@ const PrivateRoute = ({ children }) => {
   if (isValidating) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-bloom-green-500"></div>
       </div>
     );
   }

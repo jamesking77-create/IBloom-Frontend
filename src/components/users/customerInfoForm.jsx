@@ -214,7 +214,7 @@ const CustomerInfoForm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
+    <div className="min-h-screen bg-bloom-ivory">
       {/* Mobile Header - Fixed */}
       <div className="lg:hidden sticky top-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 z-40">
         <div className="flex items-center justify-between p-4">
@@ -356,7 +356,7 @@ const CustomerInfoForm = () => {
                     <span className="font-medium text-gray-700">Total Items:</span>
                     <span className="font-bold text-gray-900">{cartCount}</span>
                   </div>
-                  <div className="bg-gradient-to-r from-emerald-100 to-blue-100 p-4 rounded-lg">
+                  <div className="bg-bloom-green-100 p-4 rounded-lg">
                     <p className="text-sm text-emerald-700 font-medium text-center">
                       💎 Custom pricing will be provided within 24 hours
                     </p>
@@ -450,7 +450,7 @@ const CustomerInfoForm = () => {
                 {/* Event Details */}
                 <div className="mb-6 lg:mb-8">
                   <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 lg:mb-6 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                    <Calendar className="w-5 h-5 mr-2 text-bloom-green-600" />
                     Event Details <span className="text-gray-500 text-sm font-normal">(Optional)</span>
                   </h3>
                   
@@ -549,7 +549,7 @@ const CustomerInfoForm = () => {
                 {/* Additional Information */}
                 <div className="mb-6 lg:mb-8">
                   <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 lg:mb-6 flex items-center">
-                    <MessageSquare className="w-5 h-5 mr-2 text-purple-600" />
+                    <MessageSquare className="w-5 h-5 mr-2 text-bloom-rose-600" />
                     Additional Information
                   </h3>
                   
@@ -675,7 +675,7 @@ const CustomerInfoForm = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-4 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed shadow-2xl flex items-center justify-center touch-manipulation min-h-[48px]"
+                    className="w-full bg-bloom-green-600 hover:bg-bloom-green-700 disabled:bg-gray-400 text-white px-6 py-4 lg:py-4 rounded-xl font-bold text-base lg:text-lg transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed shadow-2xl flex items-center justify-center touch-manipulation min-h-[48px]"
                   >
                     {isSubmitting ? (
                       <>
@@ -715,8 +715,8 @@ const CustomerInfoForm = () => {
             </div>
             
             <div className="bg-white rounded-xl shadow-lg p-4 lg:p-6 text-center">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 lg:mb-4">
-                <Clock className="w-5 h-5 lg:w-6 lg:h-6 text-blue-600" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-bloom-green-100 rounded-full flex items-center justify-center mx-auto mb-3 lg:mb-4">
+                <Clock className="w-5 h-5 lg:w-6 lg:h-6 text-bloom-green-600" />
               </div>
               <h3 className="font-semibold text-gray-800 mb-2 text-sm lg:text-base">24-Hour Response</h3>
               <p className="text-xs lg:text-sm text-gray-600">
@@ -725,8 +725,8 @@ const CustomerInfoForm = () => {
             </div>
             
             <div className="bg-white rounded-xl shadow-lg p-4 lg:p-6 text-center sm:col-span-1 sm:col-start-2 sm:col-end-3 md:col-start-auto md:col-end-auto">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 lg:mb-4">
-                <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6 text-purple-600" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-bloom-rose-100 rounded-full flex items-center justify-center mx-auto mb-3 lg:mb-4">
+                <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6 text-bloom-rose-600" />
               </div>
               <h3 className="font-semibold text-gray-800 mb-2 text-sm lg:text-base">Expert Support</h3>
               <p className="text-xs lg:text-sm text-gray-600">

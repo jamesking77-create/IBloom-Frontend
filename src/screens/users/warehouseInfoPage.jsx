@@ -156,7 +156,7 @@ const WarehouseInfoPage = () => {
       isAnimating ? "opacity-0" : "opacity-100"
     }`}>
       {/* Header - Mobile Optimized */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-40">
+      <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center min-w-0 flex-1">

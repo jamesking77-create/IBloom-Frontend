@@ -67,13 +67,13 @@ const TagComponent = React.memo(
         {items.map((item, index) => (
           <span
             key={index}
-            className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"
+            className="inline-flex items-center gap-1 bg-bloom-green-100 text-bloom-green-800 px-2 py-1 rounded text-sm"
           >
             {item}
             <button
               type="button"
               onClick={() => onRemove(item)}
-              className="text-blue-600 hover:text-blue-800"
+              className="text-bloom-green-600 hover:text-bloom-green-800"
             >
               <X className="w-3 h-3" />
             </button>
@@ -91,13 +91,13 @@ const TagComponent = React.memo(
             onKeyPress={(e) =>
               e.key === "Enter" && (e.preventDefault(), onAdd())
             }
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500"
           />
         </div>
         <button
           type="button"
           onClick={onAdd}
-          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-3 py-2 bg-bloom-green-600 text-white rounded-lg hover:bg-bloom-green-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -150,7 +150,7 @@ const MultipleImageUpload = React.memo(
 
             return (
               <div key={index} className="relative">
-                <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg overflow-hidden hover:border-blue-400 transition-colors">
+                <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg overflow-hidden hover:border-bloom-green-400 transition-colors">
                   {hasImage ? (
                     <>
                       <img
@@ -170,7 +170,7 @@ const MultipleImageUpload = React.memo(
                     <button
                       type="button"
                       onClick={() => fileRefs.current[index]?.click()}
-                      className="w-full h-full flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
+                      className="w-full h-full flex flex-col items-center justify-center text-gray-400 hover:text-bloom-green-500 transition-colors"
                     >
                       <ImageIcon className="w-6 h-6 mb-1" />
                       <span className="text-xs">Add Image</span>
@@ -288,14 +288,14 @@ const CategoryCard = React.memo(
           <div className="flex gap-2">
             <button
               onClick={() => onViewItems(category)}
-              className="flex-1 px-2 sm:px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-1 text-xs sm:text-sm"
+              className="flex-1 px-2 sm:px-3 py-1.5 bg-bloom-green-50 text-bloom-green-600 rounded-lg hover:bg-bloom-green-100 transition-colors flex items-center justify-center gap-1 text-xs sm:text-sm"
             >
               <Package className="w-3 sm:w-4 h-3 sm:h-4" />
               <span className="hidden sm:inline">Items</span>
             </button>
             <button
               onClick={() => onViewSubCategories(category)}
-              className="flex-1 px-2 sm:px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors flex items-center justify-center gap-1 text-xs sm:text-sm"
+              className="flex-1 px-2 sm:px-3 py-1.5 bg-bloom-rose-50 text-bloom-rose-600 rounded-lg hover:bg-bloom-rose-100 transition-colors flex items-center justify-center gap-1 text-xs sm:text-sm"
             >
               <FolderPlus className="w-3 sm:w-4 h-3 sm:h-4" />
               <span className="hidden sm:inline">Subs</span>
@@ -345,13 +345,13 @@ const CategoryListItem = React.memo(
       <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
         <button
           onClick={() => onViewItems(category)}
-          className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+          className="p-2 bg-bloom-green-50 text-bloom-green-600 rounded-lg hover:bg-bloom-green-100 transition-colors"
         >
           <Package className="w-4 h-4" />
         </button>
         <button
           onClick={() => onViewSubCategories(category)}
-          className="p-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+          className="p-2 bg-bloom-rose-50 text-bloom-rose-600 rounded-lg hover:bg-bloom-rose-100 transition-colors"
         >
           <FolderPlus className="w-4 h-4" />
         </button>
@@ -742,7 +742,7 @@ const CategoriesScreen = () => {
 
               return (
                 <div key={index} className="relative">
-                  <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg overflow-hidden hover:border-blue-400 transition-colors">
+                  <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg overflow-hidden hover:border-bloom-green-400 transition-colors">
                     {imageExists && imagePreview ? (
                       <>
                         <img
@@ -774,7 +774,7 @@ const CategoriesScreen = () => {
                       <button
                         type="button"
                         onClick={() => fileRefs.current[index]?.click()}
-                        className="w-full h-full flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"
+                        className="w-full h-full flex flex-col items-center justify-center text-gray-400 hover:text-bloom-green-500 transition-colors"
                       >
                         <ImageIcon className="w-6 h-6 mb-1" />
                         <span className="text-xs">Add Image</span>
@@ -1329,7 +1329,7 @@ const CategoriesScreen = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-40">
+      <div className="bg-white border-b">
         <div className="px-4 py-4 lg:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -1375,7 +1375,7 @@ const CategoriesScreen = () => {
               </div>
               <button
                 onClick={handleOpenCategoryModal}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-bloom-green-600 text-white rounded-lg hover:bg-bloom-green-700 transition-colors flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden md:inline">Add Category</span>
@@ -1413,7 +1413,7 @@ const CategoriesScreen = () => {
                   placeholder="Search categories..."
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500"
                 />
               </div>
 
@@ -1421,7 +1421,7 @@ const CategoriesScreen = () => {
               <select
                 value={filterBy}
                 onChange={(e) => handleFilterChange(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500"
               >
                 <option value="all">All Categories</option>
                 <option value="hasItems">With Items</option>
@@ -1465,7 +1465,7 @@ const CategoriesScreen = () => {
                   handleOpenCategoryModal();
                   closeMobileFilters();
                 }}
-                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-bloom-green-600 text-white rounded-lg hover:bg-bloom-green-700 transition-colors flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Add Category
@@ -1485,14 +1485,14 @@ const CategoriesScreen = () => {
               placeholder="Search categories..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500"
             />
           </div>
 
           <select
             value={filterBy}
             onChange={(e) => handleFilterChange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500"
           >
             <option value="all">All Categories</option>
             <option value="hasItems">With Items</option>
@@ -1552,7 +1552,7 @@ const CategoriesScreen = () => {
             </p>
             <button
               onClick={handleOpenCategoryModal}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+              className="px-6 py-3 bg-bloom-green-600 text-white rounded-lg hover:bg-bloom-green-700 transition-colors flex items-center gap-2 mx-auto"
             >
               <Plus className="w-4 h-4" />
               Add Your First Category
@@ -1626,7 +1626,7 @@ const CategoriesScreen = () => {
                           name: e.target.value,
                         }))
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500"
                       placeholder="Enter category name"
                     />
                   </div>
@@ -1642,7 +1642,7 @@ const CategoriesScreen = () => {
                             hasQuotes: e.target.checked,
                           }))
                         }
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-bloom-green-600 focus:ring-bloom-green-500 border-gray-300 rounded"
                       />
                       <span className="text-sm font-medium text-gray-700">
                         Has Quotes
@@ -1664,7 +1664,7 @@ const CategoriesScreen = () => {
                         description: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500 resize-none"
                     placeholder="Describe your category"
                   />
                 </div>
@@ -1744,7 +1744,7 @@ const CategoriesScreen = () => {
                   <button
                     type="submit"
                     disabled={loading.create || loading.update}
-                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                    className="flex-1 px-4 py-3 bg-bloom-green-600 text-white rounded-lg hover:bg-bloom-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                   >
                     <Save className="w-4 h-4" />
                     {editingCategory ? "Update" : "Create"}
@@ -1773,7 +1773,7 @@ const CategoriesScreen = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={handleOpenSubCategoryModal}
-                    className="px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 text-sm sm:text-base"
+                    className="px-3 sm:px-4 py-2 bg-bloom-rose-600 text-white rounded-lg hover:bg-bloom-rose-700 flex items-center gap-2 text-sm sm:text-base"
                   >
                     <FolderPlus className="w-4 h-4" />
                     <span className="hidden sm:inline">Add Subcategory</span>
@@ -1802,7 +1802,7 @@ const CategoriesScreen = () => {
                   </p>
                   <button
                     onClick={handleOpenSubCategoryModal}
-                    className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
+                    className="px-6 py-3 bg-bloom-rose-600 text-white rounded-lg hover:bg-bloom-rose-700 transition-colors flex items-center gap-2 mx-auto"
                   >
                     <FolderPlus className="w-4 h-4" />
                     Add First Subcategory
@@ -1860,7 +1860,7 @@ const CategoriesScreen = () => {
                                     .map((color, index) => (
                                       <span
                                         key={index}
-                                        className="text-xs bg-blue-100 text-blue-700 px-1 rounded"
+                                        className="text-xs bg-bloom-green-100 text-bloom-green-700 px-1 rounded"
                                       >
                                         {color}
                                       </span>
@@ -1907,7 +1907,7 @@ const CategoriesScreen = () => {
                             onClick={() =>
                               handleViewSubCategoryItems(subCategory)
                             }
-                            className="px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors text-sm"
+                            className="px-2 py-1 bg-bloom-green-50 text-bloom-green-600 rounded hover:bg-bloom-green-100 transition-colors text-sm"
                           >
                             View Items
                           </button>
@@ -1956,7 +1956,7 @@ const CategoriesScreen = () => {
                         name: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500"
                     placeholder="Enter subcategory name"
                   />
                 </div>
@@ -1974,7 +1974,7 @@ const CategoriesScreen = () => {
                         description: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500 resize-none"
                     placeholder="Describe your subcategory"
                   />
                 </div>
@@ -2056,7 +2056,7 @@ const CategoriesScreen = () => {
                   <button
                     type="submit"
                     disabled={loading.subcategory}
-                    className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                    className="flex-1 px-4 py-3 bg-bloom-rose-600 text-white rounded-lg hover:bg-bloom-rose-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                   >
                     <Save className="w-4 h-4" />
                     {editingSubCategory ? "Update" : "Create"}
@@ -2207,7 +2207,7 @@ const CategoriesScreen = () => {
                                     .map((color, index) => (
                                       <span
                                         key={index}
-                                        className="text-xs bg-purple-100 text-purple-700 px-1 rounded"
+                                        className="text-xs bg-bloom-rose-100 text-bloom-rose-700 px-1 rounded"
                                       >
                                         {color}
                                       </span>
@@ -2307,7 +2307,7 @@ const CategoriesScreen = () => {
                           name: e.target.value,
                         }))
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500"
                       placeholder="Enter item name"
                     />
                   </div>
@@ -2326,7 +2326,7 @@ const CategoriesScreen = () => {
                           price: e.target.value,
                         }))
                       }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500"
                     />
                   </div>
                 </div>
@@ -2345,7 +2345,7 @@ const CategoriesScreen = () => {
                         description: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-bloom-green-500 resize-none"
                     placeholder="Describe your item"
                   />
                 </div>

@@ -16,14 +16,14 @@ import {
   ImageDownIcon,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png";
+import logoimg from "../../../assets/b94e8c2c-c599-4ea6-8277-01d92a9a6290.png";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../../../store/slices/auth-slice";
 import { useNavigate } from "react-router-dom";
 import { fetchProfile } from "../../../store/slices/profile-slice";
 
 // ADD: Import global notification context
-import { useGlobalNotificationContext } from '../../../components/globalNotificationProvider';
+import { useGlobalNotificationContext } from "../../../components/globalNotificationProvider";
 
 const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
   const location = useLocation();
@@ -61,49 +61,49 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
       icon: <Home size={20} />,
       label: "Home",
       path: "home",
-      count: 0 // Home doesn't have notifications
+      count: 0, // Home doesn't have notifications
     },
     {
       icon: <User size={20} />,
       label: "Profile",
       path: "profile",
-      count: 0 // Profile doesn't have notifications
+      count: 0, // Profile doesn't have notifications
     },
-{
+    {
       icon: <ImageDownIcon size={20} />,
       label: "Gallery",
       path: "gallery",
-      count: 0 // Profile doesn't have notifications
+      count: 0, // Profile doesn't have notifications
     },
     {
       icon: <Calendar size={20} />,
       label: "Bookings",
       path: "bookings",
-      count: unreadCounts.bookings || 0
+      count: unreadCounts.bookings || 0,
     },
     {
       icon: <ShoppingCart size={20} />,
       label: "Orders",
       path: "orders",
-      count: unreadCounts.orders || 0
+      count: unreadCounts.orders || 0,
     },
     {
       icon: <Mail size={20} />,
       label: "Mailer",
       path: "mailer",
-      count: 0 // Mailer doesn't have notifications
+      count: 0, // Mailer doesn't have notifications
     },
     {
       icon: <Layers size={20} />,
       label: "Categories",
       path: "categories",
-      count: 0 // Categories doesn't have notifications
+      count: 0, // Categories doesn't have notifications
     },
     {
       icon: <Quote size={20} />,
       label: "Quotes",
       path: "quotes",
-      count: unreadCounts.quotes || 0
+      count: unreadCounts.quotes || 0,
     },
   ];
 
@@ -155,7 +155,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
         <div
           className={`
             fixed inset-0 bg-black/60 z-40 transition-opacity duration-300 ease-in-out
-            ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+            ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
           `}
           onClick={handleOverlayClick}
           aria-hidden="true"
@@ -165,20 +165,23 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
       {/* Enhanced Sidebar with improved animations */}
       <aside
         className={`
-          ${isMobile 
-            ? `fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-out ${
-                isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-95'
-              }`
-            : `relative transition-all duration-300 ease-in-out ${
-                isCollapsed ? 'w-16' : 'w-64'
-              }`
+          ${
+            isMobile
+              ? `fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-out ${
+                  isOpen
+                    ? "translate-x-0 opacity-100"
+                    : "-translate-x-full opacity-95"
+                }`
+              : `relative transition-all duration-300 ease-in-out ${
+                  isCollapsed ? "w-16" : "w-64"
+                }`
           }
           h-screen bg-white/95 backdrop-blur-md border-r border-gray-200/50 shadow-xl
           flex flex-col will-change-transform
         `}
-        style={{ 
-          width: isMobile ? '280px' : undefined,
-          transform: isMobile && !isOpen ? 'translateX(-100%)' : undefined
+        style={{
+          width: isMobile ? "280px" : undefined,
+          transform: isMobile && !isOpen ? "translateX(-100%)" : undefined,
         }}
       >
         {/* Enhanced Close Button for Mobile */}
@@ -188,10 +191,10 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
             className={`
               absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 z-10
               transition-all duration-200 transform hover:scale-110 active:scale-95
-              ${isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'}
+              ${isOpen ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"}
             `}
             style={{
-              transitionDelay: isOpen ? '150ms' : '0ms'
+              transitionDelay: isOpen ? "150ms" : "0ms",
             }}
             aria-label="Close sidebar"
           >
@@ -206,11 +209,11 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
             className="absolute -right-3 top-8 bg-white border border-gray-200 rounded-full p-1.5 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 z-10"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <ChevronLeft 
-              size={16} 
+            <ChevronLeft
+              size={16}
               className={`text-gray-600 transition-transform duration-300 ${
-                isCollapsed ? 'rotate-180' : ''
-              }`} 
+                isCollapsed ? "rotate-180" : ""
+              }`}
             />
           </button>
         )}
@@ -218,20 +221,26 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
         {/* Sidebar Content with staggered animations */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Enhanced Profile Section */}
-          <div className={`
+          <div
+            className={`
             px-4 py-6 border-b border-gray-200/50 transition-all duration-300
-            ${isCollapsed && !isMobile ? 'px-2' : ''}
-            ${isMobile && isOpen ? 'animate-slideInDown' : ''}
-          `}>
-            <div className={`
+            ${isCollapsed && !isMobile ? "px-2" : ""}
+            ${isMobile && isOpen ? "animate-slideInDown" : ""}
+          `}
+          >
+            <div
+              className={`
               flex flex-col items-center space-y-3 transition-all duration-300
-              ${isCollapsed && !isMobile ? 'space-y-2' : ''}
-            `}>
-              <div className={`
+              ${isCollapsed && !isMobile ? "space-y-2" : ""}
+            `}
+            >
+              <div
+                className={`
                 rounded-full overflow-hidden border-3 border-emerald-500/20 shadow-lg
                 transition-all duration-300 transform hover:scale-105 relative
-                ${isCollapsed && !isMobile ? 'h-10 w-10' : 'h-16 w-16'}
-              `}>
+                ${isCollapsed && !isMobile ? "h-10 w-10" : "h-16 w-16"}
+              `}
+              >
                 <img
                   src={userData?.avatar || defaultAvatar}
                   alt="Profile"
@@ -241,25 +250,31 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                     e.target.src = logoimg;
                   }}
                 />
-                
+
                 {/* ADD: Connection status indicator */}
-                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
-                  isConnected ? 'bg-green-500' : 'bg-red-500'
-                }`} />
+                <div
+                  className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
+                    isConnected ? "bg-green-500" : "bg-red-500"
+                  }`}
+                />
               </div>
-              
+
               {(!isCollapsed || isMobile) && (
-                <div className={`
+                <div
+                  className={`
                   text-center transition-all duration-300 transform
-                  ${isCollapsed && !isMobile ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}
-                `}>
+                  ${isCollapsed && !isMobile ? "opacity-0 scale-75" : "opacity-100 scale-100"}
+                `}
+                >
                   <h2 className="font-semibold text-gray-900 text-sm transition-all duration-200">
                     {loading ? "Loading..." : userData?.name || "User"}
                   </h2>
                   <p className="text-xs text-emerald-600 font-medium">Admin</p>
                   {/* ADD: Connection status text */}
-                  <p className={`text-xs font-medium ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
-                    {isConnected ? 'Live Updates' : 'Offline'}
+                  <p
+                    className={`text-xs font-medium ${isConnected ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {isConnected ? "Live Updates" : "Offline"}
                   </p>
                 </div>
               )}
@@ -280,44 +295,48 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                   className={`
                     group flex items-center px-3 py-3 rounded-xl relative
                     transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
-                    ${isActive
-                      ? "bg-emerald-500/10 text-emerald-700 shadow-sm scale-[1.02]"
-                      : "text-gray-700 hover:bg-gray-100/70 hover:text-gray-900"
+                    ${
+                      isActive
+                        ? "bg-emerald-500/10 text-emerald-700 shadow-sm scale-[1.02]"
+                        : "text-gray-700 hover:bg-gray-100/70 hover:text-gray-900"
                     }
-                    ${isCollapsed && !isMobile ? 'justify-center px-2' : ''}
-                    ${isMobile && isOpen ? `animate-slideInLeft` : ''}
+                    ${isCollapsed && !isMobile ? "justify-center px-2" : ""}
+                    ${isMobile && isOpen ? `animate-slideInLeft` : ""}
                   `}
                   style={{
-                    animationDelay: isMobile && isOpen ? `${index * 50}ms` : '0ms'
+                    animationDelay:
+                      isMobile && isOpen ? `${index * 50}ms` : "0ms",
                   }}
-                  title={isCollapsed && !isMobile ? item.label : ''}
+                  title={isCollapsed && !isMobile ? item.label : ""}
                 >
                   <span
                     className={`
                       flex-shrink-0 transition-all duration-300 relative
                       ${isActive ? "text-emerald-600 scale-110" : "text-gray-500 group-hover:text-gray-700 group-hover:scale-110"}
-                      ${isCollapsed && !isMobile ? '' : 'mr-3'}
+                      ${isCollapsed && !isMobile ? "" : "mr-3"}
                     `}
                   >
                     {item.icon}
-                    
+
                     {/* ADD: Notification badge on icon */}
                     {hasNotifications && (
                       <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium animate-pulse">
-                        {item.count > 99 ? '99+' : item.count}
+                        {item.count > 99 ? "99+" : item.count}
                       </div>
                     )}
                   </span>
-                  
+
                   {(!isCollapsed || isMobile) && (
                     <div className="flex items-center justify-between flex-1">
-                      <span className={`
+                      <span
+                        className={`
                         font-medium text-sm transition-all duration-300
-                        ${isCollapsed && !isMobile ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}
-                      `}>
+                        ${isCollapsed && !isMobile ? "opacity-0 scale-75" : "opacity-100 scale-100"}
+                      `}
+                      >
                         {item.label}
                       </span>
-                      
+
                       {/* ADD: Notification badge next to label */}
                       {hasNotifications && (
                         <div className="bg-red-500 text-white text-xs rounded-full px-2 py-1 font-medium animate-pulse">
@@ -326,42 +345,48 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                       )}
                     </div>
                   )}
-                  
-                  {isActive && (!isCollapsed || isMobile) && !hasNotifications && (
-                    <div className="ml-auto w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                  )}
+
+                  {isActive &&
+                    (!isCollapsed || isMobile) &&
+                    !hasNotifications && (
+                      <div className="ml-auto w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    )}
                 </Link>
               );
             })}
           </nav>
 
           {/* Enhanced Logout Section */}
-          <div className={`
+          <div
+            className={`
             p-3 border-t border-gray-200/50 transition-all duration-300
-            ${isCollapsed && !isMobile ? 'px-2' : ''}
-            ${isMobile && isOpen ? 'animate-slideInUp' : ''}
-          `}>
+            ${isCollapsed && !isMobile ? "px-2" : ""}
+            ${isMobile && isOpen ? "animate-slideInUp" : ""}
+          `}
+          >
             <button
               onClick={showLogoutConfirmation}
               className={`
                 group flex items-center w-full px-3 py-3 text-red-600 rounded-xl 
                 hover:bg-red-50 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
-                ${isCollapsed && !isMobile ? 'justify-center px-2' : ''}
+                ${isCollapsed && !isMobile ? "justify-center px-2" : ""}
               `}
-              title={isCollapsed && !isMobile ? 'Logout' : ''}
+              title={isCollapsed && !isMobile ? "Logout" : ""}
             >
-              <LogOut 
-                size={20} 
+              <LogOut
+                size={20}
                 className={`
                   flex-shrink-0 transition-all duration-300 group-hover:scale-110
-                  ${isCollapsed && !isMobile ? '' : 'mr-3'}
-                `} 
+                  ${isCollapsed && !isMobile ? "" : "mr-3"}
+                `}
               />
               {(!isCollapsed || isMobile) && (
-                <span className={`
+                <span
+                  className={`
                   font-medium text-sm transition-all duration-300
-                  ${isCollapsed && !isMobile ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}
-                `}>
+                  ${isCollapsed && !isMobile ? "opacity-0 scale-75" : "opacity-100 scale-100"}
+                `}
+                >
                   Logout
                 </span>
               )}
@@ -395,7 +420,8 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
 
               <div className="mb-6">
                 <p className="text-gray-600">
-                  Are you sure you want to logout? You'll need to sign in again to access your dashboard.
+                  Are you sure you want to logout? You'll need to sign in again
+                  to access your dashboard.
                 </p>
               </div>
 

@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { forgotPassword } from "../../../store/slices/auth-slice";
 import { validateEmail } from "../../../utils/validateEmail";
-import logoimg from "../../../assets/Screenshot 2025-05-09 144927.png";
+import logoimg from "../../../assets/b94e8c2c-c599-4ea6-8277-01d92a9a6290.png";
 import { notifyError, notifyPromise } from "../../../utils/toastify";
 
 const ForgotPassword = () => {
@@ -48,7 +48,7 @@ const ForgotPassword = () => {
         // navigate("/resetPassword");
       } else {
         notifyError(
-          resultAction.payload || "Failed to send verification email"
+          resultAction.payload || "Failed to send verification email",
         );
       }
     } catch (error) {
@@ -79,10 +79,14 @@ const ForgotPassword = () => {
   // };
 
   return (
-    <div className="min-h-screen w-screen flex items-center justify-center bg-[#DDFFD5]">
-      <div className="w-full max-w-md p-8 rounded-2xl shadow-2xl bg-white">
+    <div className="min-h-screen w-screen flex items-center justify-center relative overflow-hidden bg-bloom-charcoal px-4 py-12">
+      <div className="blob blob-a absolute top-0 -left-16 w-80 h-80 bg-bloom-green/30" />
+      <div className="blob blob-b absolute bottom-0 -right-16 w-96 h-96 bg-bloom-rose/20" />
+      <div className="blob blob-c absolute top-1/2 left-1/2 w-56 h-56 bg-bloom-gold/10" />
+
+      <div className="relative w-full max-w-md p-8 rounded-3xl shadow-2xl bg-white">
         <div className="flex justify-center mb-8">
-          <img src={logoimg} alt="Logo" className="h-16" />
+          <img src={logoimg} alt="Logo" className="h-20 w-auto" />
         </div>
 
         <form onSubmit={handleSubmit}>

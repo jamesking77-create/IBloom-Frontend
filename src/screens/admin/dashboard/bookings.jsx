@@ -29,7 +29,7 @@ import {
   WifiOff,
   RefreshCw,
 } from "lucide-react";
-import ibloomlogo from "../../../assets/ibloomcut.png";
+import ibloomlogo from "../../../assets/newiblooms.png";
 import {
   updateBookingStatus,
   fetchBookingDetails,
@@ -200,7 +200,7 @@ const Bookings = () => {
   const calculateTotalsFromServices = (services, taxRate = 0.075) => {
     const subtotal = services.reduce(
       (sum, service) => sum + (service.total || service.subtotal || 0),
-      0
+      0,
     );
     const tax = subtotal * taxRate;
     const total = subtotal + tax;
@@ -325,7 +325,7 @@ const Bookings = () => {
     const taxRate = 0.075; // 7.5%
     const { subtotal, tax, total } = calculateTotalsFromServices(
       services,
-      taxRate
+      taxRate,
     );
 
     // Initialize invoice data with booking information
@@ -420,7 +420,7 @@ const Bookings = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -478,7 +478,7 @@ const Bookings = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(requestBody),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -489,7 +489,7 @@ const Bookings = () => {
       const result = await response.json();
 
       notifySuccess(
-        `Invoice ${invoiceData.invoiceNumber} sent successfully to ${invoiceData.customer.email}!`
+        `Invoice ${invoiceData.invoiceNumber} sent successfully to ${invoiceData.customer.email}!`,
       );
       setShowInvoiceModal(false);
     } catch (error) {
@@ -552,7 +552,7 @@ const Bookings = () => {
 
       const { subtotal, tax, total } = calculateTotalsFromServices(
         updatedServices,
-        prev.taxRate
+        prev.taxRate,
       );
 
       return {
@@ -595,7 +595,7 @@ const Bookings = () => {
       }
 
       await dispatch(
-        updateBookingStatus({ bookingId, status: newStatus })
+        updateBookingStatus({ bookingId, status: newStatus }),
       ).unwrap();
     } catch (error) {
       console.error("Failed to update booking status:", error);
@@ -649,8 +649,8 @@ const Bookings = () => {
                     wsConnected
                       ? "bg-green-500 animate-pulse"
                       : wsState === "connecting"
-                      ? "bg-yellow-500 animate-pulse"
-                      : "bg-red-500"
+                        ? "bg-yellow-500 animate-pulse"
+                        : "bg-red-500"
                   }`}
                 ></div>
                 <span
@@ -658,15 +658,15 @@ const Bookings = () => {
                     wsConnected
                       ? "text-green-600"
                       : wsState === "connecting"
-                      ? "text-yellow-600"
-                      : "text-red-600"
+                        ? "text-yellow-600"
+                        : "text-red-600"
                   }`}
                 >
                   {wsConnected
                     ? "Live Updates Active"
                     : wsState === "connecting"
-                    ? "Connecting..."
-                    : "Offline Mode"}
+                      ? "Connecting..."
+                      : "Offline Mode"}
                 </span>
               </div>
               {wsError && (
@@ -1231,7 +1231,7 @@ const Bookings = () => {
                   <div className="text-sm text-gray-600">
                     Booked on{" "}
                     {new Date(
-                      currentViewingBooking.bookingDate
+                      currentViewingBooking.bookingDate,
                     ).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "long",
@@ -1301,7 +1301,7 @@ const Bookings = () => {
                       />
                       <span>
                         {formatDateTimeRange(
-                          currentViewingBooking.eventSchedule
+                          currentViewingBooking.eventSchedule,
                         )}
                       </span>
                     </div>
@@ -1798,7 +1798,7 @@ const Bookings = () => {
                           onChange={(e) =>
                             updateBankDetailField(
                               "accountNumber",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
@@ -1914,7 +1914,7 @@ const Bookings = () => {
                                   updateServiceField(
                                     index,
                                     "description",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 mt-1 resize-none"
@@ -2006,7 +2006,7 @@ const Bookings = () => {
                                           updateAdditionalServiceField(
                                             index,
                                             "included",
-                                            true
+                                            true,
                                           )
                                         }
                                         className="text-green-600"
@@ -2024,7 +2024,7 @@ const Bookings = () => {
                                           updateAdditionalServiceField(
                                             index,
                                             "included",
-                                            false
+                                            false,
                                           )
                                         }
                                         className="text-red-600"
@@ -2048,7 +2048,7 @@ const Bookings = () => {
                                           updateAdditionalServiceField(
                                             index,
                                             "price",
-                                            parseFloat(e.target.value) || 0
+                                            parseFloat(e.target.value) || 0,
                                           )
                                         }
                                         className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
@@ -2064,7 +2064,7 @@ const Bookings = () => {
                                         updateAdditionalServiceField(
                                           index,
                                           "description",
-                                          e.target.value
+                                          e.target.value,
                                         )
                                       }
                                       className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 resize-none"
@@ -2082,7 +2082,7 @@ const Bookings = () => {
                                 </td>
                               </tr>
                             );
-                          }
+                          },
                         )}
                       </tbody>
                     </table>

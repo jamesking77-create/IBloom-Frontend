@@ -21,8 +21,8 @@ import {
   Smartphone,
   MessageCircle,
 } from "lucide-react";
-import logoimg from "../../assets/ibloomcut.png";
-import fullLogo from "../../assets/ibloomcut.png";
+import logoimg from "../../assets/newiblooms.png";
+import fullLogo from "../../assets/newiblooms.png";
 import { fetchCompanyInfo } from "../../store/slices/publicCompanyInfoSlice";
 
 const UserLayout = () => {
@@ -157,9 +157,7 @@ const UserLayout = () => {
       <nav className="hidden md:block fixed top-4 inset-x-0 z-50 px-4">
         <div
           className={`glass-nav mx-auto flex items-center justify-between rounded-full shadow-[0_8px_30px_rgb(163,43,94,0.1)] transition-all duration-500 ease-out ${
-            isScrolled
-              ? "max-w-3xl px-5 py-2"
-              : "max-w-5xl px-8 py-3"
+            isScrolled ? "max-w-3xl px-5 py-2" : "max-w-5xl px-8 py-3"
           }`}
         >
           <Link to="/" className="flex items-center shrink-0">
@@ -201,7 +199,8 @@ const UserLayout = () => {
                 }`}
               >
                 <div className="p-2 max-h-96 overflow-y-auto custom-scrollbar">
-                  {companyInfo.categories && companyInfo.categories.length > 0 ? (
+                  {companyInfo.categories &&
+                  companyInfo.categories.length > 0 ? (
                     companyInfo.categories.map((category) => (
                       <button
                         key={category.id}
@@ -271,7 +270,8 @@ const UserLayout = () => {
                 }`}
               >
                 <div className="p-2 max-h-80 overflow-y-auto custom-scrollbar">
-                  {companyInfo.categories && companyInfo.categories.length > 0 ? (
+                  {companyInfo.categories &&
+                  companyInfo.categories.length > 0 ? (
                     companyInfo.categories.map((category) => (
                       <button
                         key={category.id}
@@ -332,7 +332,11 @@ const UserLayout = () => {
       <nav className="md:hidden fixed top-0 left-0 right-0 z-50 glass-nav border-b border-white/40 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center">
-            <img src={logoimg} alt="Ibloom Decor Rentals" className="h-8 w-auto" />
+            <img
+              src={logoimg}
+              alt="Ibloom Decor Rentals"
+              className="h-8 w-auto"
+            />
           </Link>
 
           <div className="flex items-center gap-2">
@@ -360,7 +364,9 @@ const UserLayout = () => {
 
         <div
           className={`fixed inset-0 bg-gray-900/40 transition-opacity duration-300 z-40 ${
-            isMobileMenuOpen ? "opacity-100 backdrop-blur-sm" : "opacity-0 pointer-events-none"
+            isMobileMenuOpen
+              ? "opacity-100 backdrop-blur-sm"
+              : "opacity-0 pointer-events-none"
           }`}
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -373,10 +379,16 @@ const UserLayout = () => {
           <div className="flex flex-col h-screen">
             <div
               className={`flex items-center justify-between p-6 border-b border-gray-200/60 shrink-0 ${
-                isMobileMenuOpen ? "menu-item-enter menu-item-0" : "menu-item-exit"
+                isMobileMenuOpen
+                  ? "menu-item-enter menu-item-0"
+                  : "menu-item-exit"
               }`}
             >
-              <img src={fullLogo} alt="Ibloom Decor Rentals" className="h-8 w-auto" />
+              <img
+                src={fullLogo}
+                alt="Ibloom Decor Rentals"
+                className="h-8 w-auto"
+              />
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
@@ -390,12 +402,16 @@ const UserLayout = () => {
               <div className="p-4 space-y-1">
                 <div
                   className={
-                    isMobileMenuOpen ? "menu-item-enter menu-item-1" : "menu-item-exit"
+                    isMobileMenuOpen
+                      ? "menu-item-enter menu-item-1"
+                      : "menu-item-exit"
                   }
                 >
                   <button
                     className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 hover:bg-bloom-blush/50 hover:text-bloom-green transition-colors duration-200 group"
-                    onClick={() => setIsRentalsDropdownOpen(!isRentalsDropdownOpen)}
+                    onClick={() =>
+                      setIsRentalsDropdownOpen(!isRentalsDropdownOpen)
+                    }
                   >
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-bloom-blush transition-colors duration-200">
@@ -412,11 +428,14 @@ const UserLayout = () => {
 
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isRentalsDropdownOpen ? "max-h-64 opacity-100 mt-2" : "max-h-0 opacity-0"
+                      isRentalsDropdownOpen
+                        ? "max-h-64 opacity-100 mt-2"
+                        : "max-h-0 opacity-0"
                     }`}
                   >
                     <div className="bg-gray-50/80 rounded-xl border border-gray-200/60 mx-4 overflow-y-auto custom-scrollbar max-h-60">
-                      {companyInfo.categories && companyInfo.categories.length > 0 ? (
+                      {companyInfo.categories &&
+                      companyInfo.categories.length > 0 ? (
                         companyInfo.categories.map((category) => (
                           <button
                             key={category.id}
@@ -430,7 +449,9 @@ const UserLayout = () => {
                               <div className="font-medium text-gray-800 text-sm truncate">
                                 {category.name}
                               </div>
-                              <div className="text-xs text-gray-500">View collection</div>
+                              <div className="text-xs text-gray-500">
+                                View collection
+                              </div>
                             </div>
                           </button>
                         ))
@@ -439,7 +460,9 @@ const UserLayout = () => {
                           <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
                             <Package className="w-5 h-5 text-gray-400" />
                           </div>
-                          <p className="text-gray-500 text-sm">No categories available</p>
+                          <p className="text-gray-500 text-sm">
+                            No categories available
+                          </p>
                         </div>
                       )}
                     </div>
@@ -541,7 +564,11 @@ const UserLayout = () => {
                   aria-label="TikTok"
                   className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-colors duration-200"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
                     <path d="M19.321 5.562a5.122 5.122 0 0 1-.443-.258 6.228 6.228 0 0 1-1.137-.966c-.849-.849-1.133-1.905-1.133-3.019V.833h-3.1v14.895c0 1.419-1.156 2.574-2.575 2.574s-2.575-1.155-2.575-2.574c0-1.42 1.156-2.575 2.575-2.575.284 0 .557.046.814.132V9.704a5.65 5.65 0 0 0-.814-.058c-3.145 0-5.693 2.548-5.693 5.693s2.548 5.693 5.693 5.693 5.693-2.548 5.693-5.693V8.235a8.626 8.626 0 0 0 4.925 1.526V6.643c-.584 0-1.149-.108-1.665-.315a4.472 4.472 0 0 1-.765-.381z" />
                   </svg>
                 </a>
@@ -553,7 +580,8 @@ const UserLayout = () => {
                 Services
               </h4>
               <ul className="space-y-2.5 text-sm text-slate-400">
-                {companyInfo?.specialize && companyInfo?.specialize?.length > 0 ? (
+                {companyInfo?.specialize &&
+                companyInfo?.specialize?.length > 0 ? (
                   companyInfo.specialize.slice(0, 4).map((service, index) => (
                     <li key={index}>
                       <span className="hover:text-white transition-colors duration-200 cursor-pointer">
@@ -607,22 +635,34 @@ const UserLayout = () => {
                 ) : (
                   <>
                     <li>
-                      <Link to="/about" className="hover:text-white transition-colors duration-200">
+                      <Link
+                        to="/about"
+                        className="hover:text-white transition-colors duration-200"
+                      >
                         About Us
                       </Link>
                     </li>
                     <li>
-                      <Link to="/gallery" className="hover:text-white transition-colors duration-200">
+                      <Link
+                        to="/gallery"
+                        className="hover:text-white transition-colors duration-200"
+                      >
                         Gallery
                       </Link>
                     </li>
                     <li>
-                      <Link to="/faq" className="hover:text-white transition-colors duration-200">
+                      <Link
+                        to="/faq"
+                        className="hover:text-white transition-colors duration-200"
+                      >
                         FAQ
                       </Link>
                     </li>
                     <li>
-                      <Link to="/contact" className="hover:text-white transition-colors duration-200">
+                      <Link
+                        to="/contact"
+                        className="hover:text-white transition-colors duration-200"
+                      >
                         Contact
                       </Link>
                     </li>
@@ -714,8 +754,9 @@ const UserLayout = () => {
 
           <div className="border-t border-white/10 mt-14 pt-8 text-center text-sm text-slate-500">
             <p>
-              &copy; {new Date().getFullYear()} {companyInfo.name || "Ibloom"}. All rights
-              reserved. &nbsp;|&nbsp; Privacy Policy &nbsp;|&nbsp; Terms of Service
+              &copy; {new Date().getFullYear()} {companyInfo.name || "Ibloom"}.
+              All rights reserved. &nbsp;|&nbsp; Privacy Policy &nbsp;|&nbsp;
+              Terms of Service
             </p>
           </div>
         </div>

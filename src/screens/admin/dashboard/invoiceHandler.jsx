@@ -2,24 +2,56 @@
 // components/InvoiceHandler.jsx
 
 import React, { useState } from 'react';
-import { FileText, Mail, Download, X, Check, AlertCircle } from 'lucide-react';
+import { FileText, Mail, Download, X, Check, AlertCircle, MessageCircle } from 'lucide-react';
+import { validatePhoneNumber } from '../../../utils/validatePhoneNumber';
 
 const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isSharingWhatsApp, setIsSharingWhatsApp] = useState(false);
   const [error, setError] = useState(null);
 
-  // Generate PDF using browser's print functionality
-  const generatePDF = (invoiceData) => {
-    const allServices = [...invoiceData.services, ...invoiceData.additionalServices.filter(s => s.total > 0)];
-    
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Invoice ${invoiceData.invoiceNumber}</title>
-        <style>
+  const customerPhoneValidation = validatePhoneNumber(invoiceData.customer.phone);
+
+  // Plain-text version of the invoice for WhatsApp (no HTML support there)
+  const buildWhatsAppMessage = () => {
+    const allServices = [
+      ...invoiceData.services,
+      ...invoiceData.additionalServices.filter((s) => s.total > 0 || s.price > 0),
+    ];
+
+    const itemLines = allServices
+      .map((s) => {
+        const amount = s.total || s.price || 0;
+        return `• ${s.name} x${s.quantity || 1} — ₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+      })
+      .join('\n');
+
+    const bank = invoiceData.company.bankDetails || {};
+    const bankLines = bank.accountNumber
+      ? `\n*Bank Details:*\n${bank.bankName || ''} - ${bank.accountName || ''}\nAcct No: ${bank.accountNumber}\n`
+      : '';
+
+    return `*Invoice ${invoiceData.invoiceNumber}*
+From: ${invoiceData.company.name}
+
+Hi ${invoiceData.customer.name}, here's your invoice:
+
+${itemLines}
+
+Subtotal: ₦${invoiceData.subtotal.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+Tax (${(invoiceData.taxRate * 100).toFixed(1)}%): ₦${invoiceData.tax.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+*Total: ₦${invoiceData.total.toLocaleString('en-NG', { minimumFractionDigits: 2 })}*
+${invoiceData.requiresDeposit ? `Deposit required (50%): ₦${invoiceData.depositAmount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}\n` : ''}
+Due date: ${new Date(invoiceData.dueDate).toLocaleDateString()}
+${bankLines}
+Thank you for choosing ${invoiceData.company.name}!`;
+  };
+
+  // Shared invoice markup: styles + body content, reused by the full HTML doc
+  // (for email) and the bare fragment (for html2pdf, which can't parse a full
+  // <html>/<head>/<body> document reliably when injected into a container div).
+  const buildInvoiceStyles = () => `
           @page {
             margin: 0.5in;
             size: A4;
@@ -158,9 +190,12 @@ const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
             body { margin: 0; }
             .no-print { display: none; }
           }
-        </style>
-      </head>
-      <body>
+  `;
+
+  const buildInvoiceBody = (invoiceData) => {
+    const allServices = [...invoiceData.services, ...invoiceData.additionalServices.filter(s => s.total > 0)];
+
+    return `
         <div class="invoice-header">
           <div>
             <h1 class="invoice-title">INVOICE</h1>
@@ -279,50 +314,128 @@ const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
           <div style="margin-top: 8px;">Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</div>
           <div style="margin-top: 5px;">This invoice was automatically generated and is valid without signature.</div>
         </div>
-      </body>
+    `;
+  };
+
+  // Full standalone HTML document — used as the email payload's htmlContent
+  const generatePDF = (invoiceData) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Invoice ${invoiceData.invoiceNumber}</title>
+        <style>${buildInvoiceStyles()}</style>
+      </head>
+      <body>${buildInvoiceBody(invoiceData)}</body>
       </html>
     `;
 
-    return htmlContent;
+  const pdfFilename = `Invoice-${invoiceData.invoiceNumber}.pdf`;
+
+  // Renders the invoice fragment to a real PDF Blob via html2pdf (html2canvas + jsPDF).
+  // The source element has to be in the DOM (off-screen) for html2canvas to lay it
+  // out and measure it correctly — a detached node renders blank/garbled.
+  const generateInvoicePdfBlob = async () => {
+    const html2pdf = (await import('html2pdf.js')).default;
+    const container = document.createElement('div');
+    container.innerHTML = `<style>${buildInvoiceStyles()}</style>${buildInvoiceBody(invoiceData)}`;
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '-9999px';
+    container.style.width = '794px'; // ~A4 at 96dpi, keeps layout consistent off-screen
+    document.body.appendChild(container);
+
+    try {
+      return await html2pdf()
+        .set({
+          margin: 0.4,
+          filename: pdfFilename,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+        })
+        .from(container)
+        .outputPdf('blob');
+    } finally {
+      document.body.removeChild(container);
+    }
   };
 
-  // Handle PDF download
+  // Handle PDF download — generates a real PDF file and saves it directly
   const handleDownloadPDF = async () => {
     setIsGenerating(true);
     setError(null);
 
     try {
-      const htmlContent = generatePDF(invoiceData);
-      
-      // Create a new window for printing
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
-      
-      if (!printWindow) {
-        throw new Error('Pop-up blocked. Please allow pop-ups and try again.');
-      }
+      const blob = await generateInvoicePdfBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = pdfFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      
-      // Wait for content to load
-      printWindow.onload = () => {
-        setTimeout(() => {
-          printWindow.print();
-          
-          // Close the window after printing (optional)
-          setTimeout(() => {
-            printWindow.close();
-          }, 1000);
-        }, 500);
-      };
-
-      onSuccess?.('PDF generated successfully! Use your browser\'s print dialog to save as PDF.');
-      
+      onSuccess?.('Invoice PDF downloaded successfully!');
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       setError(error.message);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Shares the actual invoice PDF via the device's native share sheet (WhatsApp
+  // shows up there if installed, with the PDF pre-attached — the admin still picks
+  // the chat/contact themselves, since wa.me links can't carry attachments).
+  // Falls back to downloading the PDF + opening a prefilled WhatsApp text chat on
+  // browsers/devices without file-sharing support (e.g. desktop Firefox).
+  const handleSendWhatsAppPdf = async () => {
+    setError(null);
+
+    if (!customerPhoneValidation.isValid) {
+      setError('No valid WhatsApp number on file for this customer.');
+      return;
+    }
+
+    setIsSharingWhatsApp(true);
+    try {
+      const blob = await generateInvoicePdfBlob();
+      const file = new File([blob], pdfFilename, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Invoice ${invoiceData.invoiceNumber}`,
+          text: `Invoice ${invoiceData.invoiceNumber} for ${invoiceData.customer.name}`,
+        });
+        onSuccess?.('Share sheet opened — pick WhatsApp to send the invoice PDF.');
+        return;
+      }
+
+      // Fallback: no file-sharing support here, so download the PDF and open a
+      // prefilled WhatsApp chat with a reminder to attach it manually.
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = pdfFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      const phone = customerPhoneValidation.international.replace('+', '');
+      const message = `${buildWhatsAppMessage()}\n\n📎 PDF downloaded as "${pdfFilename}" — please attach it to this chat.`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+      onSuccess?.('PDF downloaded and WhatsApp opened — attach the file to send it.');
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Failed to share invoice PDF:', err);
+        setError(err.message || 'Failed to share invoice PDF');
+      }
+    } finally {
+      setIsSharingWhatsApp(false);
     }
   };
 
@@ -387,7 +500,7 @@ const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <button
           onClick={handleDownloadPDF}
           disabled={isGenerating}
@@ -409,7 +522,7 @@ const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
         <button
           onClick={handleSendEmail}
           disabled={isSending || !invoiceData.customer.email}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-bloom-rose-600 text-white rounded-lg hover:bg-bloom-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSending ? (
             <>
@@ -423,14 +536,41 @@ const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
             </>
           )}
         </button>
+
+        <button
+          onClick={handleSendWhatsAppPdf}
+          disabled={!customerPhoneValidation.isValid || isSharingWhatsApp}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#1ebc59] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSharingWhatsApp ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              Preparing PDF...
+            </>
+          ) : (
+            <>
+              <MessageCircle size={16} />
+              Send to WhatsApp
+            </>
+          )}
+        </button>
       </div>
 
-      <div className="text-sm text-gray-600 text-center">
-        {invoiceData.customer.email ? (
-          <>Invoice will be sent to: <span className="font-medium">{invoiceData.customer.email}</span></>
-        ) : (
-          <span className="text-red-600">No email address available</span>
-        )}
+      <div className="text-sm text-gray-600 text-center space-y-1">
+        <div>
+          {invoiceData.customer.email ? (
+            <>Email: <span className="font-medium">{invoiceData.customer.email}</span></>
+          ) : (
+            <span className="text-red-600">No email address available</span>
+          )}
+        </div>
+        <div>
+          {customerPhoneValidation.isValid ? (
+            <>WhatsApp: <span className="font-medium">{customerPhoneValidation.international}</span></>
+          ) : (
+            <span className="text-red-600">No valid WhatsApp number on file</span>
+          )}
+        </div>
       </div>
     </div>
   );

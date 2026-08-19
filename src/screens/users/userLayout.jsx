@@ -165,7 +165,7 @@ const UserLayout = () => {
               src={logoimg}
               alt="Ibloom Decor Rentals"
               className={`w-auto transition-all duration-500 ${
-                isScrolled ? "h-8" : "h-10"
+                isScrolled ? "h-10" : "h-14"
               }`}
             />
           </Link>
@@ -335,7 +335,7 @@ const UserLayout = () => {
             <img
               src={logoimg}
               alt="Ibloom Decor Rentals"
-              className="h-8 w-auto"
+              className="h-10 w-auto"
             />
           </Link>
 
@@ -387,7 +387,7 @@ const UserLayout = () => {
               <img
                 src={fullLogo}
                 alt="Ibloom Decor Rentals"
-                className="h-8 w-auto"
+                className="h-10 w-auto"
               />
               <button
                 onClick={() => setIsMobileMenuOpen(false)}

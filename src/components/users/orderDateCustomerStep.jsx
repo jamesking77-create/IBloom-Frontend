@@ -20,6 +20,7 @@ import {
   Phone,
   Mail,
   MessageSquare,
+  MessageCircle,
   CheckCircle,
   Truck,
   Settings,
@@ -1024,6 +1025,13 @@ const OrderDateCustomerStep = ({
                   {errors.phone}
                 </p>
               )}
+              <p className="text-xs sm:text-sm text-bloom-green-700 bg-bloom-green-50 border border-bloom-green-200 rounded-lg px-3 py-2 flex items-start gap-2">
+                <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 flex-shrink-0 text-[#25D366]" fill="#25D366" />
+                <span>
+                  Please use a WhatsApp-active number — that's our preferred
+                  channel for confirming details and pricing with you.
+                </span>
+              </p>
             </div>
 
             {/* Delivery Option */}

@@ -335,17 +335,28 @@ Thank you for choosing ${invoiceData.company.name}!`;
   const pdfFilename = `Invoice-${invoiceData.invoiceNumber}.pdf`;
 
   // Renders the invoice fragment to a real PDF Blob via html2pdf (html2canvas + jsPDF).
-  // The source element has to be in the DOM (off-screen) for html2canvas to lay it
-  // out and measure it correctly — a detached node renders blank/garbled.
+  // The source element has to be in the DOM for html2canvas to lay it out and
+  // measure it correctly — a detached node renders blank/garbled. It's kept inside
+  // the viewport (not pushed off-screen with a large negative offset, which is a
+  // known cause of fully blank captures on mobile browsers) and instead hidden
+  // behind everything else with a negative z-index.
   const generateInvoicePdfBlob = async () => {
     const html2pdf = (await import('html2pdf.js')).default;
     const container = document.createElement('div');
     container.innerHTML = `<style>${buildInvoiceStyles()}</style>${buildInvoiceBody(invoiceData)}`;
     container.style.position = 'fixed';
     container.style.top = '0';
-    container.style.left = '-9999px';
+    container.style.left = '0';
+    container.style.zIndex = '-9999';
     container.style.width = '794px'; // ~A4 at 96dpi, keeps layout consistent off-screen
     document.body.appendChild(container);
+
+    // Wait for layout + paint to actually settle before capturing — running
+    // html2canvas in the same tick the container was inserted can grab it before
+    // it's fully laid out, which is the other common cause of a blank capture.
+    await new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve)),
+    );
 
     try {
       return await html2pdf()
@@ -353,7 +364,7 @@ Thank you for choosing ${invoiceData.company.name}!`;
           margin: 0.4,
           filename: pdfFilename,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
+          html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
           jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
         })
         .from(container)

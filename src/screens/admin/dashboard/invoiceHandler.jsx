@@ -341,7 +341,20 @@ Thank you for choosing ${invoiceData.company.name}!`;
   // known cause of fully blank captures on mobile browsers) and instead hidden
   // behind everything else with a negative z-index.
   const generateInvoicePdfBlob = async () => {
-    const html2pdf = (await import('html2pdf.js')).default;
+    let html2pdfModule;
+    try {
+      html2pdfModule = await import('html2pdf.js');
+    } catch (err) {
+      // A stale cached page (from before the latest deploy) can reference a chunk
+      // hash that no longer exists on the server. Reloading picks up the current
+      // build instead of leaving the admin stuck on a dead "Failed to fetch" error.
+      console.error('Failed to load PDF module — likely a stale cached page after a redeploy:', err);
+      if (window.confirm('This page needs to reload to load the latest version before it can generate a PDF. Reload now?')) {
+        window.location.reload();
+      }
+      throw new Error('Page needs a reload to generate the PDF — please try again after reloading.');
+    }
+    const html2pdf = html2pdfModule.default;
     const container = document.createElement('div');
     container.innerHTML = `<style>${buildInvoiceStyles()}</style>${buildInvoiceBody(invoiceData)}`;
     container.style.position = 'fixed';

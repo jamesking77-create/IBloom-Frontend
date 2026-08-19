@@ -1,7 +1,7 @@
 // First, create the InvoiceHandler component as a separate file
 // components/InvoiceHandler.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Mail, Download, X, Check, AlertCircle, MessageCircle } from 'lucide-react';
 import { validatePhoneNumber } from '../../../utils/validatePhoneNumber';
 
@@ -9,7 +9,9 @@ const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSharingWhatsApp, setIsSharingWhatsApp] = useState(false);
+  const [whatsappPdfFile, setWhatsappPdfFile] = useState(null);
   const [error, setError] = useState(null);
+  const pdfGenerationToken = useRef(0);
 
   const customerPhoneValidation = validatePhoneNumber(invoiceData.customer.phone);
 
@@ -361,6 +363,29 @@ Thank you for choosing ${invoiceData.company.name}!`;
     }
   };
 
+  // Pre-generates the WhatsApp PDF in the background whenever the invoice data
+  // changes, so the Send-to-WhatsApp click handler can call navigator.share()
+  // immediately (required — Chrome/Safari drop the "user gesture" needed for
+  // share() if it happens after an awaited multi-second PDF render).
+  useEffect(() => {
+    const myToken = ++pdfGenerationToken.current;
+    setWhatsappPdfFile(null);
+
+    const timer = setTimeout(async () => {
+      try {
+        const blob = await generateInvoicePdfBlob();
+        if (pdfGenerationToken.current === myToken) {
+          setWhatsappPdfFile(new File([blob], pdfFilename, { type: 'application/pdf' }));
+        }
+      } catch (err) {
+        console.error('Failed to pre-generate invoice PDF:', err);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoiceData]);
+
   // Handle PDF download — generates a real PDF file and saves it directly
   const handleDownloadPDF = async () => {
     setIsGenerating(true);
@@ -386,12 +411,35 @@ Thank you for choosing ${invoiceData.company.name}!`;
     }
   };
 
+  // Downloads the PDF and opens a prefilled WhatsApp text chat with a reminder to
+  // attach it manually — used when file-sharing isn't available on this browser/device.
+  const sendWhatsAppFallback = async (blobOrPromise) => {
+    const blob = await blobOrPromise;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = pdfFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    const phone = customerPhoneValidation.international.replace('+', '');
+    const message = `${buildWhatsAppMessage()}\n\n📎 PDF downloaded as "${pdfFilename}" — please attach it to this chat.`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    onSuccess?.('PDF downloaded and WhatsApp opened — attach the file to send it.');
+  };
+
   // Shares the actual invoice PDF via the device's native share sheet (WhatsApp
   // shows up there if installed, with the PDF pre-attached — the admin still picks
   // the chat/contact themselves, since wa.me links can't carry attachments).
-  // Falls back to downloading the PDF + opening a prefilled WhatsApp text chat on
-  // browsers/devices without file-sharing support (e.g. desktop Firefox).
-  const handleSendWhatsAppPdf = async () => {
+  //
+  // navigator.share() must run synchronously off this click — it loses the
+  // "user gesture" it needs (and throws) if anything is awaited first — so this
+  // relies on whatsappPdfFile having already been generated in the background.
+  // Falls back to download + a prefilled WhatsApp text chat when the PDF isn't
+  // ready yet or the browser/device has no file-sharing support.
+  const handleSendWhatsAppPdf = () => {
     setError(null);
 
     if (!customerPhoneValidation.isValid) {
@@ -399,44 +447,31 @@ Thank you for choosing ${invoiceData.company.name}!`;
       return;
     }
 
-    setIsSharingWhatsApp(true);
-    try {
-      const blob = await generateInvoicePdfBlob();
-      const file = new File([blob], pdfFilename, { type: 'application/pdf' });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
+    if (whatsappPdfFile && navigator.canShare?.({ files: [whatsappPdfFile] })) {
+      navigator
+        .share({
+          files: [whatsappPdfFile],
           title: `Invoice ${invoiceData.invoiceNumber}`,
           text: `Invoice ${invoiceData.invoiceNumber} for ${invoiceData.customer.name}`,
+        })
+        .then(() => onSuccess?.('Share sheet opened — pick WhatsApp to send the invoice PDF.'))
+        .catch((err) => {
+          if (err.name !== 'AbortError') {
+            console.error('Failed to share invoice PDF:', err);
+            setError(err.message || 'Failed to share invoice PDF');
+          }
         });
-        onSuccess?.('Share sheet opened — pick WhatsApp to send the invoice PDF.');
-        return;
-      }
-
-      // Fallback: no file-sharing support here, so download the PDF and open a
-      // prefilled WhatsApp chat with a reminder to attach it manually.
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = pdfFilename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      const phone = customerPhoneValidation.international.replace('+', '');
-      const message = `${buildWhatsAppMessage()}\n\n📎 PDF downloaded as "${pdfFilename}" — please attach it to this chat.`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-      onSuccess?.('PDF downloaded and WhatsApp opened — attach the file to send it.');
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Failed to share invoice PDF:', err);
-        setError(err.message || 'Failed to share invoice PDF');
-      }
-    } finally {
-      setIsSharingWhatsApp(false);
+      return;
     }
+
+    // PDF not ready yet, or this browser/device can't share files — fall back.
+    setIsSharingWhatsApp(true);
+    sendWhatsAppFallback(whatsappPdfFile || generateInvoicePdfBlob())
+      .catch((err) => {
+        console.error('Failed to prepare invoice PDF:', err);
+        setError(err.message || 'Failed to prepare invoice PDF');
+      })
+      .finally(() => setIsSharingWhatsApp(false));
   };
 
   // Handle email sending

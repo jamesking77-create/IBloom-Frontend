@@ -51,7 +51,7 @@ Thank you for choosing ${invoiceData.company.name}!`;
   };
 
   // Shared invoice markup: styles + body content, reused by the full HTML doc
-  // (for email) and the bare fragment (for html2pdf, which can't parse a full
+  // (for email) and the bare fragment (for html2canvas, which can't parse a full
   // <html>/<head>/<body> document reliably when injected into a container div).
   const buildInvoiceStyles = () => `
           @page {
@@ -334,27 +334,33 @@ Thank you for choosing ${invoiceData.company.name}!`;
 
   const pdfFilename = `Invoice-${invoiceData.invoiceNumber}.pdf`;
 
-  // Renders the invoice fragment to a real PDF Blob via html2pdf (html2canvas + jsPDF).
-  // The source element has to be in the DOM for html2canvas to lay it out and
-  // measure it correctly — a detached node renders blank/garbled. It's kept inside
-  // the viewport (not pushed off-screen with a large negative offset, which is a
-  // known cause of fully blank captures on mobile browsers) and instead hidden
-  // behind everything else with a negative z-index.
+  // Renders the invoice fragment to a real PDF Blob using jsPDF + html2canvas
+  // directly (not the html2pdf.js wrapper — it's unmaintained since ~2021 and npm
+  // resolved its loose jsPDF version range to a current major release its code
+  // wasn't written against, which produced a structurally valid but blank PDF on
+  // every platform). The source element has to be in the DOM for html2canvas to
+  // lay it out and measure it correctly — a detached node renders blank/garbled.
+  // It's kept inside the viewport (not pushed off-screen with a large negative
+  // offset, a separate known cause of blank captures on mobile) and instead
+  // hidden behind everything else with a negative z-index.
   const generateInvoicePdfBlob = async () => {
-    let html2pdfModule;
+    let jsPDF, html2canvas;
     try {
-      html2pdfModule = await import('html2pdf.js');
+      [{ jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ]);
     } catch (err) {
       // A stale cached page (from before the latest deploy) can reference a chunk
       // hash that no longer exists on the server. Reloading picks up the current
       // build instead of leaving the admin stuck on a dead "Failed to fetch" error.
-      console.error('Failed to load PDF module — likely a stale cached page after a redeploy:', err);
+      console.error('Failed to load PDF modules — likely a stale cached page after a redeploy:', err);
       if (window.confirm('This page needs to reload to load the latest version before it can generate a PDF. Reload now?')) {
         window.location.reload();
       }
       throw new Error('Page needs a reload to generate the PDF — please try again after reloading.');
     }
-    const html2pdf = html2pdfModule.default;
+
     const container = document.createElement('div');
     container.innerHTML = `<style>${buildInvoiceStyles()}</style>${buildInvoiceBody(invoiceData)}`;
     container.style.position = 'fixed';
@@ -366,22 +372,44 @@ Thank you for choosing ${invoiceData.company.name}!`;
 
     // Wait for layout + paint to actually settle before capturing — running
     // html2canvas in the same tick the container was inserted can grab it before
-    // it's fully laid out, which is the other common cause of a blank capture.
+    // it's fully laid out, which is another common cause of a blank capture.
     await new Promise((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(resolve)),
     );
 
     try {
-      return await html2pdf()
-        .set({
-          margin: 0.4,
-          filename: pdfFilename,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
-          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-        })
-        .from(container)
-        .outputPdf('blob');
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        scrollX: 0,
+        scrollY: 0,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const margin = 0.4; // inches
+      const pdf = new jsPDF({ unit: 'in', format: 'a4', orientation: 'portrait' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const usableWidth = pageWidth - margin * 2;
+      const usableHeight = pageHeight - margin * 2;
+      const imgWidth = usableWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Multi-page: redraw the full image on each page, shifted up by however
+      // much has already been shown — the page's own bounds clip the rest.
+      let heightLeft = imgHeight;
+      let position = margin;
+      pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+      heightLeft -= usableHeight;
+
+      while (heightLeft > 0) {
+        position = margin - (imgHeight - heightLeft);
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+        heightLeft -= usableHeight;
+      }
+
+      return pdf.output('blob');
     } finally {
       document.body.removeChild(container);
     }

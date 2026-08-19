@@ -1588,19 +1588,19 @@ const Bookings = () => {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-4xl w-full h-[95vh] flex flex-col shadow-2xl">
             {/* Header */}
-            <div className="flex-shrink-0 p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
+            <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                     Create Invoice
                   </h2>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     Customize and send invoice to customer
                   </p>
                 </div>
                 <button
                   onClick={() => setShowInvoiceModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
                 >
                   <X size={20} />
                 </button>
@@ -1608,7 +1608,7 @@ const Bookings = () => {
             </div>
 
             {/* Invoice Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               <div className="max-w-3xl mx-auto bg-white">
                 {/* Invoice Header */}
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-6 mb-8">
@@ -1869,8 +1869,8 @@ const Bookings = () => {
                   <h3 className="font-semibold text-gray-900 mb-3">
                     Booked Services
                   </h3>
-                  <div className="border border-gray-300 rounded-lg overflow-hidden">
-                    <table className="w-full">
+                  <div className="border border-gray-300 rounded-lg overflow-x-auto">
+                    <table className="w-full min-w-[480px]">
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="text-left p-3 font-medium text-gray-700">
@@ -1920,8 +1920,8 @@ const Bookings = () => {
                   <h3 className="font-semibold text-gray-900 mb-3">
                     Additional Services
                   </h3>
-                  <div className="border border-gray-300 rounded-lg overflow-hidden">
-                    <table className="w-full">
+                  <div className="border border-gray-300 rounded-lg overflow-x-auto">
+                    <table className="w-full min-w-[560px]">
                       <thead className="bg-bloom-green-50">
                         <tr>
                           <th className="text-left p-3 font-medium text-gray-700">
@@ -2068,7 +2068,7 @@ const Bookings = () => {
 
                 {/* Totals */}
                 <div className="flex justify-end mb-6">
-                  <div className="w-80">
+                  <div className="w-full sm:w-80">
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span>Subtotal:</span>
@@ -2199,7 +2199,7 @@ const Bookings = () => {
             </div>
 
             {/* Footer with InvoiceHandler */}
-            <div className="flex-shrink-0 border-t border-gray-200 p-6">
+            <div className="flex-shrink-0 border-t border-gray-200 p-4 sm:p-6">
               <div className="space-y-4">
                 {/* Invoice Handler Component */}
                 <InvoiceHandler
@@ -2212,7 +2212,7 @@ const Bookings = () => {
                 <div className="flex justify-center">
                   <button
                     onClick={() => setShowInvoiceModal(false)}
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    className="w-full sm:w-auto px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                   >
                     Close
                   </button>

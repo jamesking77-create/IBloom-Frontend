@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Mail, Download, X, Check, AlertCircle, MessageCircle } from 'lucide-react';
 import { validatePhoneNumber } from '../../../utils/validatePhoneNumber';
+import ibloomLogo from '../../../assets/newiblooms.png';
 
 const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -82,15 +83,11 @@ Thank you for choosing ${invoiceData.company.name}!`;
             letter-spacing: 2px;
           }
           .company-logo {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #4F46E5, #7C3AED);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
+            width: 140px;
+            height: 84px;
+            object-fit: contain;
+            display: block;
+            margin-left: auto;
             margin-bottom: 10px;
           }
           .info-section { 
@@ -208,7 +205,7 @@ Thank you for choosing ${invoiceData.company.name}!`;
             </div>
           </div>
           <div class="invoice-details">
-            <div class="company-logo">LOGO</div>
+            <img src="${new URL(ibloomLogo, window.location.origin).href}" alt="Company Logo" class="company-logo" />
           </div>
         </div>
 

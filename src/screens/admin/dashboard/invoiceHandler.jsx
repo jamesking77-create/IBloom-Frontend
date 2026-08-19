@@ -367,6 +367,29 @@ Thank you for choosing ${invoiceData.company.name}!`;
     container.style.width = '794px'; // ~A4 at 96dpi, keeps layout consistent off-screen
     document.body.appendChild(container);
 
+    // Wait for every image in the fragment (the logo) to actually finish
+    // downloading before capturing. html2canvas's own image-loading wait isn't
+    // reliable enough for a freshly-injected node on a slow connection — on a
+    // fast/cached connection (desktop, or the logo already viewed on-screen)
+    // this resolves instantly, but on mobile data it can otherwise get captured
+    // before the fetch completes, leaving the logo blank.
+    const images = Array.from(container.querySelectorAll('img'));
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete) {
+              resolve();
+              return;
+            }
+            const done = () => resolve();
+            img.addEventListener('load', done, { once: true });
+            img.addEventListener('error', done, { once: true });
+            setTimeout(done, 8000); // don't hang the whole invoice on a dead image
+          }),
+      ),
+    );
+
     // Wait for layout + paint to actually settle before capturing — running
     // html2canvas in the same tick the container was inserted can grab it before
     // it's fully laid out, which is another common cause of a blank capture.

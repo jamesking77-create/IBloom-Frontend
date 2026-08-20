@@ -1,7 +1,7 @@
 // First, create the InvoiceHandler component as a separate file
 // components/InvoiceHandler.jsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Mail, Download, X, Check, AlertCircle, MessageCircle } from 'lucide-react';
 import { validatePhoneNumber } from '../../../utils/validatePhoneNumber';
 import ibloomLogo from '../../../assets/newiblooms.png';
@@ -9,25 +9,40 @@ import ibloomLogo from '../../../assets/newiblooms.png';
 const InvoiceHandler = ({ invoiceData, onClose, onSuccess }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [isSharingWhatsApp, setIsSharingWhatsApp] = useState(false);
   const [whatsappPdfFile, setWhatsappPdfFile] = useState(null);
+  // 'idle' -> first tap prepares the PDF; 'preparing' -> generating; 'ready' ->
+  // second tap actually shares it. Split into two taps (instead of generating
+  // in the background on every field edit) because that background approach
+  // re-ran a full html2canvas render on every keystroke and froze the form.
+  const [whatsappStage, setWhatsappStage] = useState('idle');
   const [error, setError] = useState(null);
-  const pdfGenerationToken = useRef(0);
+
+  // A field edit after the PDF was prepared means it's stale — drop it so the
+  // next click re-prepares instead of silently sharing outdated data. This is
+  // just flag resets, not regeneration, so it's cheap and doesn't cause jank.
+  useEffect(() => {
+    setWhatsappStage('idle');
+    setWhatsappPdfFile(null);
+  }, [invoiceData]);
 
   const customerPhoneValidation = validatePhoneNumber(invoiceData.customer.phone);
 
-  // Plain-text version of the invoice for WhatsApp (no HTML support there)
+  // Plain-text version of the invoice for WhatsApp (no HTML support there).
+  // Tax applies only to the booked item(s) — delivery/setup/deposit are listed
+  // separately and added to the total untaxed.
   const buildWhatsAppMessage = () => {
-    const allServices = [
-      ...invoiceData.services,
-      ...invoiceData.additionalServices.filter((s) => s.total > 0 || s.price > 0),
-    ];
-
-    const itemLines = allServices
+    const itemLines = invoiceData.services
       .map((s) => {
-        const amount = s.total || s.price || 0;
+        const amount = s.total || s.subtotal || 0;
         return `• ${s.name} x${s.quantity || 1} — ₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
       })
+      .join('\n');
+
+    const includedAdditional = invoiceData.additionalServices.filter(
+      (s) => s.included === true && s.price > 0,
+    );
+    const additionalLines = includedAdditional
+      .map((s) => `• ${s.name} — ₦${s.price.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`)
       .join('\n');
 
     const bank = invoiceData.company.bankDetails || {};
@@ -44,6 +59,7 @@ ${itemLines}
 
 Subtotal: ₦${invoiceData.subtotal.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
 Tax (${(invoiceData.taxRate * 100).toFixed(1)}%): ₦${invoiceData.tax.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+${includedAdditional.length ? `\n*Delivery/Setup/Deposit (no tax):*\n${additionalLines}\n` : ''}
 *Total: ₦${invoiceData.total.toLocaleString('en-NG', { minimumFractionDigits: 2 })}*
 ${invoiceData.requiresDeposit ? `Deposit required (50%): ₦${invoiceData.depositAmount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}\n` : ''}
 Due date: ${new Date(invoiceData.dueDate).toLocaleDateString()}
@@ -192,7 +208,12 @@ Thank you for choosing ${invoiceData.company.name}!`;
   `;
 
   const buildInvoiceBody = (invoiceData) => {
-    const allServices = [...invoiceData.services, ...invoiceData.additionalServices.filter(s => s.total > 0)];
+    // Delivery/setup/deposit are untaxed pass-through fees, not taxable item
+    // sales — kept in their own section/total rather than mixed into the taxed
+    // services table, so it's visually clear on the invoice what VAT applies to.
+    const includedAdditional = invoiceData.additionalServices.filter(
+      (s) => s.included === true && s.price > 0,
+    );
 
     return `
         <div class="invoice-header">
@@ -252,7 +273,7 @@ Thank you for choosing ${invoiceData.company.name}!`;
             </tr>
           </thead>
           <tbody>
-            ${allServices.map(service => `
+            ${invoiceData.services.map(service => `
               <tr>
                 <td>
                   <div style="font-weight: bold; font-size: 11px;">${service.name}</div>
@@ -267,6 +288,28 @@ Thank you for choosing ${invoiceData.company.name}!`;
           </tbody>
         </table>
 
+        ${includedAdditional.length ? `
+        <table class="services-table" style="margin-top: 16px;">
+          <thead>
+            <tr>
+              <th style="width: 80%;">Additional Charges (No Tax)</th>
+              <th class="text-right" style="width: 20%;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${includedAdditional.map(service => `
+              <tr>
+                <td>
+                  <div style="font-weight: bold; font-size: 11px;">${service.name}</div>
+                  ${service.description ? `<div class="service-description">${service.description}</div>` : ''}
+                </td>
+                <td class="text-right"><strong>₦${service.price.toLocaleString('en-NG', {minimumFractionDigits: 2})}</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ` : ''}
+
         <div class="totals-section">
           <table class="totals-table">
             <tr>
@@ -277,6 +320,12 @@ Thank you for choosing ${invoiceData.company.name}!`;
               <td>Tax (${(invoiceData.taxRate * 100).toFixed(1)}%):</td>
               <td class="text-right">₦${invoiceData.tax.toLocaleString('en-NG', {minimumFractionDigits: 2})}</td>
             </tr>
+            ${invoiceData.additionalSubtotal > 0 ? `
+            <tr>
+              <td>Delivery/Setup/Deposit (no tax):</td>
+              <td class="text-right">₦${invoiceData.additionalSubtotal.toLocaleString('en-NG', {minimumFractionDigits: 2})}</td>
+            </tr>
+            ` : ''}
             <tr class="total-row">
               <td><strong>Total Amount:</strong></td>
               <td class="text-right"><strong>₦${invoiceData.total.toLocaleString('en-NG', {minimumFractionDigits: 2})}</strong></td>
@@ -435,29 +484,6 @@ Thank you for choosing ${invoiceData.company.name}!`;
     }
   };
 
-  // Pre-generates the WhatsApp PDF in the background whenever the invoice data
-  // changes, so the Send-to-WhatsApp click handler can call navigator.share()
-  // immediately (required — Chrome/Safari drop the "user gesture" needed for
-  // share() if it happens after an awaited multi-second PDF render).
-  useEffect(() => {
-    const myToken = ++pdfGenerationToken.current;
-    setWhatsappPdfFile(null);
-
-    const timer = setTimeout(async () => {
-      try {
-        const blob = await generateInvoicePdfBlob();
-        if (pdfGenerationToken.current === myToken) {
-          setWhatsappPdfFile(new File([blob], pdfFilename, { type: 'application/pdf' }));
-        }
-      } catch (err) {
-        console.error('Failed to pre-generate invoice PDF:', err);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invoiceData]);
-
   // Handle PDF download — generates a real PDF file and saves it directly
   const handleDownloadPDF = async () => {
     setIsGenerating(true);
@@ -506,16 +532,32 @@ Thank you for choosing ${invoiceData.company.name}!`;
   // shows up there if installed, with the PDF pre-attached — the admin still picks
   // the chat/contact themselves, since wa.me links can't carry attachments).
   //
-  // navigator.share() must run synchronously off this click — it loses the
-  // "user gesture" it needs (and throws) if anything is awaited first — so this
-  // relies on whatsappPdfFile having already been generated in the background.
-  // Falls back to download + a prefilled WhatsApp text chat when the PDF isn't
-  // ready yet or the browser/device has no file-sharing support.
-  const handleSendWhatsAppPdf = () => {
+  // Two taps, deliberately: navigator.share() must run synchronously off a click
+  // — it loses the "user gesture" it needs (and throws) if anything is awaited
+  // first, and PDF generation takes too long to happen inline with the same
+  // click. First tap generates the PDF (shows "Preparing..."); once ready, a
+  // second tap shares it immediately, as literally the first thing that click
+  // does. Falls back to download + a prefilled WhatsApp text chat when this
+  // browser/device has no file-sharing support.
+  const handleSendWhatsAppPdf = async () => {
     setError(null);
 
     if (!customerPhoneValidation.isValid) {
       setError('No valid WhatsApp number on file for this customer.');
+      return;
+    }
+
+    if (whatsappStage !== 'ready') {
+      setWhatsappStage('preparing');
+      try {
+        const blob = await generateInvoicePdfBlob();
+        setWhatsappPdfFile(new File([blob], pdfFilename, { type: 'application/pdf' }));
+        setWhatsappStage('ready');
+      } catch (err) {
+        console.error('Failed to prepare invoice PDF:', err);
+        setError(err.message || 'Failed to prepare invoice PDF');
+        setWhatsappStage('idle');
+      }
       return;
     }
 
@@ -532,18 +574,18 @@ Thank you for choosing ${invoiceData.company.name}!`;
             console.error('Failed to share invoice PDF:', err);
             setError(err.message || 'Failed to share invoice PDF');
           }
-        });
+        })
+        .finally(() => setWhatsappStage('idle'));
       return;
     }
 
-    // PDF not ready yet, or this browser/device can't share files — fall back.
-    setIsSharingWhatsApp(true);
-    sendWhatsAppFallback(whatsappPdfFile || generateInvoicePdfBlob())
+    // This browser/device can't share files — fall back to download + text.
+    sendWhatsAppFallback(whatsappPdfFile)
       .catch((err) => {
-        console.error('Failed to prepare invoice PDF:', err);
-        setError(err.message || 'Failed to prepare invoice PDF');
+        console.error('Failed to send invoice via WhatsApp:', err);
+        setError(err.message || 'Failed to send invoice via WhatsApp');
       })
-      .finally(() => setIsSharingWhatsApp(false));
+      .finally(() => setWhatsappStage('idle'));
   };
 
   // Handle email sending
@@ -646,13 +688,18 @@ Thank you for choosing ${invoiceData.company.name}!`;
 
         <button
           onClick={handleSendWhatsAppPdf}
-          disabled={!customerPhoneValidation.isValid || isSharingWhatsApp}
+          disabled={!customerPhoneValidation.isValid || whatsappStage === 'preparing'}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#1ebc59] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSharingWhatsApp ? (
+          {whatsappStage === 'preparing' ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
               Preparing PDF...
+            </>
+          ) : whatsappStage === 'ready' ? (
+            <>
+              <Check size={16} />
+              Tap Again to Share
             </>
           ) : (
             <>

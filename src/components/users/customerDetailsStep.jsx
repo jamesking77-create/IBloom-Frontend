@@ -725,7 +725,9 @@ const CustomerDetailsStep = ({
                 setup is, so they're calculated per booking, not shown as a
                 fixed price here. Our team will confirm the exact delivery/setup
                 cost with you directly on WhatsApp before your booking is
-                finalized.
+                finalized. A refundable security deposit may also be added to
+                your final invoice depending on the items booked — this is
+                fully refunded after the event, subject to a condition check.
               </p>
             </div>
           </div>

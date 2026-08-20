@@ -194,15 +194,25 @@ const Bookings = () => {
     };
   };
 
-  // Helper function to calculate totals from services only
-  const calculateTotalsFromServices = (services, taxRate = 0.075) => {
+  // Tax/VAT applies only to the booked item(s) subtotal. Any additional service
+  // (delivery, setup, refundable deposit) the admin has toggled "Yes" with a
+  // custom price is added to the total AFTER tax, untaxed — it's a pass-through
+  // fee, not a taxable item sale.
+  const calculateTotalsFromServices = (
+    services,
+    additionalServices = [],
+    taxRate = 0.075,
+  ) => {
     const subtotal = services.reduce(
       (sum, service) => sum + (service.total || service.subtotal || 0),
       0,
     );
+    const additionalSubtotal = additionalServices
+      .filter((service) => service.included === true && service.price)
+      .reduce((sum, service) => sum + (service.price || 0), 0);
     const tax = subtotal * taxRate;
-    const total = subtotal + tax;
-    return { subtotal, tax, total };
+    const total = subtotal + tax + additionalSubtotal;
+    return { subtotal, additionalSubtotal, tax, total };
   };
 
   useEffect(() => {
@@ -320,11 +330,35 @@ const Bookings = () => {
         editable: false,
       })) || [];
 
+    // Additional services (delivery/installation/refundable deposit) - YES/NO ONLY
+    const additionalServices = [
+      {
+        id: "delivery",
+        name: "Delivery Service",
+        description: "Equipment delivery to event location",
+        included: booking.customer?.eventDetails?.delivery === "yes",
+        required: booking.customer?.eventDetails?.delivery === "yes",
+      },
+      {
+        id: "installation",
+        name: "Setup & Installation",
+        description: "Professional equipment setup and installation",
+        included: booking.customer?.eventDetails?.installation === "yes",
+        required: booking.customer?.eventDetails?.installation === "yes",
+      },
+      {
+        id: "refundableDeposit",
+        name: "Refundable Deposit",
+        description:
+          "Refundable security deposit for the booked items — returned after the event, subject to a condition check",
+        included: false,
+        required: false,
+      },
+    ];
+
     const taxRate = 0.075; // 7.5%
-    const { subtotal, tax, total } = calculateTotalsFromServices(
-      services,
-      taxRate,
-    );
+    const { subtotal, additionalSubtotal, tax, total } =
+      calculateTotalsFromServices(services, additionalServices, taxRate);
 
     // Initialize invoice data with booking information
     const bookingKey = booking.bookingId || booking._id || "unknown";
@@ -360,26 +394,12 @@ const Bookings = () => {
       // Services (NOT editable except descriptions)
       services,
 
-      // Additional services (delivery/installation) - YES/NO ONLY
-      additionalServices: [
-        {
-          id: "delivery",
-          name: "Delivery Service",
-          description: "Equipment delivery to event location",
-          included: booking.customer?.eventDetails?.delivery === "yes",
-          required: booking.customer?.eventDetails?.delivery === "yes",
-        },
-        {
-          id: "installation",
-          name: "Setup & Installation",
-          description: "Professional equipment setup and installation",
-          included: booking.customer?.eventDetails?.installation === "yes",
-          required: booking.customer?.eventDetails?.installation === "yes",
-        },
-      ],
+      // Additional services (delivery/installation/refundable deposit) - YES/NO ONLY
+      additionalServices,
 
-      // Pricing (calculated from services only)
+      // Pricing (services + any included/priced additional services)
       subtotal,
+      additionalSubtotal,
       taxRate,
       tax,
       total,
@@ -542,9 +562,21 @@ const Bookings = () => {
         [field]: value,
       };
 
+      const { subtotal, additionalSubtotal, tax, total } =
+        calculateTotalsFromServices(
+          prev.services,
+          updatedServices,
+          prev.taxRate,
+        );
+
       return {
         ...prev,
         additionalServices: updatedServices,
+        subtotal,
+        additionalSubtotal,
+        tax,
+        total,
+        depositAmount: prev.requiresDeposit ? total * 0.5 : 0,
       };
     });
   };
@@ -1945,7 +1977,8 @@ const Bookings = () => {
                               service.name.toLowerCase().includes("delivery") ||
                               service.name
                                 .toLowerCase()
-                                .includes("installation");
+                                .includes("installation") ||
+                              service.name.toLowerCase().includes("deposit");
                             const showPriceInput =
                               isPriceableService && service.included === true;
 
@@ -2066,84 +2099,15 @@ const Bookings = () => {
                   </p>
                 </div>
 
-                {/* Totals */}
+                {/* Totals — tax applies only to the booked item(s) subtotal.
+                    Any included/priced additional service (delivery, setup,
+                    refundable deposit) is added after tax, untaxed, matching
+                    exactly what gets sent in the PDF/email/WhatsApp. */}
                 <div className="flex justify-end mb-6">
                   <div className="w-full sm:w-80">
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span>Subtotal:</span>
-                        <span>{formatCurrency(invoiceData.subtotal)}</span>
-                      </div>
-                      {(() => {
-                        const additionalServicesTotal =
-                          invoiceData.additionalServices
-                            .filter((s) => s.included === true && s.price)
-                            .reduce((sum, s) => sum + (s.price || 0), 0);
-
-                        return additionalServicesTotal > 0 ? (
-                          <div className="flex justify-between text-sm text-gray-600">
-                            <span>Additional Services:</span>
-                            <span>
-                              {formatCurrency(additionalServicesTotal)}
-                            </span>
-                          </div>
-                        ) : null;
-                      })()}
-                      {(() => {
-                        const additionalServicesTotal =
-                          invoiceData.additionalServices
-                            .filter((s) => s.included === true && s.price)
-                            .reduce((sum, s) => sum + (s.price || 0), 0);
-                        const subtotalWithAdditional =
-                          invoiceData.subtotal + additionalServicesTotal;
-                        const taxAmount =
-                          subtotalWithAdditional * invoiceData.taxRate;
-
-                        return (
-                          <div className="flex justify-between">
-                            <span>
-                              Tax ({(invoiceData.taxRate * 100).toFixed(1)}%):
-                            </span>
-                            <span>{formatCurrency(taxAmount)}</span>
-                          </div>
-                        );
-                      })()}
-                      {(() => {
-                        const additionalServicesTotal =
-                          invoiceData.additionalServices
-                            .filter((s) => s.included === true && s.price)
-                            .reduce((sum, s) => sum + (s.price || 0), 0);
-                        const subtotalWithAdditional =
-                          invoiceData.subtotal + additionalServicesTotal;
-                        const taxAmount =
-                          subtotalWithAdditional * invoiceData.taxRate;
-                        const grandTotal = subtotalWithAdditional + taxAmount;
-
-                        return (
-                          <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                            <span>Total:</span>
-                            <span>{formatCurrency(grandTotal)}</span>
-                          </div>
-                        );
-                      })()}
-                      {invoiceData.requiresDeposit && (
-                        <div className="flex justify-between text-orange-600">
-                          <span>Deposit Required:</span>
-                          <span>
-                            {formatCurrency(invoiceData.depositAmount)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Totals */}
-                {/* <div className="flex justify-end mb-6">
-                  <div className="w-80">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Subtotal:</span>
+                        <span>Subtotal (items):</span>
                         <span>{formatCurrency(invoiceData.subtotal)}</span>
                       </div>
                       <div className="flex justify-between">
@@ -2152,6 +2116,14 @@ const Bookings = () => {
                         </span>
                         <span>{formatCurrency(invoiceData.tax)}</span>
                       </div>
+                      {invoiceData.additionalSubtotal > 0 && (
+                        <div className="flex justify-between text-sm text-gray-600">
+                          <span>Delivery/Setup/Deposit (no tax):</span>
+                          <span>
+                            {formatCurrency(invoiceData.additionalSubtotal)}
+                          </span>
+                        </div>
+                      )}
                       <div className="border-t pt-2 flex justify-between font-bold text-lg">
                         <span>Total:</span>
                         <span>{formatCurrency(invoiceData.total)}</span>
@@ -2166,7 +2138,7 @@ const Bookings = () => {
                       )}
                     </div>
                   </div>
-                </div> */}
+                </div>
 
                 {/* Notes and Terms */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

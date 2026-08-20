@@ -295,7 +295,7 @@ ${itemLines || "No items selected"}
 Items Subtotal: ${formatPrice(calculations.subtotal)}
 Tax (7.5%): ${formatPrice(calculations.tax)}
 *Items + Tax: ${formatPrice(calculations.total)}*
-(Delivery/setup fees not included — to be confirmed here)`;
+(Delivery/setup fees and any refundable deposit not included — to be confirmed here)`;
   }, [
     cartItems,
     customerInfo,
@@ -754,8 +754,9 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
                 <div className="text-center pt-3 sm:pt-4">
                   <p className="text-xs sm:text-sm text-gray-600">
                     <Globe className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-                    This does not include delivery or setup fees — those depend
-                    on distance and setup complexity, and will be confirmed
+                    This does not include delivery/setup fees or a possible
+                    refundable security deposit — those depend on distance,
+                    setup complexity, and items booked, and will be confirmed
                     with you directly on WhatsApp
                   </p>
                 </div>

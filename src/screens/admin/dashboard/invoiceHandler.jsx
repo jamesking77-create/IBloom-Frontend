@@ -339,6 +339,18 @@ Thank you for choosing ${invoiceData.company.name}!`;
           </table>
         </div>
 
+        ${invoiceData.company.bankDetails?.accountNumber ? `
+        <div class="event-details">
+          <div class="section-title">Bank Details</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; font-size: 11px;">
+            ${invoiceData.company.bankDetails.bankName ? `<div><strong>Bank Name:</strong> ${invoiceData.company.bankDetails.bankName}</div>` : ''}
+            ${invoiceData.company.bankDetails.accountName ? `<div><strong>Account Name:</strong> ${invoiceData.company.bankDetails.accountName}</div>` : ''}
+            <div><strong>Account Number:</strong> ${invoiceData.company.bankDetails.accountNumber}</div>
+            ${invoiceData.company.bankDetails.sortCode ? `<div><strong>Sort Code:</strong> ${invoiceData.company.bankDetails.sortCode}</div>` : ''}
+          </div>
+        </div>
+        ` : ''}
+
         ${invoiceData.notes || invoiceData.terms ? `
         <div style="margin-top: 40px;">
           ${invoiceData.notes ? `

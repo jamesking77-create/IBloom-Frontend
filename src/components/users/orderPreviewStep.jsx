@@ -26,6 +26,7 @@ import {
   Hash,
   MessageCircle,
 } from "lucide-react";
+import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
 
 const OrderPreviewStep = ({
   customerInfo,
@@ -615,7 +616,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
               const itemImage =
                 item.image ||
                 item.imageUrl ||
-                "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
+                ITEM_PLACEHOLDER;
               const totalForQuantity = itemPrice * itemQuantity;
 
               return (
@@ -633,7 +634,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
                           className="w-12 h-12 rounded-lg object-cover shadow-md"
                           onError={(e) => {
                             e.target.src =
-                              "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
+                              ITEM_PLACEHOLDER;
                           }}
                         />
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -676,7 +677,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
                           className="w-16 h-16 rounded-xl object-cover mr-4 shadow-md"
                           onError={(e) => {
                             e.target.src =
-                              "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
+                              ITEM_PLACEHOLDER;
                           }}
                         />
                         <div className="absolute -top-2 -right-2 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">

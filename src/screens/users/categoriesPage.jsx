@@ -1,18 +1,51 @@
-// screens/user/CategoriesPage.js - OPTIMIZED WITH SUBCATEGORIES AND ENHANCED UI
-import React, { useState, useEffect } from 'react';
+// screens/users/categoriesPage.jsx — browse one category and build a list.
+// Adding an item keeps the customer on this page (the list bar at the bottom
+// picks it up); sending to WhatsApp or booking happens from there or per item.
+import React, { useState, useEffect, useMemo } from "react";
 import {
   useParams,
   useNavigate,
   useLocation,
   useSearchParams,
 } from "react-router-dom";
-import { useSelector, useDispatch } from 'react-redux';
-import { ArrowLeft, Package, Search, Filter, AlertTriangle, CheckCircle, Palette, Ruler, Grid, List, Eye, Check } from 'lucide-react';
-import { fetchCategories } from '../../store/slices/categoriesSlice';
-import { addToCart, selectCartItems, openCart } from '../../store/slices/cart-slice';
-import FloatingChatBox from '../../UI/floatingChatBox';
-import ItemAddedPopup from '../../UI/itemAddedPopup';
-import ItemDetailsModal from '../../UI/itemDetailsModal';
+import { useSelector, useDispatch } from "react-redux";
+import {
+  ArrowLeft,
+  Search,
+  Grid,
+  List,
+  Check,
+  Plus,
+  Minus,
+  X,
+  PackageOpen,
+} from "lucide-react";
+import { fetchCategories } from "../../store/slices/categoriesSlice";
+import {
+  addToCart,
+  selectCartItems,
+  incrementQuantity,
+  decrementQuantity,
+  removeFromCart,
+} from "../../store/slices/cart-slice";
+import { openList } from "../../store/slices/ui-slice";
+import ItemDetailsModal from "../../UI/itemDetailsModal";
+import WhatsAppSheet, { WhatsAppIcon, sendOrAsk } from "../../UI/whatsAppSheet";
+import { buildItemMessage, formatNaira } from "../../config/whatsapp";
+import { ITEM_PLACEHOLDER, pluralize } from "../../utils/itemPlaceholder";
+
+const PLACEHOLDER = ITEM_PLACEHOLDER;
+
+const parsePrice = (price) => {
+  const n =
+    typeof price === "string"
+      ? parseFloat(price.replace(/[₦\s,]/g, ""))
+      : parseFloat(price);
+  return isNaN(n) ? 0 : n;
+};
+
+const getPrimaryImage = (item) =>
+  item.images?.image1 || item.image1 || item.image || PLACEHOLDER;
 
 const CategoriesPage = () => {
   const { categoryId } = useParams();
@@ -21,384 +54,165 @@ const CategoriesPage = () => {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('name');
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [showPopup, setShowPopup] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [modalItem, setModalItem] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("name");
   const [selectedSubCategory, setSelectedSubCategory] = useState(null);
-  const [viewMode, setViewMode] = useState('grid');
-  const [selectedColors, setSelectedColors] = useState({});
+  const [viewMode, setViewMode] = useState("grid");
+  const [modalItem, setModalItem] = useState(null);
+  const [justAdded, setJustAdded] = useState(null);
+  const [waItem, setWaItem] = useState(null);
 
-  // Navigation source detection
-  const navigationSource = location.state?.from || 'home';
-  const fromEventBooking = navigationSource === 'eventbooking';
-  const fromOrderProcess = navigationSource === 'orderprocess';
+  // Where the customer came from: booking and order-by-date send people here
+  // to pick items, and expect them back afterwards.
+  const navigationSource = location.state?.from || "home";
+  const fromEventBooking = navigationSource === "eventbooking";
+  const fromOrderProcess = navigationSource === "orderprocess";
   const warehouseInfo = location.state?.warehouseInfo;
 
-  // Get categories data from Redux store
-  const { categories, isLoading } = useSelector((state) => state.categories);
+  const { categories, isLoading, error } = useSelector((state) => state.categories);
   const cartItems = useSelector(selectCartItems);
-  
-  // Get the specific category
-  const category = categories.find(cat => cat.id === parseInt(categoryId)) || location.state?.category;
 
-  const findItemById = (category, itemId) => {
-    if (!category || !itemId) return null;
-    const numericItemId = parseInt(itemId, 10);
+  const category =
+    categories.find((cat) => cat.id === parseInt(categoryId)) ||
+    location.state?.category;
 
-    // Check top-level items
-    let found = category.items?.find(
-      (i) => parseInt(i.id, 10) === numericItemId,
-    );
-    if (found) return found;
-
-    // Check inside subCategories
-    for (const sub of category.subCategories || []) {
-      found = sub.items?.find((i) => parseInt(i.id, 10) === numericItemId);
-      if (found) return found;
-    }
-
-    return null;
-  };
-
-
-  useEffect(() => {
-    if (!category) return;
-
-    const itemIdFromUrl = searchParams.get("item");
-    if (itemIdFromUrl) {
-      const foundItem = findItemById(category, itemIdFromUrl);
-      if (foundItem) {
-        setModalItem(foundItem);
-        setShowDetailsModal(true);
-      }
-    }
-  }, [category, searchParams]);
-
-  
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [categoryId]);
 
   useEffect(() => {
-    if (categories.length === 0) {
-      dispatch(fetchCategories());
-    }
+    if (categories.length === 0) dispatch(fetchCategories());
   }, [dispatch, categories.length]);
 
-  // Update filtered items based on selected subcategory
+  // "All" shows the category's own items plus everything in its subcategories.
+  // Subcategory items are numbered 1, 2, 3… within each subcategory, so their
+  // ids clash with each other; _uid gives every item a key that is unique
+  // across the whole category (used for React keys and list lines).
+  const allItems = useMemo(() => {
+    if (!category) return [];
+    return [
+      ...(category.items || []).map((item) => ({ ...item, _uid: `c-${item.id}` })),
+      ...(category.subCategories || []).flatMap((sub) =>
+        (sub.items || []).map((item) => ({
+          ...item,
+          _uid: `s${sub.id}-${item.id}`,
+          _subId: sub.id,
+          _subName: sub.name,
+        }))
+      ),
+    ];
+  }, [category]);
+
+  // Deep link: /category/:id?item=:itemId opens that item's details;
+  // ?sub=:subId&item=:itemId for items inside a subcategory (their ids repeat).
   useEffect(() => {
-    if (!category) {
-      setFilteredItems([]);
+    const itemId = parseInt(searchParams.get("item"), 10);
+    if (Number.isNaN(itemId) || !allItems.length) return;
+    const subParam = searchParams.get("sub");
+    const subId = subParam === null ? null : parseInt(subParam, 10);
+    const found =
+      subId === null
+        ? // Same lookup order as the old share links: top-level items first.
+          allItems.find((i) => parseInt(i.id, 10) === itemId)
+        : allItems.find(
+            (i) => parseInt(i._subId, 10) === subId && parseInt(i.id, 10) === itemId
+          );
+    if (found) setModalItem(found);
+  }, [searchParams, allItems]);
+
+  // Search always covers the whole category, every subcategory included, and
+  // matches item names, descriptions and subcategory names ("gold" finds the
+  // Gold centerpieces). A chip only narrows the list when nothing is typed.
+  const query = searchQuery.trim().toLowerCase();
+  const filteredItems = useMemo(() => {
+    let items = query
+      ? [...allItems]
+      : selectedSubCategory
+      ? allItems.filter((item) => item._subId === selectedSubCategory.id)
+      : [...allItems];
+    if (query) {
+      const words = query.split(/\s+/);
+      items = items.filter((item) => {
+        const haystack = `${item.name || ""} ${item.description || ""} ${item._subName || ""}`.toLowerCase();
+        return words.every((w) => haystack.includes(w));
+      });
+    }
+    if (sortBy === "name") items.sort((a, b) => a.name.localeCompare(b.name));
+    if (sortBy === "price-low") items.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
+    if (sortBy === "price-high") items.sort((a, b) => parsePrice(b.price) - parsePrice(a.price));
+    return items;
+  }, [allItems, selectedSubCategory, query, sortBy]);
+
+  const linesFor = (item) => cartItems.filter((ci) => ci.id === item._uid);
+
+  const addItem = (item, selectedColor = item.selectedColor) => {
+    const processedItem = {
+      ...item,
+      id: item._uid, // unique list line per item, even across subcategories
+      itemId: item.itemId ?? item.id,
+      name: selectedColor ? `${item.name} - Color: ${selectedColor}` : item.name,
+      selectedColor,
+      price: parsePrice(item.price),
+      categoryId: category?.id,
+    };
+
+    dispatch(addToCart({ item: processedItem, dates: null, allowDuplicates: false }));
+
+    if (fromOrderProcess) {
+      navigate("/orderprocess", {
+        state: { fromWarehouse: true, warehouseInfo, addedItem: processedItem },
+      });
       return;
     }
 
-    let items = [];
-    
-    // If a subcategory is selected, show only its items
-    if (selectedSubCategory) {
-      items = [...(selectedSubCategory.items || [])];
-    } else {
-      // Show direct category items
-      items = [...(category.items || [])];
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      items = items.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply sorting
-    switch (sortBy) {
-      case 'name':
-        items.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'price-low':
-        items.sort((a, b) => {
-          const priceA = parseFloat(a.price?.toString().replace(/[₦\s,]/g, '') || 0);
-          const priceB = parseFloat(b.price?.toString().replace(/[₦\s,]/g, '') || 0);
-          return priceA - priceB;
-        });
-        break;
-      case 'price-high':
-        items.sort((a, b) => {
-          const priceA = parseFloat(a.price?.toString().replace(/[₦\s,]/g, '') || 0);
-          const priceB = parseFloat(b.price?.toString().replace(/[₦\s,]/g, '') || 0);
-          return priceB - priceA;
-        });
-        break;
-      default:
-        break;
-    }
-
-    setFilteredItems(items);
-  }, [category, selectedSubCategory, searchQuery, sortBy]);
-
-  const handleColorSelect = (itemId, color) => {
-  setSelectedColors(prev => ({
-    ...prev,
-    [itemId]: color
-  }));
-};
-
-  // Handle subcategory selection
-  const handleSubCategoryClick = (subCategory) => {
-    setSelectedSubCategory(subCategory);
-    setSearchQuery(''); // Clear search when switching subcategories
+    setJustAdded(item._uid);
+    setTimeout(() => setJustAdded((cur) => (cur === item._uid ? null : cur)), 1400);
   };
 
-  // Handle showing all items
-  const handleShowAllItems = () => {
-    setSelectedSubCategory(null);
-    setSearchQuery(''); // Clear search when showing all
+  // Items with colours need one chosen first; the details sheet handles that.
+  const handleAddClick = (item) => {
+    if (item.colors?.length === 1) {
+      addItem(item, item.colors[0]);
+      return;
+    }
+    if (item.colors?.length > 1) {
+      setModalItem(item);
+      return;
+    }
+    addItem(item);
   };
 
-  // Handle item click to open modal
-  const handleItemClick = (item) => {
-    console.log('Opening details modal for item:', item);
-    setModalItem(item);
-    setShowDetailsModal(true);
-  };
-
-  // Handle modal close
-  const handleCloseModal = () => {
-    setShowDetailsModal(false);
+  const handleModalAdd = (processedItem) => {
+    addItem({ ...modalItem, ...processedItem, id: modalItem?.id, name: modalItem?.name || processedItem.name });
     setModalItem(null);
   };
 
-  // Price formatting function
-  const formatPrice = (price) => {
-    if (!price) return '₦0';
-    
-    let numericPrice;
-    if (typeof price === 'string') {
-      const cleanPrice = price.replace(/[₦\s]/g, '');
-      numericPrice = parseFloat(cleanPrice.replace(/,/g, ''));
-    } else {
-      numericPrice = parseFloat(price);
-    }
-    
-    if (isNaN(numericPrice)) return '₦0';
-    return `₦${numericPrice.toLocaleString('en-NG')}`;
+  const handleBack = () => {
+    if (fromEventBooking) navigate("/eventbooking", { state: { fromBooking: true } });
+    else if (fromOrderProcess)
+      navigate("/orderprocess", { state: { fromWarehouse: true, warehouseInfo } });
+    else navigate("/", { state: { scrollToCategories: true } });
   };
 
-  // Get primary image for item
-  const getPrimaryImage = (item) => {
-    return item.images?.image1 || item.image1 || item.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop';
+  const askOnWhatsApp = (item) => {
+    sendOrAsk(buildItemMessage({ item, category }), () => setWaItem(item));
   };
 
-  // Enhanced navigation logic
-  const navigateToCorrectScreen = (processedItem) => {
-    console.log('🚀 Navigating based on source:', navigationSource);
-    
-    if (fromEventBooking) {
-      console.log('📅 Navigating back to Event Booking');
-      navigate('/eventbooking', { 
-        state: { 
-          selectedItem: processedItem, 
-          category: category,
-          fromBooking: true
-        } 
-      });
-    } else if (fromOrderProcess) {
-      console.log('📦 Navigating back to Order Process');
-      navigate('/order-process', { 
-        state: { 
-          selectedItem: processedItem, 
-          category: category,
-          fromWarehouse: true,
-          warehouseInfo: warehouseInfo
-        } 
-      });
-    } else {
-      console.log('🏠 Default navigation to Event Booking');
-      navigate('/eventbooking', { 
-        state: { 
-          selectedItem: processedItem, 
-          category: category 
-        } 
-      });
-    }
-  };
-
-  // Enhanced add to cart process
-const addToCartProcess = (item) => {
-  console.log('🛒 Original item:', item);
-  console.log('🛒 Navigation source:', navigationSource);
-  
-  let processedPrice;
-  if (typeof item.price === 'string') {
-    processedPrice = parseFloat(item.price.replace(/[₦\s,]/g, ''));
-  } else {
-    processedPrice = parseFloat(item.price || 0);
-  }
-  
-  if (isNaN(processedPrice) || processedPrice <= 0) {
-    console.error('❌ Invalid price detected:', item.price);
-    alert('Error: Invalid item price. Please contact support.');
-    return;
-  }
-  
-  // NEW: Get selected color for this item
-  const selectedColor = selectedColors[item.id];
-  
-  // NEW: Append color to item name if selected
-  const itemName = selectedColor 
-    ? `${item.name} - Color: ${selectedColor}`
-    : item.name;
-  
-  const processedItem = {
-    ...item,
-    name: itemName,  // ← Modified name with color
-    selectedColor: selectedColor, // ← Store selected color separately too
-    price: processedPrice
-  };
-  
-  console.log('✅ Processed item with color:', processedItem);
-  
-  const isCartEmpty = cartItems.length === 0;
-  
-  // For order process, always navigate back after adding item
-  if (fromOrderProcess) {
-    dispatch(addToCart({ 
-      item: processedItem,
-      dates: null,
-      allowDuplicates: false 
-    }));
-    
-    console.log('📦 Navigating back to Order Process after adding item');
-    navigate('/orderprocess', { 
-      state: { 
-        fromWarehouse: true,
-        warehouseInfo: warehouseInfo,
-        addedItem: processedItem
-      } 
-    });
-    return;
-  }
-  
-  // For event booking or default behavior
-  if (isCartEmpty) {
-    navigateToCorrectScreen(processedItem);
-  } else {
-    dispatch(addToCart({ 
-      item: processedItem,
-      dates: null,
-      allowDuplicates: false 
-    }));
-    
-    setSelectedItem(processedItem);
-    setShowPopup(true);
-  }
-};
-
-const handleModalAddToCart = (item) => {
-  console.log('🛒 Adding to cart from modal:', item);
-  
-  // Item already has selectedColor if it was set in modal
-  // No need to modify here, just pass it through
-  
-  if (fromOrderProcess) {
-    dispatch(addToCart({ 
-      item: item,
-      dates: null,
-      allowDuplicates: false 
-    }));
-    
-    handleCloseModal();
-    
-    console.log('📦 Navigating back to Order Process from modal');
-    navigate('/order-process', { 
-      state: { 
-        fromWarehouse: true,
-        warehouseInfo: warehouseInfo,
-        addedItem: item
-      } 
-    });
-    return;
-  }
-  
-  const isCartEmpty = cartItems.length === 0;
-  
-  if (isCartEmpty) {
-    navigateToCorrectScreen(item);
-  } else {
-    dispatch(addToCart({ 
-      item: item,
-      dates: null,
-      allowDuplicates: false 
-    }));
-    
-    setSelectedItem(item);
-    setShowPopup(true);
-    handleCloseModal();
-  }
-};  
-
-  const handleClosePopup = () => {
-    setShowPopup(false);
-    setSelectedItem(null);
-  };
-
-  // View cart with proper navigation
-  const handleViewCart = () => {
-    setShowPopup(false);
-    setSelectedItem(null);
-    
-    if (fromEventBooking) {
-      console.log('📅 Returning to Event Booking from popup');
-      navigate('/eventbooking', { 
-        state: { 
-          fromBooking: true 
-        } 
-      });
-    } else if (fromOrderProcess) {
-      console.log('📦 Returning to Order Process from popup');
-      navigate('/order-process', { 
-        state: { 
-          fromWarehouse: true,
-          warehouseInfo: warehouseInfo 
-        } 
-      });
-    } else {
-      dispatch(openCart());
-    }
-  };
-
-  // Back button navigation
-  const handleBackNavigation = () => {
-    if (fromEventBooking) {
-      console.log('📅 Going back to Event Booking');
-      navigate('/eventbooking', { 
-        state: { 
-          fromBooking: true 
-        } 
-      });
-    } else if (fromOrderProcess) {
-      console.log('📦 Going back to Order Process');
-      navigate('/order-process', {
-        state: { 
-          fromWarehouse: true,
-          warehouseInfo: warehouseInfo 
-        } 
-      });
-    } else {
-      navigate('/');
-    }
-  };
-
-  if (isLoading && !category) {
+  // Before the first fetch finishes, categories is empty and isLoading is still
+  // false, so a direct link would flash "not available". Treat that as loading.
+  if (!category && (isLoading || (categories.length === 0 && !error))) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bloom-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading category...</p>
+      <div className="min-h-screen bg-bloom-ivory pt-8 md:pt-28 px-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="rounded-2xl bg-white overflow-hidden animate-pulse">
+              <div className="aspect-square bg-bloom-blush/50" />
+              <div className="p-3 space-y-2">
+                <div className="h-4 bg-gray-100 rounded w-3/4" />
+                <div className="h-4 bg-gray-100 rounded w-1/3" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -406,647 +220,401 @@ const handleModalAddToCart = (item) => {
 
   if (!category) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="text-6xl mb-4">📦</div>
-          <h2 className="text-2xl font-semibold text-gray-700 mb-2">Category Not Found</h2>
-          <p className="text-gray-500 mb-6">The category you're looking for doesn't exist.</p>
+      <div className="min-h-[70vh] flex items-center justify-center bg-bloom-ivory px-4 md:pt-20">
+        <div className="text-center max-w-sm">
+          <PackageOpen className="w-12 h-12 text-bloom-green mx-auto mb-4" />
+          <h1 className="font-display text-2xl font-semibold text-bloom-charcoal mb-2">
+            This category isn't available
+          </h1>
+          <p className="text-gray-500 mb-6">It may have been renamed or removed. Pick another from the homepage.</p>
           <button
-            onClick={handleBackNavigation}
-            className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-300 flex items-center mx-auto"
+            onClick={() => navigate("/", { state: { scrollToCategories: true } })}
+            className="inline-flex items-center gap-2 bg-bloom-green hover:bg-bloom-green-dark text-white px-6 py-3 rounded-full font-semibold"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Go Back
+            <ArrowLeft className="w-4 h-4" /> See all categories
           </button>
         </div>
       </div>
     );
   }
 
-  return (
-    <>
-      {/* Hero Section with Colors and Sizes */}
-      <div className="relative h-80 overflow-hidden mt-20">
-        <div
-          className="w-full h-full bg-cover bg-center"
-          style={{ 
-            backgroundImage: `url(${category.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=600&fit=crop'})` 
-          }}
-        >
-          <div className="absolute inset-0 bg-black/50" />
-        </div>
+  const contextLabel = fromEventBooking
+    ? "Adding to your booking"
+    : fromOrderProcess
+    ? "Adding to your order"
+    : null;
 
-        {/* Colors and Sizes Display - Top Right */}
-        {((category.colors && category.colors.length > 0) || (category.sizes && category.sizes.length > 0)) && (
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg max-w-xs">
-            {category.colors && category.colors.length > 0 && (
-              <div className="mb-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <Palette className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Colors</span>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {category.colors.slice(0, 4).map((color, index) => (
-                    <span key={index} className="text-xs bg-bloom-green-100 text-bloom-green-800 px-2 py-1 rounded-full">
-                      {color}
-                    </span>
-                  ))}
-                  {category.colors.length > 4 && (
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                      +{category.colors.length - 4} more
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {category.sizes && category.sizes.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Ruler className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Sizes</span>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {category.sizes.slice(0, 4).map((size, index) => (
-                    <span key={index} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                      {size}
-                    </span>
-                  ))}
-                  {category.sizes.length > 4 && (
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                      +{category.sizes.length - 4} more
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+  const renderAddControl = (item, size = "md") => {
+    const lines = linesFor(item);
+    const qty = lines.reduce((s, l) => s + (parseInt(l.quantity) || 0), 0);
+    const pad = size === "sm" ? "h-9 text-xs" : "h-10 text-sm";
 
-        <div className="absolute inset-0 flex items-center justify-center text-center text-white z-10">
-          <div className="max-w-4xl mx-auto px-4">
-            <button
-              onClick={handleBackNavigation}
-              className="mb-4 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-all duration-300 backdrop-blur-sm flex items-center mx-auto"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              {category.name}
-            </h1>
-            
-            <p className="text-lg md:text-xl mb-4 text-gray-200 max-w-2xl mx-auto">
-              {category.description || 'Premium quality rentals for your special event'}
-            </p>
-            
-            <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-300">
-              <div className="flex items-center">
-                <Package className="w-4 h-4 mr-2" />
-                <span>{category.itemCount || 0} items available</span>
-              </div>
-              {(fromEventBooking || fromOrderProcess) && (
-                <div className="flex items-center bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
-                  <span className="text-sm font-medium">
-                    {fromEventBooking ? '📅 Event Booking' : '📦 Order Process'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Subcategories Section - Only show if category has subcategories */}
-      {category.subCategories && category.subCategories.length > 0 && (
-        <div className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 py-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Subcategories</h2>
-              <button
-                onClick={handleShowAllItems}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  !selectedSubCategory 
-                    ? 'bg-bloom-green-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                All Items
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {category.subCategories.map((subCategory) => (
-                <div
-                  key={subCategory.id}
-                  onClick={() => handleSubCategoryClick(subCategory)}
-                  className={`cursor-pointer rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 ${
-                    selectedSubCategory?.id === subCategory.id 
-                      ? 'ring-2 ring-bloom-green-500 shadow-lg' 
-                      : 'hover:shadow-md'
-                  }`}
-                >
-                  <div className="relative">
-                    <img
-                      src={subCategory.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=200&h=150&fit=crop'}
-                      alt={subCategory.name}
-                      className="w-full h-24 sm:h-32 object-cover"
-                    />
-                    <div className={`absolute inset-0 ${
-                      selectedSubCategory?.id === subCategory.id 
-                        ? 'bg-bloom-green-600/20' 
-                        : 'bg-black/20'
-                    }`} />
-                    
-                    {/* Item count badge */}
-                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
-                      <span className="text-xs font-medium text-gray-700">
-                        {subCategory.items?.length || 0}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-white">
-                    <h3 className="font-medium text-sm text-gray-800 mb-1 line-clamp-1">
-                      {subCategory.name}
-                    </h3>
-                    
-                    {/* Colors and Sizes for Subcategory */}
-                    <div className="space-y-1">
-                      {subCategory.colors && subCategory.colors.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Palette className="w-3 h-3 text-gray-400" />
-                          <div className="flex flex-wrap gap-1">
-                            {subCategory.colors.slice(0, 2).map((color, index) => (
-                              <span key={index} className="text-xs bg-bloom-green-100 text-bloom-green-700 px-1.5 py-0.5 rounded">
-                                {color}
-                              </span>
-                            ))}
-                            {subCategory.colors.length > 2 && (
-                              <span className="text-xs text-gray-400">+{subCategory.colors.length - 2}</span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {subCategory.sizes && subCategory.sizes.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Ruler className="w-3 h-3 text-gray-400" />
-                          <div className="flex flex-wrap gap-1">
-                            {subCategory.sizes.slice(0, 2).map((size, index) => (
-                              <span key={index} className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
-                                {size}
-                              </span>
-                            ))}
-                            {subCategory.sizes.length > 2 && (
-                              <span className="text-xs text-gray-400">+{subCategory.sizes.length - 2}</span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Search and Filter Section */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent"
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-gray-400" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-bloom-green-500 focus:border-transparent"
-                >
-                  <option value="name">Sort by Name</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                </select>
-              </div>
-              
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-md transition-colors ${
-                    viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
-                  }`}
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-md transition-colors ${
-                    viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 text-sm text-gray-600">
-            Showing {filteredItems.length} items
-            {selectedSubCategory && (
-              <span> in "{selectedSubCategory.name}"</span>
-            )}
-            {searchQuery && (
-              <span> for "{searchQuery}"</span>
-            )}
-            {(fromEventBooking || fromOrderProcess) && (
-              <span className="ml-2 text-bloom-green-600 font-medium">
-                • Adding to {fromEventBooking ? 'Event Booking' : 'Order Process'}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Items Section */}
-      <div className="py-16 bg-gradient-to-br from-gray-50 to-white min-h-screen">
-        <div className="max-w-7xl mx-auto px-4">
-          {filteredItems.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">
-                {searchQuery ? '🔍' : '📦'}
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-700 mb-2">
-                {searchQuery ? 'No items found' : 'No items available'}
-              </h3>
-              <p className="text-gray-500 mb-6">
-                {searchQuery 
-                  ? `No items match your search for "${searchQuery}"`
-                  : selectedSubCategory
-                  ? `No items in "${selectedSubCategory.name}" yet.`
-                  : 'Items will appear here once they are added to this category.'
-                }
-              </p>
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="bg-bloom-green-600 hover:bg-bloom-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-300"
-                >
-                  Clear Search
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className={
-              viewMode === 'grid'
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch"
-                : "space-y-4"
-            }>
-{filteredItems.map((item, index) => (
-  <div
-    key={item.id}
-    className={
-      viewMode === 'grid'
-        ? "group h-full transition-all duration-500 hover:-translate-y-1"
-        : "group cursor-pointer bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex items-center gap-4"
+    if (item.outOfStock) {
+      return (
+        <span className={`flex-1 inline-flex items-center justify-center rounded-xl bg-gray-100 text-gray-400 font-semibold ${pad}`}>
+          Out of stock
+        </span>
+      );
     }
-    style={viewMode === 'grid' ? { animationDelay: `${index * 100}ms` } : {}}
-  >
-    {viewMode === 'grid' ? (
-      // Grid View
-      <div className="h-full flex flex-col bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-500 overflow-hidden border border-gray-100">
-        {/* IMAGE SECTION - This opens modal */}
-        <div
-          className="relative overflow-hidden cursor-pointer h-56 shrink-0"
-          onClick={() => handleItemClick(item)}
-        >
-          <img
-            src={getPrimaryImage(item)}
-            alt={item.name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            onError={(e) => {
-              e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop';
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-bloom-charcoal/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-          {/* Price Badge */}
-          {item.price && (
-            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
-              <div className="flex items-center text-bloom-rose-700 font-semibold text-sm">
-                <span>₦</span>
-                <span className="ml-0.5">{formatPrice(item.price).replace('₦', '')}</span>
-              </div>
-            </div>
-          )}
+    if (justAdded === item._uid) {
+      return (
+        <span className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-bloom-green text-white font-semibold ${pad}`} role="status">
+          <Check className="w-4 h-4" /> Added
+        </span>
+      );
+    }
 
-          {/* Stock Status Badge */}
-          <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm">
-            <span className={`w-1.5 h-1.5 rounded-full ${item.outOfStock ? 'bg-red-500' : 'bg-emerald-500'}`} />
-            {item.outOfStock ? 'Out of Stock' : 'In Stock'}
-          </div>
-
-          {/* Navigation context badge */}
-          {(fromEventBooking || fromOrderProcess) && (
-            <div className="absolute bottom-3 left-3 bg-bloom-green-600/90 backdrop-blur-sm text-white rounded-full px-2 py-1 text-xs font-medium">
-              {fromEventBooking ? '📅' : '📦'}
-            </div>
-          )}
-        </div>
-
-        {/* CONTENT SECTION - NOT clickable to open modal */}
-        <div className="flex flex-col flex-1 p-6">
-          {/* Title - This opens modal */}
-          <h3
-            className="font-display text-lg font-semibold text-gray-800 mb-1.5 line-clamp-1 group-hover:text-bloom-green-600 transition-colors duration-300 cursor-pointer"
-            onClick={() => handleItemClick(item)}
+    // One line in the list: adjust it right on the card.
+    if (lines.length === 1) {
+      const line = lines[0];
+      return (
+        <div className={`flex-1 flex items-center justify-between rounded-xl bg-bloom-green-50 ring-1 ring-bloom-green-200 ${pad}`}>
+          <button
+            type="button"
+            onClick={() =>
+              qty > 1 ? dispatch(decrementQuantity(line.cartId)) : dispatch(removeFromCart(line.cartId))
+            }
+            className="h-full px-2 sm:px-2.5 text-bloom-green-700 hover:bg-bloom-green-100 rounded-l-xl focus-visible:outline-2 focus-visible:outline-bloom-green"
+            aria-label={qty > 1 ? `One less ${item.name}` : `Remove ${item.name} from list`}
           >
-            {item.name}
-          </h3>
-          <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 min-h-[2.6em]">
-            {item.description}
-          </p>
-
-          {/* Item Colors and Sizes - ISOLATED, won't trigger modal. Fixed-height so cards with
-              different color/size counts still line up. */}
-          <div className="mt-3 min-h-[3.25rem]">
-            {/* COLOR SELECTION - capped so extra colors don't grow the card */}
-            {item.colors && item.colors.length > 0 && (
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <Palette className="w-3.5 h-3.5 text-gray-400" />
-                  <span className="text-xs font-medium text-gray-500">
-                    {selectedColors[item.id] ? `Selected: ${selectedColors[item.id]}` : 'Select color:'}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {item.colors.slice(0, 4).map((color, colorIndex) => (
-                    <button
-                      key={colorIndex}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleColorSelect(item.id, color);
-                      }}
-                      className={`text-xs px-2.5 py-1 rounded-full font-medium transition-all hover:scale-105 active:scale-95 ${
-                        selectedColors[item.id] === color
-                          ? 'bg-bloom-green-600 text-white shadow-sm ring-2 ring-bloom-green-200'
-                          : 'bg-bloom-rose-50 text-bloom-rose-700 hover:bg-bloom-rose-100'
-                      }`}
-                      type="button"
-                    >
-                      {color}
-                      {selectedColors[item.id] === color && (
-                        <Check className="w-3 h-3 inline ml-1" />
-                      )}
-                    </button>
-                  ))}
-                  {item.colors.length > 4 && (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleItemClick(item);
-                      }}
-                      className="text-xs px-2 py-1 text-gray-500 hover:text-bloom-green-600"
-                      type="button"
-                    >
-                      +{item.colors.length - 4} more
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* SIZES - Display only */}
-            {item.sizes && item.sizes.length > 0 && (
-              <div className="flex items-center gap-2 mt-1.5">
-                <Ruler className="w-3.5 h-3.5 text-gray-400" />
-                <div className="flex flex-wrap gap-1">
-                  {item.sizes.slice(0, 3).map((size, sizeIndex) => (
-                    <span key={sizeIndex} className="text-xs bg-bloom-gold/15 text-bloom-gold px-2 py-1 rounded-full">
-                      {size}
-                    </span>
-                  ))}
-                  {item.sizes.length > 3 && (
-                    <span className="text-xs text-gray-400">+{item.sizes.length - 3}</span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Spacer pushes the action row to the bottom so every card aligns */}
-          <div className="flex-1" />
-
-          {/* ACTION BUTTONS */}
-          <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleItemClick(item);
-              }}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors duration-300 font-medium flex items-center justify-center gap-2 text-sm"
-              type="button"
-            >
-              <Eye className="w-4 h-4" />
-              View Details
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Check if color is required but not selected
-                if (item.colors && item.colors.length > 0 && !selectedColors[item.id]) {
-                  alert('Please select a color first');
-                  return;
-                }
-
-                addToCartProcess(item);
-              }}
-              disabled={item.outOfStock}
-              className={`flex-1 px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
-                item.outOfStock
-                  ? 'bg-gray-300 text-gray-500'
-                  : fromOrderProcess
-                  ? 'bg-bloom-rose-600 hover:bg-bloom-rose-700 text-white'
-                  : 'bg-bloom-green-600 hover:bg-bloom-green-700 text-white'
-              }`}
-              type="button"
-            >
-              {item.outOfStock
-                ? 'Out of Stock'
-                : fromEventBooking ? 'Add to Booking'
-                : fromOrderProcess ? 'Add to Order'
-                : 'Add To Cart'
-              }
-            </button>
-          </div>
+            {qty > 1 ? <Minus className="w-4 h-4" /> : <X className="w-4 h-4" />}
+          </button>
+          <span className="font-semibold text-bloom-green-800 tabular-nums whitespace-nowrap" aria-live="polite">
+            {qty}
+            <span className={size === "sm" ? "hidden sm:inline" : ""}> in list</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => dispatch(incrementQuantity(line.cartId))}
+            className="h-full px-2 sm:px-2.5 text-bloom-green-700 hover:bg-bloom-green-100 rounded-r-xl focus-visible:outline-2 focus-visible:outline-bloom-green"
+            aria-label={`One more ${item.name}`}
+          >
+            <Plus className="w-4 h-4" />
+          </button>
         </div>
-      </div>
-    ) : (
-      // List View - Keep existing structure
-      <>
-        <div className="relative flex-shrink-0">
-          <img
-            src={getPrimaryImage(item)}
-            alt={item.name}
-            className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg cursor-pointer"
-            onError={(e) => {
-              e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=200&h=200&fit=crop';
-            }}
-            onClick={() => handleItemClick(item)}
-          />
-          <div className="absolute -top-1 -right-1">
-            {item.outOfStock ? (
-              <AlertTriangle className="w-4 h-4 text-red-500" />
-            ) : (
-              <CheckCircle className="w-4 h-4 text-green-500" />
+      );
+    }
+
+    // Several colour variants in the list: point to the list to manage them.
+    if (lines.length > 1) {
+      return (
+        <button
+          type="button"
+          onClick={() => dispatch(openList())}
+          className={`flex-1 inline-flex items-center justify-center rounded-xl bg-bloom-green-50 ring-1 ring-bloom-green-200 text-bloom-green-800 font-semibold ${pad}`}
+        >
+          {qty} in list
+        </button>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleAddClick(item)}
+        className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-bloom-green hover:bg-bloom-green-dark text-white font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-green ${pad}`}
+      >
+        <Plus className="w-4 h-4" />
+        {item.colors?.length > 1 ? "Choose colour" : "Add to list"}
+      </button>
+    );
+  };
+
+  const waButton = (item, size = "md") => (
+    <button
+      type="button"
+      onClick={() => askOnWhatsApp(item)}
+      className={`shrink-0 inline-flex items-center justify-center rounded-xl bg-[#25D366]/15 text-[#128C4A] hover:bg-[#25D366] hover:text-[#0B3B1E] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1DA851] ${
+        size === "sm" ? "w-9 h-9" : "w-10 h-10"
+      }`}
+      aria-label={`Ask about ${item.name} on WhatsApp`}
+      title="Ask on WhatsApp"
+    >
+      <WhatsAppIcon className="w-[18px] h-[18px]" />
+    </button>
+  );
+
+  return (
+    <div className="bg-bloom-ivory min-h-screen">
+      {/* Compact header: name + count, so items are visible on the first screen */}
+      <header className="relative overflow-hidden">
+        <img
+          src={category.image || PLACEHOLDER}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-bloom-charcoal/85 via-bloom-charcoal/55 to-bloom-charcoal/30" />
+        <div className="relative max-w-7xl mx-auto px-4 pt-6 pb-7 md:pt-32 md:pb-12 text-white">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center gap-1.5 text-sm text-white/80 hover:text-white mb-4 sm:mb-6 rounded-full focus-visible:outline-2 focus-visible:outline-white"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {fromEventBooking ? "Back to booking" : fromOrderProcess ? "Back to order" : "All categories"}
+          </button>
+          <h1 className="font-display text-3xl sm:text-5xl font-semibold leading-tight">
+            {category.name}
+          </h1>
+          {category.description && (
+            <p className="mt-2 text-white/75 max-w-2xl text-sm sm:text-base line-clamp-2">
+              {category.description}
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+            <span className="rounded-full bg-white/15 backdrop-blur px-3 py-1">
+              {allItems.length} {allItems.length === 1 ? "item" : "items"}
+            </span>
+            {contextLabel && (
+              <span className="rounded-full bg-bloom-rose px-3 py-1 font-medium">{contextLabel}</span>
             )}
           </div>
         </div>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate cursor-pointer hover:text-bloom-green-600 transition-colors"
-                  onClick={() => handleItemClick(item)}>
-                {item.name}
-              </h3>
-              <p className="text-gray-600 text-sm line-clamp-2 mb-2">
-                {item.description}
-              </p>
-              
-              {/* Colors and sizes in list view */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-3">
-                {item.colors && item.colors.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <Palette className="w-3 h-3" />
-                    {selectedColors[item.id] ? (
-                      <span className="font-bold text-bloom-green-600">{selectedColors[item.id]}</span>
-                    ) : (
-                      <span>{item.colors.length} colors</span>
+      </header>
+
+      {/* Sticky search + subcategory chips */}
+      <div className="sticky top-16 md:top-[5.25rem] z-30 bg-bloom-ivory/95 backdrop-blur border-b border-bloom-charcoal/10">
+        <div className="max-w-7xl mx-auto px-4 py-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <label className="relative flex-1">
+              <span className="sr-only">Search {category.name}</span>
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="search"
+                placeholder={`Search ${category.name.toLowerCase()}…`}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value) setSelectedSubCategory(null);
+                }}
+                className="w-full h-11 pl-10 pr-4 rounded-xl bg-white ring-1 ring-bloom-charcoal/10 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-bloom-green-400"
+              />
+            </label>
+            <label className="sr-only" htmlFor="sort-items">Sort items</label>
+            <select
+              id="sort-items"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="h-11 rounded-xl bg-white ring-1 ring-bloom-charcoal/10 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-bloom-green-400 max-w-[8.5rem] sm:max-w-none"
+            >
+              <option value="name">A–Z</option>
+              <option value="price-low">Price: low to high</option>
+              <option value="price-high">Price: high to low</option>
+            </select>
+            <div className="hidden sm:flex rounded-xl bg-white ring-1 ring-bloom-charcoal/10 p-1">
+              {[
+                { mode: "grid", Icon: Grid, label: "Grid view" },
+                { mode: "list", Icon: List, label: "List view" },
+              ].map((option) => {
+                const ModeIcon = option.Icon;
+                return (
+                  <button
+                    key={option.mode}
+                    onClick={() => setViewMode(option.mode)}
+                    aria-label={option.label}
+                    aria-pressed={viewMode === option.mode}
+                    className={`p-2 rounded-lg transition-colors ${
+                      viewMode === option.mode ? "bg-bloom-green text-white" : "text-gray-500 hover:bg-gray-100"
+                    }`}
+                  >
+                    <ModeIcon className="w-4 h-4" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {query && (
+            <p className="text-sm text-gray-500" aria-live="polite">
+              {pluralize(filteredItems.length, "result")} in all of {category.name}
+            </p>
+          )}
+
+          {category.subCategories?.length > 0 && !query && (
+            <div className="-mx-4 px-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+              {[{ id: "__all", name: "All", items: allItems }, ...category.subCategories].map((sub) => {
+                const isAll = sub.id === "__all";
+                const active = isAll ? !selectedSubCategory : selectedSubCategory?.id === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    onClick={() => {
+                      setSelectedSubCategory(isAll ? null : sub);
+                      setSearchQuery("");
+                    }}
+                    aria-pressed={active}
+                    className={`shrink-0 inline-flex items-center gap-2 rounded-full pr-3.5 py-1 text-sm font-medium transition-colors ${
+                      isAll ? "pl-3.5" : "pl-1"
+                    } ${
+                      active
+                        ? "bg-bloom-charcoal text-white"
+                        : "bg-white text-gray-700 ring-1 ring-bloom-charcoal/10 hover:ring-bloom-charcoal/25"
+                    }`}
+                  >
+                    {!isAll && (
+                      <img src={sub.image || PLACEHOLDER} alt="" className="w-7 h-7 rounded-full object-cover" />
                     )}
-                  </div>
-                )}
-                {item.sizes && item.sizes.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <Ruler className="w-3 h-3" />
-                    <span>{item.sizes.length} sizes</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-1">
-                  {item.outOfStock ? (
-                    <span className="text-red-600 font-medium">Out of Stock</span>
-                  ) : (
-                    <span className="text-green-600 font-medium">In Stock</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col items-end gap-2">
-              {item.price && (
-                <div className="text-lg font-semibold text-green-600">
-                  {formatPrice(item.price)}
-                </div>
-              )}
-              
-              <div className="flex gap-2">
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleItemClick(item);
-                  }}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium text-sm flex items-center gap-1"
-                  type="button"
-                >
-                  <Eye className="w-4 h-4" />
-                  Details
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    if (item.colors && item.colors.length > 0 && !selectedColors[item.id]) {
-                      alert('Please select a color first');
-                      return;
-                    }
-                    
-                    addToCartProcess(item);
-                  }}
-                  disabled={item.outOfStock}
-                  className={`px-4 py-2 rounded-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
-                    item.outOfStock
-                      ? 'bg-gray-300 text-gray-500'
-                      : fromEventBooking 
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : fromOrderProcess
-                      ? 'bg-bloom-rose-600 hover:bg-bloom-rose-700 text-white'
-                      : 'bg-bloom-green-600 hover:bg-bloom-green-700 text-white'
-                  }`}
-                  type="button"
-                >
-                  {item.outOfStock 
-                    ? 'Out of Stock' 
-                    : fromEventBooking ? 'Add to Booking' 
-                    : fromOrderProcess ? 'Add to Order' 
-                    : 'Add To Cart'
-                  }
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </>
-    )}
-  </div>
-))}
-
+                    {sub.name}
+                    <span className={`text-xs tabular-nums ${active ? "text-white/60" : "text-gray-400"}`}>
+                      {sub.items?.length || 0}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
 
-      {/* Item Added Popup */}
-      <ItemAddedPopup 
-        isOpen={showPopup}
-        onClose={handleClosePopup}
-        item={selectedItem}
-        category={category}
-        onViewCart={handleViewCart}
-        navigationSource={navigationSource}
-      />
+      {/* Items */}
+      <main className="max-w-7xl mx-auto px-4 py-5 sm:py-8">
+        {filteredItems.length === 0 ? (
+          <div className="text-center py-20 max-w-sm mx-auto">
+            <PackageOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <h2 className="font-display text-xl font-semibold text-bloom-charcoal mb-1">
+              {searchQuery ? `Nothing matches "${searchQuery}"` : "No items here yet"}
+            </h2>
+            <p className="text-gray-500 text-sm mb-5">
+              {searchQuery
+                ? "Try a shorter word, or ask us on WhatsApp. We may have it in stock."
+                : "Message us on WhatsApp and we'll tell you what's available."}
+            </p>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="bg-bloom-green hover:bg-bloom-green-dark text-white px-5 py-2.5 rounded-full text-sm font-semibold"
+              >
+                Clear search
+              </button>
+            )}
+          </div>
+        ) : viewMode === "grid" ? (
+          <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+            {filteredItems.map((item) => {
+              const price = formatNaira(item.price);
+              return (
+                <li key={item._uid} className="group flex flex-col bg-white rounded-2xl overflow-hidden ring-1 ring-bloom-charcoal/[0.06] hover:shadow-[0_14px_34px_-18px_rgba(36,26,32,0.35)] transition-shadow">
+                  <button
+                    type="button"
+                    onClick={() => setModalItem(item)}
+                    className="relative aspect-square overflow-hidden bg-bloom-blush/40 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-bloom-green"
+                    aria-label={`View ${item.name}`}
+                  >
+                    <img
+                      src={getPrimaryImage(item)}
+                      alt=""
+                      loading="lazy"
+                      className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04] ${item.outOfStock ? "grayscale opacity-70" : ""}`}
+                      onError={(e) => {
+                        e.currentTarget.src = PLACEHOLDER;
+                      }}
+                    />
+                    {item.outOfStock && (
+                      <span className="absolute top-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                        Out of stock
+                      </span>
+                    )}
+                    {item.colors?.length > 0 && (
+                      <span className="absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-gray-700">
+                        {pluralize(item.colors.length, "colour")}
+                      </span>
+                    )}
+                  </button>
 
-      {/* Enhanced Item Details Modal */}
+                  <div className="flex flex-col flex-1 p-3 sm:p-4">
+                    {item._subName && (!selectedSubCategory || query) && (
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-bloom-green/80 mb-1 line-clamp-1">
+                        {item._subName}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setModalItem(item)}
+                      className="text-left font-medium text-gray-900 text-sm sm:text-base leading-snug line-clamp-2 hover:text-bloom-green"
+                    >
+                      {item.name}
+                    </button>
+                    {price && (
+                      <p className="mt-1 font-display text-base sm:text-lg font-semibold text-bloom-rose tabular-nums">
+                        {price}
+                      </p>
+                    )}
+                    <div className="flex-1" />
+                    <div className="mt-3 flex items-center gap-2">
+                      {renderAddControl(item, "sm")}
+                      {waButton(item, "sm")}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <ul className="space-y-3">
+            {filteredItems.map((item) => {
+              const price = formatNaira(item.price);
+              return (
+                <li key={item._uid} className="flex items-center gap-4 bg-white rounded-2xl p-3 ring-1 ring-bloom-charcoal/[0.06]">
+                  <button
+                    type="button"
+                    onClick={() => setModalItem(item)}
+                    className="shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-bloom-blush/40"
+                    aria-label={`View ${item.name}`}
+                  >
+                    <img
+                      src={getPrimaryImage(item)}
+                      alt=""
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = PLACEHOLDER;
+                      }}
+                    />
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => setModalItem(item)}
+                      className="text-left font-medium text-gray-900 hover:text-bloom-green line-clamp-1"
+                    >
+                      {item.name}
+                    </button>
+                    {item.description && (
+                      <p className="text-sm text-gray-500 line-clamp-2 mt-0.5">{item.description}</p>
+                    )}
+                    <div className="mt-1 flex items-center gap-3 text-sm">
+                      {price && <span className="font-display font-semibold text-bloom-rose tabular-nums">{price}</span>}
+                      {item.colors?.length > 0 && <span className="text-gray-400">{pluralize(item.colors.length, "colour")}</span>}
+                      {item.outOfStock && <span className="text-red-600 font-medium">Out of stock</span>}
+                    </div>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2 w-56">
+                    {renderAddControl(item)}
+                    {waButton(item)}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </main>
+
       <ItemDetailsModal
-        isOpen={showDetailsModal}
-        onClose={handleCloseModal}
+        isOpen={!!modalItem}
+        onClose={() => setModalItem(null)}
         item={modalItem}
         category={category}
-        onAddToCart={handleModalAddToCart}view
+        onAddToCart={handleModalAdd}
         navigationSource={navigationSource}
       />
 
-      {/* Floating Chat Box Component */}
-      <FloatingChatBox whatsappNumber="+2348142186524" />
-    </>
+      <WhatsAppSheet
+        isOpen={!!waItem}
+        onClose={() => setWaItem(null)}
+        message={() => (waItem ? buildItemMessage({ item: waItem, category }) : "")}
+        title="Ask about this item"
+      />
+    </div>
   );
 };
 

@@ -697,13 +697,15 @@ const cartSlice = createSlice({
 
       // Check for existing item (prevent duplicates unless explicitly allowed)
       if (!allowDuplicates) {
+        // Same item in a different colour is a separate line (the colour is part
+        // of the name), so match on both id and name.
         const existingItemIndex = state.items.findIndex(
-          (i) => i.id === normalizedItem.id || i.name === normalizedItem.name
+          (i) => i.id === normalizedItem.id && i.name === normalizedItem.name
         );
 
         if (existingItemIndex !== -1) {
-          console.log('📝 Item already exists, updating quantity to 1');
-          state.items[existingItemIndex].quantity = 1;
+          // Already in the list: keep the quantity the customer chose.
+          console.log('📝 Item already exists, keeping current quantity');
           state.subtotal = utils.calculateTotal(state.items);
           state.tax = utils.calculateTax(state.subtotal);
           state.totalAmount = utils.calculateTotalWithTax(state.subtotal);

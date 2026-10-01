@@ -6,6 +6,8 @@ const initialState = {
   isMobile: window.innerWidth < 768,
   isProfileOpen: false,
   isNotificationsOpen: false,
+  // Public site: the customer's item list drawer (see UI/listBar.jsx)
+  isListOpen: false,
 };
 
 const uiSlice = createSlice({
@@ -42,7 +44,13 @@ const uiSlice = createSlice({
     closeAllDropdowns: (state) => {
       state.isProfileOpen = false;
       state.isNotificationsOpen = false;
-    }
+    },
+    openList: (state) => {
+      state.isListOpen = true;
+    },
+    closeList: (state) => {
+      state.isListOpen = false;
+    },
   },
 });
 
@@ -52,7 +60,9 @@ export const {
   setMobileState,
   toggleProfileDropdown,
   toggleNotificationsDropdown,
-  closeAllDropdowns
+  closeAllDropdowns,
+  openList,
+  closeList,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

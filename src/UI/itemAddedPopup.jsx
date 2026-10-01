@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, ShoppingCart, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ITEM_PLACEHOLDER } from "../utils/itemPlaceholder";
 
 const ItemAddedPopup = ({ 
   isOpen, 
@@ -21,7 +22,7 @@ const ItemAddedPopup = ({
     
     if (fromOrderProcess) {
       // Navigate back to order process
-      navigate('/order-process', { 
+      navigate('/orderprocess', { 
         state: { 
           fromWarehouse: true,
           warehouseInfo: warehouseInfo 
@@ -102,11 +103,11 @@ const ItemAddedPopup = ({
           {item && (
             <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
               <img
-                src={item.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop'}
+                src={item.image || ITEM_PLACEHOLDER}
                 alt={item.name}
                 className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0"
                 onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop';
+                  e.target.src = ITEM_PLACEHOLDER;
                 }}
               />
               <div className="flex-1 min-w-0">

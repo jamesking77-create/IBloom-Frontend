@@ -1,27 +1,39 @@
-// UI/ItemDetailsModal.js - Combined Version with Full Image Support
-import React, { useState, useEffect } from "react";
+// UI/itemDetailsModal.jsx — item details sheet: photos, price, colour, and the
+// two actions that matter: send this item on WhatsApp, or add it to the list.
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch } from "react-redux";
 import {
   X,
-  ShoppingCart,
-  Star,
-  Heart,
   Share2,
-  Zap,
-  Clock,
-  Package,
-  Award,
   ChevronLeft,
   ChevronRight,
   Check,
-  Palette,
+  Plus,
   Ruler,
-  AlertTriangle,
-  CheckCircle,
-  Eye,
-  MessageCircle,
 } from "lucide-react";
 import { addToCart } from "../store/slices/cart-slice";
+import { buildItemMessage, formatNaira, getItemLink } from "../config/whatsapp";
+import WhatsAppSheet, { WhatsAppIcon, sendOrAsk } from "./whatsAppSheet";
+import { ITEM_PLACEHOLDER } from "../utils/itemPlaceholder";
+
+const PLACEHOLDER = ITEM_PLACEHOLDER;
+
+const collectImages = (item) => {
+  if (!item) return [];
+  const out = [];
+  const push = (src) => src && !out.includes(src) && out.push(src);
+  push(item.image);
+  if (item.images && typeof item.images === "object" && !Array.isArray(item.images)) {
+    push(item.images.image1);
+    push(item.images.image2);
+    push(item.images.image3);
+  }
+  push(item.image1);
+  push(item.image2);
+  push(item.image3);
+  if (Array.isArray(item.images)) item.images.forEach(push);
+  return out.length ? out : [PLACEHOLDER];
+};
 
 const ItemDetailsModal = ({
   isOpen,
@@ -34,732 +46,314 @@ const ItemDetailsModal = ({
   onShowAddedPopup,
 }) => {
   const dispatch = useDispatch();
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
-  const [showAddedAnimation, setShowAddedAnimation] = useState(false);
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [images, setImages] = useState([]);
+  const [imageIndex, setImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(null);
-  const [showWhatsAppPicker, setShowWhatsAppPicker] = useState(false); // NEW
+  const [colorHint, setColorHint] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
+  const images = useMemo(() => collectImages(item), [item]);
   const fromOrderProcess = navigationSource === "orderprocess";
   const fromEventBooking = navigationSource === "eventbooking";
+  const addLabel = fromOrderProcess ? "Add to order" : fromEventBooking ? "Add to booking" : "Add to list";
 
-  // NEW: the two WhatsApp numbers to choose between
-  const whatsappNumbers = [
-    { label: "Sales Line 1", phone: "2348172258085" },
-    { label: "Sales Line 2", phone: "2348124862088" },
-  ];
-
-  // Enhanced image extraction that supports all image structures
-  useEffect(() => {
-    if (!item) return;
-
-    const availableImages = [];
-
-    // Priority 1: Check single image first (for backward compatibility with old structure)
-    if (item.image) {
-      availableImages.push(item.image);
-    }
-
-    // Priority 2: Handle new structure (item.images object)
-    if (item.images && typeof item.images === "object") {
-      if (item.images.image1 && !availableImages.includes(item.images.image1)) {
-        availableImages.push(item.images.image1);
-      }
-      if (item.images.image2 && !availableImages.includes(item.images.image2)) {
-        availableImages.push(item.images.image2);
-      }
-      if (item.images.image3 && !availableImages.includes(item.images.image3)) {
-        availableImages.push(item.images.image3);
-      }
-    }
-
-    // Priority 3: Handle old structure (direct image1, image2, image3 fields)
-    if (item.image1 && !availableImages.includes(item.image1)) {
-      availableImages.push(item.image1);
-    }
-    if (item.image2 && !availableImages.includes(item.image2)) {
-      availableImages.push(item.image2);
-    }
-    if (item.image3 && !availableImages.includes(item.image3)) {
-      availableImages.push(item.image3);
-    }
-
-    // Priority 4: Handle array structure (item.images as array)
-    if (item.images && Array.isArray(item.images)) {
-      item.images.forEach((img) => {
-        if (img && !availableImages.includes(img)) {
-          availableImages.push(img);
-        }
-      });
-    }
-
-    // If still no images found, use placeholder
-    if (availableImages.length === 0) {
-      availableImages.push(
-        "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop",
-      );
-    }
-
-    setImages(availableImages);
-    setSelectedImageIndex(0);
-  }, [item]);
+  // Parents pass an inline onClose, so read it through a ref instead of
+  // re-running the effects below on every parent render.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      setSelectedImageIndex(0);
-      setShowAddedAnimation(false);
-      setSelectedColor(null);
-      setShowWhatsAppPicker(false); // NEW: reset picker on open
-    } else {
-      document.body.style.overflow = "unset";
-    }
+    if (!isOpen) return;
+    setImageIndex(0);
+    setSelectedColor(item?.colors?.length === 1 ? item.colors[0] : null);
+    setColorHint(false);
+    setAdded(false);
+    setSheetOpen(false);
+  }, [isOpen, item]);
 
-    return () => {
-      document.body.style.overflow = "unset";
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (sheetOpen) return;
+      if (e.key === "Escape") onCloseRef.current();
+      if (e.key === "ArrowRight") setImageIndex((i) => (i + 1) % images.length);
+      if (e.key === "ArrowLeft") setImageIndex((i) => (i - 1 + images.length) % images.length);
     };
-  }, [isOpen]);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isOpen, images.length, sheetOpen]);
 
   if (!isOpen || !item) return null;
 
-  // FIXED: Proper price formatting function
-  const formatPrice = (price) => {
-    if (!price) return "₦0";
+  const needsColor = item.colors?.length > 0;
+  const price = formatNaira(item.price);
+  const message = () => buildItemMessage({ item, category, selectedColor });
 
-    let numericPrice;
-    if (typeof price === "string") {
-      const cleanPrice = price.replace(/[₦\s]/g, "");
-      numericPrice = parseFloat(cleanPrice.replace(/,/g, ""));
-    } else {
-      numericPrice = parseFloat(price);
-    }
-
-    if (isNaN(numericPrice)) return "₦0";
-    return `₦${numericPrice.toLocaleString("en-NG")}`;
-  };
-
-  const handleAddToCart = () => {
-    // Check if item is out of stock
+  const handleAdd = () => {
     if (item.outOfStock) return;
-
-    // Check if item has colors but none selected
-    if (item.colors && item.colors.length > 0 && !selectedColor) {
-      alert("Please select a color before adding to cart");
+    if (needsColor && !selectedColor) {
+      setColorHint(true);
       return;
     }
-
-    // Process item price properly
-    let processedPrice;
-    if (typeof item.price === "string") {
-      processedPrice = parseFloat(item.price.replace(/[₦\s,]/g, ""));
-    } else {
-      processedPrice = parseFloat(item.price);
-    }
-
-    // NEW: Append color to item name if selected
-    const itemName = selectedColor
-      ? `${item.name} - Color: ${selectedColor}`
-      : item.name;
-
+    const numericPrice =
+      typeof item.price === "string"
+        ? parseFloat(item.price.replace(/[₦\s,]/g, "")) || 0
+        : parseFloat(item.price) || 0;
     const processedItem = {
       ...item,
-      name: itemName, // ← Modified name with color
-      selectedColor: selectedColor, // ← Store selected color separately
-      price: processedPrice,
+      name: selectedColor ? `${item.name} - Color: ${selectedColor}` : item.name,
+      selectedColor,
+      price: numericPrice,
+      categoryId: category?.id,
     };
 
     if (onAddToCart) {
       onAddToCart(processedItem);
-    } else {
-      dispatch(
-        addToCart({
-          item: processedItem,
-          dates: null,
-          allowDuplicates: false,
-        }),
-      );
+      return;
     }
-
-    setShowAddedAnimation(true);
-    setTimeout(() => setShowAddedAnimation(false), 2000);
-
-    // Close the modal and show the added popup
+    dispatch(addToCart({ item: processedItem, dates: null, allowDuplicates: false }));
+    setAdded(true);
     setTimeout(() => {
-      onClose(); // Close the modal first
-      if (onShowAddedPopup) {
-        onShowAddedPopup(
-          processedItem,
-          category,
-          navigationSource,
-          warehouseInfo,
-        );
-      }
-    }, 1500);
+      onClose();
+      onShowAddedPopup?.(processedItem, category, navigationSource, warehouseInfo);
+    }, 900);
   };
 
   const handleShare = async () => {
+    const link = getItemLink(item, category?.id);
+    const url = link.includes("/share/") ? link : window.location.href;
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: item.name,
-          text: `Check out this ${item.name} for your event!`,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log("Share failed:", error);
+        await navigator.share({ title: item.name, url });
+      } catch {
+        /* dismissed */
       }
     } else {
-      // Fallback - copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard?.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
     }
   };
 
-  // NEW: build the shared WhatsApp message text
-  const buildWhatsAppMessage = () => {
-    const shareUrl = `https://ibloomrentals.com/share/${category.id}/${item.id}`;
-
-    return `Hi, I'm interested in this item:
-
-*${item.name}*${selectedColor ? ` (Color: ${selectedColor})` : ""}
-${category ? `Category: ${category.name}` : ""}
-Price: ${formatPrice(item.price)}
-${item.outOfStock ? "⚠️ Currently Out of Stock" : "✅ In Stock"}
-
-${item.description ? item.description.slice(0, 150) : ""}
-
-View item: ${shareUrl}`;
-  };
-
-  // NEW: opens wa.me for the chosen number and closes the picker
-  const sendToWhatsAppNumber = (phone) => {
-    const message = buildWhatsAppMessage();
-    window.open(
-      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
-      "_blank",
-    );
-    setShowWhatsAppPicker(false);
-  };
-
-  // CHANGED: now just toggles the picker instead of sending directly
-  const handleShareToWhatsApp = () => {
-    setShowWhatsAppPicker((prev) => !prev);
-  };
-
-  const nextImage = () => {
-    setSelectedImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = () => {
-    setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const goToImage = (index) => {
-    setSelectedImageIndex(index);
-  };
-
-  const handleImageError = (e) => {
-    e.target.src =
-      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop";
-  };
-
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div
-        className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden transform transition-all duration-300 scale-100 animate-fadeIn"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header - FIXED: No sticky, stays at top */}
-        <div className="bg-white z-10 p-4 sm:p-6 border-b border-gray-200 shadow-sm flex-shrink-0">
-          <div className="flex items-center justify-between">
-            {/* Left side - Category and context badges */}
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 flex-1 mr-4">
-              {category && (
-                <span
-                  className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium inline-block w-fit ${
-                    fromOrderProcess
-                      ? "bg-bloom-rose-100 text-bloom-rose-800"
-                      : fromEventBooking
-                        ? "bg-green-100 text-green-800"
-                        : "bg-bloom-green-100 text-bloom-green-800"
-                  }`}
-                >
-                  {category.name}
-                </span>
-              )}
+    <div
+      className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="item-title"
+    >
+      <div className="absolute inset-0 bg-bloom-charcoal/60 backdrop-blur-sm item-fade" onClick={onClose} />
 
-              {(fromEventBooking || fromOrderProcess) && (
-                <span
-                  className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium inline-block w-fit ${
-                    fromOrderProcess
-                      ? "bg-bloom-rose-100 text-bloom-rose-800"
-                      : "bg-green-100 text-green-800"
-                  }`}
-                >
-                  <span className="mr-1">{fromOrderProcess ? "📦" : "📅"}</span>
-                  <span className="hidden sm:inline">
-                    {fromOrderProcess ? "Order Process" : "Event Booking"}
-                  </span>
-                  <span className="sm:hidden">
-                    {fromOrderProcess ? "Order" : "Booking"}
-                  </span>
-                </span>
-              )}
-            </div>
-
-            {/* Right side - Action buttons */}
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <button
-                onClick={() => setIsLiked(!isLiked)}
-                className={`p-2 rounded-full transition-colors duration-200 ${
-                  isLiked
-                    ? "text-red-500 bg-red-50"
-                    : "text-gray-400 hover:text-red-500 hover:bg-red-50"
-                }`}
-              >
-                <Heart
-                  className={`w-4 h-4 sm:w-5 sm:h-5 ${isLiked ? "fill-current" : ""}`}
-                />
-              </button>
-              <button
-                onClick={handleShare}
-                className="p-2 text-gray-400 hover:text-bloom-green-500 hover:bg-bloom-green-50 rounded-full transition-colors duration-200"
-              >
-                <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
-              >
-                <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
-              </button>
-            </div>
-          </div>
+      <div className="relative w-full sm:max-w-4xl max-h-[94vh] sm:max-h-[88vh] flex flex-col bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl item-rise">
+        {/* Top controls float over the photo */}
+        <div className="absolute top-3 right-3 z-10 flex gap-2">
+          <button
+            type="button"
+            onClick={handleShare}
+            className="w-10 h-10 rounded-full bg-white/90 backdrop-blur text-gray-700 hover:bg-white flex items-center justify-center shadow-sm focus-visible:outline-2 focus-visible:outline-bloom-green"
+            aria-label={copied ? "Link copied" : "Share item"}
+          >
+            {copied ? <Check className="w-4 h-4 text-bloom-green" /> : <Share2 className="w-4 h-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-white/90 backdrop-blur text-gray-700 hover:bg-white flex items-center justify-center shadow-sm focus-visible:outline-2 focus-visible:outline-bloom-green"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Modal Content - FIXED: Proper scrolling with padding for fixed button */}
-        <div
-          className="overflow-y-auto flex-1"
-          style={{ paddingBottom: "180px" }}
-        >
-          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6">
-            {/* Image Section */}
-            <div className="space-y-3 sm:space-y-4 order-1">
-              {/* Main Image */}
-              <div className="relative aspect-square bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden group">
-                <img
-                  src={images[selectedImageIndex]}
-                  alt={`${item.name} - Image ${selectedImageIndex + 1}`}
-                  className={`w-full h-full object-cover transition-transform duration-500 ${
-                    isZoomed ? "scale-150 cursor-zoom-out" : "cursor-zoom-in"
-                  }`}
-                  onClick={() => setIsZoomed(!isZoomed)}
-                  onError={handleImageError}
-                />
-
-                {/* Stock Status Overlay */}
-                <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 shadow-sm">
-                  <span className={`w-1.5 h-1.5 rounded-full ${item.outOfStock ? "bg-red-500" : "bg-emerald-500"}`} />
-                  {item.outOfStock ? "Out of Stock" : "In Stock"}
-                </div>
-
-                {/* Image Navigation */}
-                {images.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 sm:p-3 rounded-full transition-all duration-300 hover:bg-black/80 active:scale-95"
-                    >
-                      <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 sm:p-3 rounded-full transition-all duration-300 hover:bg-black/80 active:scale-95"
-                    >
-                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  </>
-                )}
-
-                {/* Image Counter */}
-                {images.length > 1 && (
-                  <div className="absolute bottom-3 right-3 bg-black/60 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm">
-                    {selectedImageIndex + 1} / {images.length}
-                  </div>
-                )}
-
-                {/* Zoom indicator */}
-                <div className="absolute top-3 right-3 bg-black/60 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
-                  {isZoomed ? "Click to zoom out" : "Click to zoom"}
-                </div>
-              </div>
-
-              {/* Thumbnail Gallery */}
+        <div className="overflow-y-auto flex-1 sm:grid sm:grid-cols-2">
+          {/* Photos */}
+          <div className="bg-bloom-blush/30 sm:sticky sm:top-0 sm:self-start">
+            <div className="relative aspect-square">
+              <img
+                src={images[imageIndex]}
+                alt={`${item.name}, photo ${imageIndex + 1} of ${images.length}`}
+                className={`w-full h-full object-cover ${item.outOfStock ? "grayscale" : ""}`}
+                onError={(e) => {
+                  e.currentTarget.src = PLACEHOLDER;
+                }}
+              />
               {images.length > 1 && (
-                <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                  {images.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => goToImage(index)}
-                      className={`flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                        selectedImageIndex === index
-                          ? "border-bloom-green-500 ring-2 ring-bloom-green-200"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <img
-                        src={image}
-                        alt={`${item.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={handleImageError}
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Details Section */}
-            <div className="space-y-4 sm:space-y-6 order-2">
-              {/* Title and Rating */}
-              <div>
-                <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-800 mb-2 leading-tight">
-                  {item.name}
-                </h2>
-                <div className="flex items-center justify-between sm:justify-start sm:space-x-4">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < (item.rating || 5)
-                            ? "text-bloom-gold fill-current"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  {item.featured && (
-                    <span className="px-2 py-1 bg-bloom-gold/15 text-bloom-gold rounded-full text-xs font-medium flex items-center">
-                      <Award className="w-3 h-3 mr-1" />
-                      Featured
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Price */}
-              <div
-                className={`p-3 sm:p-4 rounded-xl border ${
-                  fromOrderProcess
-                    ? "bg-bloom-rose-50 border-bloom-rose-200"
-                    : "bg-bloom-green-50 border-bloom-green-200"
-                }`}
-              >
-                <div
-                  className={`font-display text-2xl sm:text-3xl font-semibold mb-1 ${
-                    fromOrderProcess ? "text-bloom-rose-600" : "text-bloom-green-600"
-                  }`}
-                >
-                  {formatPrice(item.price)}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">
-                  Description
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  {item.description ||
-                    "Premium quality rental item perfect for your special event. Professional grade equipment with reliable performance."}
-                </p>
-              </div>
-
-              {/* Colors and Sizes - FIXED WITH PROPER EVENT HANDLING */}
-              <div className="space-y-4">
-                {/* Colors */}
-                {item.colors && item.colors.length > 0 && (
-                  <div className="bg-bloom-rose-50 rounded-xl p-4 border-2 border-bloom-rose-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Palette className="w-5 h-5 text-bloom-rose-600" />
-                      <h3 className="font-bold text-gray-900">
-                        Select Color *
-                      </h3>
-                      {selectedColor && (
-                        <span className="ml-auto text-sm font-medium text-bloom-rose-600">
-                          Selected: {selectedColor}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {item.colors.map((color, index) => (
-                        <button
-                          key={index}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setSelectedColor(color);
-                          }}
-                          className={`px-4 py-2 rounded-lg font-bold transition-all transform hover:scale-105 active:scale-95 ${
-                            selectedColor === color
-                              ? "bg-bloom-green-600 text-white shadow-lg ring-4 ring-bloom-green-300"
-                              : "bg-white border-2 border-gray-300 text-gray-700 hover:border-bloom-rose-400 hover:bg-bloom-rose-50"
-                          }`}
-                          type="button"
-                        >
-                          {color}
-                          {selectedColor === color && (
-                            <Check className="w-4 h-4 inline ml-2" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                    {item.colors.length > 0 && !selectedColor && (
-                      <p className="text-xs text-bloom-rose-600 mt-2 font-medium">
-                        ⚠️ Please select a color before adding to cart
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Sizes */}
-                {item.sizes && item.sizes.length > 0 && (
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Ruler className="w-5 h-5 text-gray-600" />
-                      <h3 className="font-semibold text-gray-900">
-                        Available Sizes
-                      </h3>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {item.sizes.map((size, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm"
-                        >
-                          {size}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Features */}
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
-                  Features
-                </h3>
-                <div className="grid grid-cols-1 gap-2 sm:gap-3">
-                  {item.features ? (
-                    item.features.map((feature, index) => (
-                      <div key={index} className="flex items-start">
-                        <Check className="w-4 h-4 text-bloom-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-600 text-sm sm:text-base">
-                          {feature}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <>
-                      <div className="flex items-center">
-                        <Zap className="w-4 h-4 text-bloom-green-500 mr-2" />
-                        <span className="text-gray-600 text-sm sm:text-base">
-                          Professional Quality
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="w-4 h-4 text-bloom-green-500 mr-2" />
-                        <span className="text-gray-600 text-sm sm:text-base">
-                          Quick Setup
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <Package className="w-4 h-4 text-bloom-green-500 mr-2" />
-                        <span className="text-gray-600 text-sm sm:text-base">
-                          Complete Package
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <Award className="w-4 h-4 text-bloom-green-500 mr-2" />
-                        <span className="text-gray-600 text-sm sm:text-base">
-                          Premium Support
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Stock Status */}
-              <div
-                className={`p-4 rounded-xl ${
-                  item.outOfStock
-                    ? "bg-red-50 border border-red-200"
-                    : "bg-green-50 border border-green-200"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {item.outOfStock ? (
-                    <>
-                      <AlertTriangle className="w-5 h-5 text-red-600" />
-                      <span className="font-semibold text-red-900">
-                        Out of Stock
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <span className="font-semibold text-green-900">
-                        In Stock & Available
-                      </span>
-                    </>
-                  )}
-                </div>
-                <p
-                  className={`text-sm mt-1 ${
-                    item.outOfStock ? "text-red-700" : "text-green-700"
-                  }`}
-                >
-                  {item.outOfStock
-                    ? "This item is currently unavailable. Please check back later or contact us for alternatives."
-                    : "This item is available for booking and rental."}
-                </p>
-              </div>
-
-              {/* Additional Info */}
-              <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
-                <h4 className="font-medium text-yellow-800 mb-2 text-sm sm:text-base">
-                  📋 Rental Information
-                </h4>
-                <ul className="text-xs sm:text-sm text-yellow-700 space-y-1">
-                  <li>• Professional setup assistance available</li>
-                  <li>• 24/7 technical support during event</li>
-                  <li>• Backup equipment provided for critical items</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Fixed Bottom Section - FIXED: Proper positioning */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
-          <div className="max-w-4xl mx-auto space-y-3">
-            {/* NEW: WhatsApp button wrapped in relative container for the popup */}
-            <div className="relative">
-              {showWhatsAppPicker && (
                 <>
-                  {/* Backdrop to close picker on outside click */}
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowWhatsAppPicker(false)}
-                  />
-                  <div className="absolute bottom-full mb-2 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-20">
-                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
-                      Choose a WhatsApp number
-                    </div>
-                    {whatsappNumbers.map((num) => (
+                  <button
+                    type="button"
+                    onClick={() => setImageIndex((i) => (i - 1 + images.length) % images.length)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/85 hover:bg-white flex items-center justify-center shadow-sm"
+                    aria-label="Previous photo"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageIndex((i) => (i + 1) % images.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/85 hover:bg-white flex items-center justify-center shadow-sm"
+                    aria-label="Next photo"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                  <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
+                    {images.map((_, i) => (
                       <button
-                        key={num.phone}
-                        onClick={() => sendToWhatsAppNumber(num.phone)}
+                        key={i}
                         type="button"
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left"
-                      >
-                        <MessageCircle
-                          className="w-5 h-5 text-[#25D366]"
-                          fill="#25D366"
-                        />
-                        <span className="font-medium text-gray-800">
-                          {num.label}
-                        </span>
-                        <span className="ml-auto text-sm text-gray-400">
-                          {num.phone}
-                        </span>
-                      </button>
+                        onClick={() => setImageIndex(i)}
+                        className={`h-1.5 rounded-full transition-all ${i === imageIndex ? "w-5 bg-white" : "w-1.5 bg-white/60"}`}
+                        aria-label={`Photo ${i + 1}`}
+                      />
                     ))}
                   </div>
                 </>
               )}
-
-              {/* Big bold WhatsApp button */}
-              <button
-                onClick={handleShareToWhatsApp}
-                type="button"
-                className="w-full py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg bg-[#25D366] hover:bg-[#1ebc59] text-white flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
-              >
-                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" fill="white" />
-                Send to WhatsApp
-              </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={onClose}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium flex items-center justify-center gap-2 sm:block hidden"
-                type="button"
-              >
-                <Eye className="w-4 h-4" />
-                Continue Browsing
-              </button>
-
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAddToCart();
-                }}
-                disabled={
-                  item.outOfStock ||
-                  (item.colors && item.colors.length > 0 && !selectedColor)
-                }
-                className={`w-full sm:flex-1 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-300 transform active:scale-95 sm:hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center ${
-                  showAddedAnimation
-                    ? "bg-green-500 text-white"
-                    : item.outOfStock ||
-                        (item.colors &&
-                          item.colors.length > 0 &&
-                          !selectedColor)
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : fromOrderProcess
-                        ? "bg-bloom-rose-600 hover:bg-bloom-rose-700 text-white"
-                        : fromEventBooking
-                          ? "bg-bloom-green-600 hover:bg-bloom-green-700 text-white"
-                          : "bg-bloom-green-600 hover:bg-bloom-green-700 text-white"
-                }`}
-                type="button"
-              >
-                {showAddedAnimation ? (
-                  <>
-                    <Check className="w-5 h-5 mr-2" />
-                    Added to{" "}
-                    {fromOrderProcess
-                      ? "Order"
-                      : fromEventBooking
-                        ? "Booking"
-                        : "Cart"}
-                    !
-                  </>
-                ) : item.outOfStock ? (
-                  "Out of Stock"
-                ) : item.colors && item.colors.length > 0 && !selectedColor ? (
-                  "⚠️ Select Color First"
-                ) : (
-                  <>
-                    <ShoppingCart className="w-5 h-5 mr-2" />
-                    {fromOrderProcess
-                      ? "Add to Order"
-                      : fromEventBooking
-                        ? "Add to Booking"
-                        : "Add to Cart"}
-                  </>
-                )}
-              </button>
             </div>
           </div>
+
+          {/* Details */}
+          <div className="p-5 sm:p-7 space-y-5">
+            <div>
+              {category?.name && (
+                <p className="text-xs font-semibold uppercase tracking-wider text-bloom-green mb-1.5">
+                  {category.name}
+                </p>
+              )}
+              <h2 id="item-title" className="font-display text-2xl sm:text-3xl font-semibold text-bloom-charcoal leading-tight">
+                {item.name}
+              </h2>
+              <div className="mt-2 flex items-center gap-3">
+                {price && (
+                  <span className="font-display text-2xl font-semibold text-bloom-rose tabular-nums">{price}</span>
+                )}
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-medium rounded-full px-2.5 py-1 ${
+                    item.outOfStock ? "bg-red-50 text-red-700" : "bg-bloom-green-50 text-bloom-green-700"
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${item.outOfStock ? "bg-red-500" : "bg-bloom-green-500"}`} />
+                  {item.outOfStock ? "Out of stock" : "Available"}
+                </span>
+              </div>
+            </div>
+
+            {needsColor && (
+              <fieldset>
+                <legend className="text-sm font-semibold text-gray-900 mb-2">
+                  Colour{" "}
+                  <span className={`font-normal ${colorHint && !selectedColor ? "text-bloom-rose" : "text-gray-500"}`}>
+                    {selectedColor ? `· ${selectedColor}` : "· choose one to add to your list"}
+                  </span>
+                </legend>
+                <div className={`flex flex-wrap gap-2 rounded-2xl ${colorHint && !selectedColor ? "item-shake" : ""}`}>
+                  {item.colors.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setSelectedColor(color)}
+                      aria-pressed={selectedColor === color}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-green ${
+                        selectedColor === color
+                          ? "bg-bloom-charcoal text-white"
+                          : "bg-white text-gray-700 ring-1 ring-gray-200 hover:ring-gray-400"
+                      }`}
+                    >
+                      {selectedColor === color && <Check className="w-3.5 h-3.5" />}
+                      {color}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+
+            {item.sizes?.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
+                  <Ruler className="w-4 h-4 text-gray-400" /> Sizes
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {item.sizes.map((size) => (
+                    <span key={size} className="px-3 py-1.5 rounded-lg bg-gray-50 ring-1 ring-gray-200 text-sm text-gray-700">
+                      {size}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {item.description && (
+              <p className="text-gray-600 leading-relaxed">{item.description}</p>
+            )}
+
+            {Array.isArray(item.features) && item.features.length > 0 && (
+              <ul className="space-y-1.5">
+                {item.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-bloom-green mt-0.5 shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-sm text-gray-500 bg-bloom-ivory rounded-xl px-4 py-3">
+              Delivery and setup are available. We confirm the cost for your venue on WhatsApp.
+            </p>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="shrink-0 border-t border-gray-100 bg-white px-4 sm:px-7 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={item.outOfStock || added}
+            className={`inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm sm:text-base font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-green disabled:cursor-not-allowed ${
+              added
+                ? "bg-bloom-green text-white"
+                : item.outOfStock
+                ? "bg-gray-100 text-gray-400"
+                : "bg-bloom-green-50 text-bloom-green-800 ring-1 ring-bloom-green-200 hover:bg-bloom-green-100"
+            }`}
+          >
+            {added ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            {added ? "Added" : item.outOfStock ? "Out of stock" : addLabel}
+          </button>
+          <button
+            type="button"
+            onClick={() => sendOrAsk(message(), setSheetOpen)}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm sm:text-base font-bold bg-[#25D366] hover:bg-[#1FBE5B] text-[#0B3B1E] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1DA851]"
+          >
+            <WhatsAppIcon className="w-5 h-5" />
+            <span>
+              <span className="sm:hidden">WhatsApp</span>
+              <span className="hidden sm:inline">Send to WhatsApp</span>
+            </span>
+          </button>
         </div>
       </div>
+
+      <WhatsAppSheet
+        isOpen={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        message={message}
+        title="Ask about this item"
+      />
+
+      <style>{`
+        @keyframes itemFade { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes itemRise { from { transform: translateY(32px); opacity: 0 } to { transform: none; opacity: 1 } }
+        @keyframes itemShake { 0%,100% { transform: none } 25% { transform: translateX(-4px) } 75% { transform: translateX(4px) } }
+        .item-fade { animation: itemFade .2s ease-out both; }
+        .item-rise { animation: itemRise .3s cubic-bezier(.2,.8,.2,1) both; }
+        .item-shake { animation: itemShake .3s ease-in-out 2; }
+        @media (prefers-reduced-motion: reduce) { .item-fade, .item-rise, .item-shake { animation: none; } }
+      `}</style>
     </div>
   );
 };

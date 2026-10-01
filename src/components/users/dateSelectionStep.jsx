@@ -34,6 +34,7 @@ import {
 } from "../../store/slices/cart-slice";
 import ConfirmModal from "../../UI/confrimModal";
 import { notifySuccess } from "../../utils/toastify";
+import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
 
 // Friendly time-slot options (6:00 AM – 11:30 PM, 30-minute steps) for the time
 // dropdowns below — value stays 24-hour "HH:MM" so it's still compatible with the
@@ -165,7 +166,7 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
     
     // Return at least one image (fallback)
     if (availableImages.length === 0) {
-      availableImages.push("https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop");
+      availableImages.push(ITEM_PLACEHOLDER);
       console.log('⚠️ Using fallback image');
     }
     
@@ -230,7 +231,7 @@ const DateSelectionStep = ({ onNext, onAddMoreItems, error }) => {
               alt={`${itemName} - Image ${currentImageIndex + 1}`}
               className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-md transition-all duration-300"
               onError={(e) => {
-                e.target.src = "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
+                e.target.src = ITEM_PLACEHOLDER;
               }}
             />
             

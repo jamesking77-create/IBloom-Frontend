@@ -35,6 +35,7 @@ import {
   clearError,
   clearSuccess
 } from '../store/slices/quote-slice';
+import { ITEM_PLACEHOLDER } from "../utils/itemPlaceholder";
 
 const QuoteResponseModal = ({ quote, isOpen, onClose }) => {
   const dispatch = useDispatch();
@@ -288,11 +289,11 @@ const QuoteResponseModal = ({ quote, isOpen, onClose }) => {
                         {/* Item Image & Info */}
                         <div className="lg:col-span-4 flex items-center space-x-3">
                           <img
-                            src={item.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=60&h=60&fit=crop'}
+                            src={item.image || ITEM_PLACEHOLDER}
                             alt={item.name}
                             className="w-12 h-12 object-cover rounded-lg"
                             onError={(e) => {
-                              e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=60&h=60&fit=crop';
+                              e.target.src = ITEM_PLACEHOLDER;
                             }}
                           />
                           <div className="flex-1">

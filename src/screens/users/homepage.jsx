@@ -743,12 +743,15 @@ const HomePage = () => {
           >
             {categoriesLoading && featuredItems.length === 0
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <li key={i} className="shrink-0 w-[42vw] max-w-[13rem] sm:w-52">
-                    <div className="rounded-2xl bg-white/90 overflow-hidden animate-pulse">
+                  <li key={i} className="shrink-0 w-[44vw] max-w-[14rem] sm:w-56 flex">
+                    <div className="w-full rounded-[1.25rem] bg-white/90 overflow-hidden animate-pulse">
                       <div className="aspect-[4/5] bg-bloom-blush/60" />
-                      <div className="p-3 space-y-2">
-                        <div className="h-3 w-1/2 bg-gray-100 rounded" />
-                        <div className="h-4 w-3/4 bg-gray-100 rounded" />
+                      <div className="p-3.5 space-y-2.5">
+                        <div className="h-2.5 w-1/2 bg-gray-100 rounded" />
+                        <div className="h-4 w-full bg-gray-100 rounded" />
+                        <div className="h-4 w-2/3 bg-gray-100 rounded" />
+                        <div className="h-px bg-gray-100" />
+                        <div className="h-5 w-1/3 bg-gray-100 rounded" />
                       </div>
                     </div>
                   </li>
@@ -756,15 +759,20 @@ const HomePage = () => {
               : featuredItems.map(({ item, category }) => {
                   const price = formatNairaShort(item.price);
                   return (
-                    <li key={`${category.id}-${item.id}`} className="snap-start shrink-0 w-[42vw] max-w-[13rem] sm:w-52">
+                    // Every card has the same structure and height: one-line
+                    // category, two-line name (space reserved), then a footer
+                    // with the price (or "Ask for price") and a "View" cue.
+                    <li key={`${category.id}-${item.id}`} className="snap-start shrink-0 w-[44vw] max-w-[14rem] sm:w-56 flex">
                       <button
                         type="button"
                         onClick={() =>
                           navigate(`/category/${category.id}?item=${item.id}`, { state: { category } })
                         }
-                        className="group block w-full text-left bg-white rounded-2xl overflow-hidden ring-1 ring-black/5 shadow-[0_24px_48px_-24px_rgba(36,26,32,0.7)] transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-rose"
+                        title={item.name}
+                        aria-label={`View ${item.name}${price ? `, ${price}` : ""}`}
+                        className="group w-full flex flex-col text-left bg-white rounded-[1.25rem] overflow-hidden ring-1 ring-black/5 shadow-[0_24px_48px_-24px_rgba(36,26,32,0.7)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_30px_56px_-24px_rgba(36,26,32,0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-rose"
                       >
-                        <span className="block aspect-[4/5] overflow-hidden bg-bloom-blush/40">
+                        <span className="relative block aspect-[4/5] overflow-hidden bg-bloom-blush/40">
                           <img
                             src={itemImage(item)}
                             alt=""
@@ -774,19 +782,28 @@ const HomePage = () => {
                               e.currentTarget.src = ITEM_PLACEHOLDER;
                             }}
                           />
-                        </span>
-                        <span className="block p-3">
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-bloom-green/80 line-clamp-1">
+                          <span className="absolute top-2.5 left-2.5 max-w-[calc(100%-1.25rem)] truncate rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-bloom-green">
                             {category.name}
                           </span>
-                          <span className="mt-0.5 text-sm font-medium text-gray-900 line-clamp-1">
+                        </span>
+
+                        <span className="flex flex-col flex-1 px-3.5 pt-3 pb-3.5">
+                          <span className="mb-3 text-sm font-medium leading-5 text-gray-900 line-clamp-2 min-h-[2.5rem]">
                             {item.name}
                           </span>
-                          {price && (
-                            <span className="block mt-0.5 font-display text-base font-semibold text-bloom-rose tabular-nums">
-                              {price}
+                          <span className="mt-auto pt-3 flex items-center justify-between gap-2 border-t border-gray-100">
+                            {price ? (
+                              <span className="font-display text-[17px] font-semibold text-bloom-rose tabular-nums">
+                                {price}
+                              </span>
+                            ) : (
+                              <span className="text-sm font-medium text-gray-500">Ask for price</span>
+                            )}
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-bloom-charcoal/70 group-hover:text-bloom-rose transition-colors">
+                              View
+                              <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                             </span>
-                          )}
+                          </span>
                         </span>
                       </button>
                     </li>

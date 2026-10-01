@@ -28,6 +28,7 @@ import {
 
 // Import the quote action
 import { createQuote } from '../../store/slices/quote-slice';
+import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
 
 const CustomerInfoForm = () => {
   const navigate = useNavigate();
@@ -170,7 +171,7 @@ const CustomerInfoForm = () => {
       console.log('✅ Quote submitted successfully:', result);
 
       // Navigate to success page
-      navigate('/quote-success', { 
+      navigate('/quote-submission-success', { 
         state: { 
           quoteData: result,
           message: 'Your quote request has been submitted successfully!'
@@ -250,11 +251,11 @@ const CustomerInfoForm = () => {
               {cart.map((item) => (
                 <div key={item.id} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
                   <img
-                    src={item.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=60&h=60&fit=crop'}
+                    src={item.image || ITEM_PLACEHOLDER}
                     alt={item.name}
                     className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
                     onError={(e) => {
-                      e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=60&h=60&fit=crop';
+                      e.target.src = ITEM_PLACEHOLDER;
                     }}
                   />
                   <div className="flex-1 min-w-0">
@@ -327,11 +328,11 @@ const CustomerInfoForm = () => {
                   {cart.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                       <img
-                        src={item.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=60&h=60&fit=crop'}
+                        src={item.image || ITEM_PLACEHOLDER}
                         alt={item.name}
                         className="w-16 h-16 object-cover rounded-lg"
                         onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=60&h=60&fit=crop';
+                          e.target.src = ITEM_PLACEHOLDER;
                         }}
                       />
                       <div className="flex-1 min-w-0">

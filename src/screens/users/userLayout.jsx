@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, useNavigate, Link } from "react-router-dom";
+import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
   ChevronDown,
@@ -24,6 +24,13 @@ import {
 import logoimg from "../../assets/newiblooms.png";
 import fullLogo from "../../assets/newiblooms.png";
 import { fetchCompanyInfo } from "../../store/slices/publicCompanyInfoSlice";
+import { selectCartItemCount } from "../../store/slices/cart-slice";
+import { openList } from "../../store/slices/ui-slice";
+import ListBar, { useListBarVisible } from "../../UI/listBar";
+import FloatingChatBox from "../../UI/floatingChatBox";
+import WhatsAppSheet, { WhatsAppIcon, sendOrAsk } from "../../UI/whatsAppSheet";
+
+const HEADER_GREETING = "Hi iBloom, I'd like to ask about renting some items.";
 
 const UserLayout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,8 +39,44 @@ const UserLayout = () => {
   const [isRentalsDropdownOpen, setIsRentalsDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
+  const [waSheetOpen, setWaSheetOpen] = useState(false);
 
   const { companyInfo } = useSelector((state) => state.public);
+  const listCount = useSelector(selectCartItemCount);
+  const listBarVisible = useListBarVisible();
+
+  // Cart icon: open the list if there is one, otherwise take people to the
+  // categories so they can start one.
+  const handleListClick = () => {
+    setIsMobileMenuOpen(false);
+    if (listCount > 0) {
+      if (location.pathname === "/eventbooking") return;
+      dispatch(openList());
+    } else {
+      navigate("/", { state: { scrollToCategories: true } });
+    }
+  };
+
+  const handleWhatsAppClick = () => {
+    setIsMobileMenuOpen(false);
+    sendOrAsk(HEADER_GREETING, setWaSheetOpen);
+  };
+
+  const listIconButton = (
+    <button
+      onClick={handleListClick}
+      className="relative p-2.5 rounded-full hover:bg-white/60 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-bloom-green"
+      aria-label={listCount > 0 ? `Your list, ${listCount} items` : "Browse items"}
+    >
+      <ShoppingCart className="w-5 h-5 text-gray-700" />
+      {listCount > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[1.25rem] h-5 px-1 rounded-full bg-bloom-rose text-white text-[11px] font-bold leading-5 text-center tabular-nums">
+          {listCount > 99 ? "99+" : listCount}
+        </span>
+      )}
+    </button>
+  );
 
   useEffect(() => {
     dispatch(fetchCompanyInfo());
@@ -157,7 +200,9 @@ const UserLayout = () => {
       <nav className="hidden md:block fixed top-4 inset-x-0 z-50 px-4">
         <div
           className={`glass-nav mx-auto flex items-center justify-between rounded-full shadow-[0_8px_30px_rgb(163,43,94,0.1)] transition-all duration-500 ease-out ${
-            isScrolled ? "max-w-3xl px-5 py-2" : "max-w-5xl px-8 py-3"
+            // Scrolled state still has to fit the nav links plus the WhatsApp
+            // and Book buttons, so it only trims padding, not much width.
+            isScrolled ? "max-w-5xl px-5 py-2" : "max-w-6xl px-7 py-3"
           }`}
         >
           <Link to="/" className="flex items-center shrink-0">
@@ -170,7 +215,7 @@ const UserLayout = () => {
             />
           </Link>
 
-          <div className="hidden lg:flex items-center gap-7 mx-6">
+          <div className="hidden lg:flex items-center gap-5 xl:gap-7 mx-4 xl:mx-6 whitespace-nowrap">
             <Link
               to="/"
               className="text-sm font-medium text-gray-700 hover:text-bloom-green transition-colors duration-200"
@@ -243,7 +288,7 @@ const UserLayout = () => {
           </div>
 
           {/* Tablet-only compact links */}
-          <div className="hidden md:flex lg:hidden items-center gap-4 mx-4">
+          <div className="hidden md:flex lg:hidden items-center gap-4 mx-3 whitespace-nowrap">
             <Link
               to="/"
               className="text-sm font-medium text-gray-700 hover:text-bloom-green transition-colors"
@@ -310,19 +355,20 @@ const UserLayout = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
+            {listIconButton}
             <button
-              onClick={() => navigate("/eventbooking")}
-              className="hidden lg:inline-flex items-center bg-bloom-rose hover:bg-bloom-rose-dark text-white px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 hover:scale-[1.03] shadow-md"
+              onClick={handleWhatsAppClick}
+              className="inline-flex items-center gap-2 whitespace-nowrap bg-[#25D366] hover:bg-[#1FBE5B] text-[#0B3B1E] px-4 py-2 rounded-full text-sm font-bold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1DA851]"
             >
-              Book
+              <WhatsAppIcon className="w-4 h-4" />
+              WhatsApp
             </button>
             <button
               onClick={() => navigate("/eventbooking")}
-              className="lg:hidden p-2 rounded-full hover:bg-white/60 transition-colors"
-              aria-label="View cart"
+              className="hidden lg:inline-flex items-center bg-bloom-rose hover:bg-bloom-rose-dark text-white px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-rose"
             >
-              <ShoppingCart className="w-5 h-5 text-gray-700" />
+              Book
             </button>
           </div>
         </div>
@@ -339,14 +385,16 @@ const UserLayout = () => {
             />
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => navigate("/eventbooking")}
-              className="p-2.5 hover:bg-white/60 rounded-full transition-colors duration-200"
-              aria-label="View cart"
+              onClick={handleWhatsAppClick}
+              className="inline-flex items-center gap-1.5 bg-[#25D366] text-[#0B3B1E] pl-3 pr-3.5 py-2 rounded-full text-sm font-bold mr-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1DA851]"
+              aria-label="Chat on WhatsApp"
             >
-              <ShoppingCart className="w-5 h-5 text-gray-700" />
+              <WhatsAppIcon className="w-4 h-4" />
+              Chat
             </button>
+            {listIconButton}
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -493,21 +541,28 @@ const UserLayout = () => {
             </div>
 
             <div
-              className={`p-6 border-t border-gray-200/60 shrink-0 ${
+              className={`p-6 border-t border-gray-200/60 shrink-0 space-y-2.5 ${
                 isMobileMenuOpen
                   ? `menu-item-enter menu-item-${mobileNavLinks.length + 2}`
                   : "menu-item-exit"
               }`}
             >
               <button
+                onClick={handleWhatsAppClick}
+                className="w-full bg-[#25D366] hover:bg-[#1FBE5B] text-[#0B3B1E] px-6 py-4 rounded-xl transition-colors duration-200 font-bold text-base flex items-center justify-center gap-2"
+              >
+                <WhatsAppIcon className="w-5 h-5" />
+                Chat on WhatsApp
+              </button>
+              <button
                 onClick={() => {
                   navigate("/eventbooking");
                   setIsMobileMenuOpen(false);
                 }}
-                className="w-full bg-bloom-rose hover:bg-bloom-rose-dark text-white px-6 py-4 rounded-xl transition-all duration-200 shadow-lg font-semibold text-base hover:scale-[1.02] flex items-center justify-center gap-2"
+                className="w-full bg-bloom-rose hover:bg-bloom-rose-dark text-white px-6 py-3.5 rounded-xl transition-colors duration-200 font-semibold text-base flex items-center justify-center gap-2"
               >
                 <Calendar className="w-5 h-5" />
-                Book Event Now
+                Book your event
               </button>
             </div>
           </div>
@@ -515,11 +570,20 @@ const UserLayout = () => {
       </nav>
 
       {/* Page Content */}
-      <div className="pt-16 md:pt-0">
+      <div className={`pt-16 md:pt-0 ${listBarVisible ? "pb-24" : ""}`}>
         <main>
           <Outlet />
         </main>
       </div>
+
+      <ListBar />
+      <FloatingChatBox raised={listBarVisible} />
+      <WhatsAppSheet
+        isOpen={waSheetOpen}
+        onClose={() => setWaSheetOpen(false)}
+        message={HEADER_GREETING}
+        title="Chat on WhatsApp"
+      />
 
       {/* Footer */}
       <footer className="relative bg-bloom-charcoal text-white pt-20 pb-10 overflow-hidden">

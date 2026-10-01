@@ -34,7 +34,7 @@ import {
   selectLoading,
   selectError
 } from '../../store/slices/categoriesSlice';
-import FloatingChatBox from '../../UI/floatingChatBox';
+import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
 
 // Quote Cart Hook for managing cart state
 const useQuoteCart = () => {
@@ -173,7 +173,7 @@ const QuickCartModal = ({ cart, cartCount, updateQuantity, removeFromCart, isOpe
                   {/* Product Image */}
                   <div className="flex-shrink-0">
                     <img
-                      src={item.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=80&h=80&fit=crop'}
+                      src={item.image || ITEM_PLACEHOLDER}
                       alt={item.name}
                       className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg"
                       loading="lazy"
@@ -188,12 +188,6 @@ const QuickCartModal = ({ cart, cartCount, updateQuantity, removeFromCart, isOpe
                     <p className="text-xs sm:text-sm text-gray-600 line-clamp-1 sm:line-clamp-2 mt-0.5">
                       {item.description}
                     </p>
-                    {/* Mobile: Show price if available */}
-                    {item.price && (
-                      <p className="text-sm font-medium text-emerald-600 mt-1 sm:hidden">
-                        ${item.price}
-                      </p>
-                    )}
                   </div>
                   
                   {/* Quantity Controls - Stacked on mobile for narrow screens */}
@@ -617,12 +611,12 @@ const QuoteCategoryItemsScreen = () => {
                         <img
                           src={
                             item.image ||
-                            `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`
+                            ITEM_PLACEHOLDER
                           }
                           alt={item.name}
                           className="w-full h-36 sm:h-48 lg:h-56 object-cover transition-transform duration-700 group-hover:scale-110"
                           onError={(e) => {
-                            e.target.src = `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`;
+                            e.target.src = ITEM_PLACEHOLDER;
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-emerald-600/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -674,12 +668,12 @@ const QuoteCategoryItemsScreen = () => {
                           <img
                             src={
                               item.image ||
-                              `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=120&h=120&fit=crop`
+                              ITEM_PLACEHOLDER
                             }
                             alt={item.name}
                             className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-lg object-cover"
                             onError={(e) => {
-                              e.target.src = `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=120&h=120&fit=crop`;
+                              e.target.src = ITEM_PLACEHOLDER;
                             }}
                           />
                           {isInCart(item.id) && (
@@ -780,7 +774,6 @@ const QuoteCategoryItemsScreen = () => {
       />
 
       {/* Floating Chat Box */}
-      <FloatingChatBox whatsappNumber="+2348142186524" />
 
       {/* Enhanced Custom Styles */}
       <style jsx>{`

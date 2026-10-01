@@ -14,6 +14,7 @@ import {
   Star,
   ArrowRight
 } from 'lucide-react';
+import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
 
 const QuoteSuccessScreen = () => {
   const navigate = useNavigate();
@@ -98,11 +99,11 @@ const QuoteSuccessScreen = () => {
                   {quoteData.items.map((item, index) => (
                     <div key={item.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                       <img
-                        src={item.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=80&h=80&fit=crop'}
+                        src={item.image || ITEM_PLACEHOLDER}
                         alt={item.name}
                         className="w-16 h-16 object-cover rounded-lg"
                         onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=80&h=80&fit=crop';
+                          e.target.src = ITEM_PLACEHOLDER;
                         }}
                       />
                       <div className="flex-1 min-w-0">

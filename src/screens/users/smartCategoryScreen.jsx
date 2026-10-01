@@ -30,7 +30,7 @@ import {
   setSearchQuery,
   setFilterBy
 } from '../../store/slices/categoriesSlice';
-import FloatingChatBox from '../../UI/floatingChatBox';
+import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
 
 // Enhanced Intersection Observer hook for animations
 const useIntersectionObserver = () => {
@@ -407,12 +407,12 @@ const SmartCategoriesScreen = () => {
                         <img
                           src={
                             category.image ||
-                            `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`
+                            ITEM_PLACEHOLDER
                           }
                           alt={category.name}
                           className="w-full h-36 sm:h-48 lg:h-56 object-cover transition-transform duration-700 group-hover:scale-110"
                           onError={(e) => {
-                            e.target.src = `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`;
+                            e.target.src = ITEM_PLACEHOLDER;
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -448,12 +448,12 @@ const SmartCategoriesScreen = () => {
                           <img
                             src={
                               category.image ||
-                              `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=120&h=120&fit=crop`
+                              ITEM_PLACEHOLDER
                             }
                             alt={category.name}
                             className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-lg object-cover group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
-                              e.target.src = `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=120&h=120&fit=crop`;
+                              e.target.src = ITEM_PLACEHOLDER;
                             }}
                           />
                         </div>
@@ -561,7 +561,7 @@ const SmartCategoriesScreen = () => {
               Event Booking
             </button>
             <button
-              onClick={() => navigate('/quote')}
+              onClick={() => navigate('/request-quote')}
               className="w-full sm:w-auto bg-white/10 backdrop-blur-lg text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center justify-center hover:bg-white/20 border border-white/20"
             >
               <Package className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
@@ -572,7 +572,6 @@ const SmartCategoriesScreen = () => {
       </div>
 
       {/* Floating Chat Box */}
-      <FloatingChatBox whatsappNumber="+2348142186524" />
 
       {/* Enhanced Custom Styles */}
       <style jsx>{`

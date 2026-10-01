@@ -402,6 +402,7 @@ const CustomerDetailsStep = ({
               <input
                 type="text"
                 name="name"
+                autoComplete="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 onFocus={() => handleFocus("name")}
@@ -481,6 +482,7 @@ const CustomerDetailsStep = ({
               <input
                 type="text"
                 name="location"
+                autoComplete="street-address"
                 value={formData.location}
                 onChange={(e) => handleInputChange("location", e.target.value)}
                 onFocus={() => handleFocus("location")}
@@ -518,6 +520,8 @@ const CustomerDetailsStep = ({
               <input
                 type="tel"
                 name="phone"
+                autoComplete="tel"
+                inputMode="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
                 onFocus={() => handleFocus("phone")}
@@ -562,6 +566,8 @@ const CustomerDetailsStep = ({
               <input
                 type="email"
                 name="email"
+                autoComplete="email"
+                inputMode="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 onFocus={() => handleFocus("email")}
@@ -633,32 +639,38 @@ const CustomerDetailsStep = ({
               <Truck className="w-4 h-4 mr-2" />
               Delivery Required? *
             </label>
-            <div className="relative">
-              <select
-                name="delivery"
-                value={formData.delivery}
-                onChange={(e) => handleInputChange("delivery", e.target.value)}
-                onFocus={() => handleFocus("delivery")}
-                onBlur={handleBlur}
-                className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 transition-all duration-300 text-sm sm:text-base ${
-                  errors.delivery
-                    ? "border-red-300 bg-red-50"
-                    : isFieldValid("delivery")
-                    ? "border-green-300 bg-green-50"
-                    : focusedField === "delivery"
-                    ? "border-bloom-green-300 bg-bloom-green-50"
-                    : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
-              >
-                {deliveryOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {isFieldValid("delivery") && (
-                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
-              )}
+            <div
+              role="radiogroup"
+              aria-label="Delivery required"
+              className={`grid grid-cols-2 gap-2 rounded-xl ${errors.delivery ? "ring-2 ring-red-300 p-1" : ""}`}
+            >
+              {deliveryOptions
+                .filter((option) => option.value)
+                .map((option) => {
+                  const selected = formData.delivery === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      name="delivery"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => handleInputChange("delivery", option.value)}
+                      className={`px-3 py-3 rounded-xl border-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-green ${
+                        selected
+                          ? "border-bloom-green bg-bloom-green-50 text-bloom-green-800"
+                          : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="block font-semibold">
+                        {option.value === "yes" ? "Yes" : "No"}
+                      </span>
+                      <span className="block text-xs text-gray-500 mt-0.5">
+                        {option.label.replace(/^(Yes|No) - /, "")}
+                      </span>
+                    </button>
+                  );
+                })}
             </div>
             {errors.delivery && (
               <p className="text-red-500 text-xs sm:text-sm flex items-center">
@@ -674,34 +686,38 @@ const CustomerDetailsStep = ({
               <Settings className="w-4 h-4 mr-2" />
               Professional Setup Required? *
             </label>
-            <div className="relative">
-              <select
-                name="installation"
-                value={formData.installation}
-                onChange={(e) =>
-                  handleInputChange("installation", e.target.value)
-                }
-                onFocus={() => handleFocus("installation")}
-                onBlur={handleBlur}
-                className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 transition-all duration-300 text-sm sm:text-base ${
-                  errors.installation
-                    ? "border-red-300 bg-red-50"
-                    : isFieldValid("installation")
-                    ? "border-green-300 bg-green-50"
-                    : focusedField === "installation"
-                    ? "border-bloom-green-300 bg-bloom-green-50"
-                    : "border-gray-200 bg-gray-50"
-                } focus:outline-none focus:ring-2 focus:ring-bloom-green-500/20`}
-              >
-                {installationOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {isFieldValid("installation") && (
-                <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
-              )}
+            <div
+              role="radiogroup"
+              aria-label="Professional setup required"
+              className={`grid grid-cols-2 gap-2 rounded-xl ${errors.installation ? "ring-2 ring-red-300 p-1" : ""}`}
+            >
+              {installationOptions
+                .filter((option) => option.value)
+                .map((option) => {
+                  const selected = formData.installation === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      name="installation"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => handleInputChange("installation", option.value)}
+                      className={`px-3 py-3 rounded-xl border-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-green ${
+                        selected
+                          ? "border-bloom-green bg-bloom-green-50 text-bloom-green-800"
+                          : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="block font-semibold">
+                        {option.value === "yes" ? "Yes" : "No"}
+                      </span>
+                      <span className="block text-xs text-gray-500 mt-0.5">
+                        {option.label.replace(/^(Yes|No) - /, "")}
+                      </span>
+                    </button>
+                  );
+                })}
             </div>
             {errors.installation && (
               <p className="text-red-500 text-xs sm:text-sm flex items-center">

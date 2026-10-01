@@ -43,6 +43,7 @@ import {
 } from "../../store/slices/cart-slice";
 import ConfirmModal from "../../UI/confrimModal";
 import { notifySuccess } from "../../utils/toastify";
+import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
 
 const OrderDateCustomerStep = ({
   customerInfo,
@@ -612,11 +613,11 @@ const OrderDateCustomerStep = ({
                   {/* Item Image */}
                   <div className="flex-shrink-0 w-full sm:w-20 md:w-24 lg:w-28">
                     <img
-                      src={item.image || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=200&h=200&fit=crop'}
+                      src={item.image || ITEM_PLACEHOLDER}
                       alt={item.name}
                       className="w-full h-32 sm:h-20 md:h-24 lg:h-28 object-cover rounded-lg sm:rounded-xl"
                       onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=200&h=200&fit=crop';
+                        e.target.src = ITEM_PLACEHOLDER;
                       }}
                     />
                   </div>

@@ -17,13 +17,26 @@ import {
   Users,
   Award,
   Sparkles,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { fetchProfile } from "../../store/slices/profile-slice";
 import { fetchCategories } from "../../store/slices/categoriesSlice";
-import FloatingChatBox from "../../UI/floatingChatBox";
 import QuickActionsSection from "../../components/users/quickActionSection";
 import { fetchCompanyInfo } from "../../store/slices/publicCompanyInfoSlice";
 import { getColorHex } from "../../utils/getHexColor";
+import WhatsAppSheet, { WhatsAppIcon, sendOrAsk } from "../../UI/whatsAppSheet";
+import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
+
+const HOME_GREETING = "Hi iBloom, I'd like to ask about renting some items for my event.";
+const SLIDE_MS = 6000;
+
+const formatNairaShort = (price) => {
+  const n = typeof price === "string" ? parseFloat(price.replace(/[₦\s,]/g, "")) : parseFloat(price);
+  return n > 0 ? `₦${n.toLocaleString("en-NG")}` : "";
+};
+const itemImage = (item) => item?.images?.image1 || item?.image1 || item?.image || "";
 
 // Performance optimized scroll hook
 function useOptimizedScroll() {
@@ -123,19 +136,17 @@ const HeroSlide = memo(({ slide, isActive, style }) => {
 
       <img
         src={imageSrc}
-        alt={slide.title}
-        className={`w-full h-full object-cover transition-opacity duration-500 ${
-          imageLoaded ? "opacity-100" : "opacity-0"
+        alt=""
+        className={`w-full h-full object-cover ${imageLoaded ? "opacity-100" : "opacity-0"} ${
+          isActive ? "scale-[1.07]" : "scale-100"
         }`}
+        // Slow push-in while a slide is showing; eases back while it fades out.
+        style={{ transition: "opacity 500ms ease, transform 7000ms cubic-bezier(.2,.6,.2,1)" }}
         loading={isActive ? "eager" : "lazy"}
         onLoad={handleImageLoad}
         onError={handleImageError}
         decoding="async"
       />
-
-      {imageLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-t from-bloom-charcoal/70 via-bloom-charcoal/30 to-bloom-charcoal/10" />
-      )}
     </div>
   );
 });
@@ -189,6 +200,7 @@ const HomePage = () => {
           "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951649/gabriel-domingues-leao-da-costa-cew-O_O5Bdg-unsplash_xbxxfb.jpg",
         optimizedImage:
           "https://res.cloudinary.com/dc7jgb30v/image/upload/w_1920,h_1080,c_fill,f_webp,q_auto:good/v1753951649/gabriel-domingues-leao-da-costa-cew-O_O5Bdg-unsplash_xbxxfb.jpg",
+        label: "Rentals",
         title: `${companyInfo?.name || "Premium Event"} Rentals`,
         subtitle: "Transform your special moments",
       },
@@ -198,6 +210,7 @@ const HomePage = () => {
           "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951672/tom-pumford-WnmXzjtjRfw-unsplash_ztkhp8.jpg",
         optimizedImage:
           "https://res.cloudinary.com/dc7jgb30v/image/upload/w_1920,h_1080,c_fill,f_webp,q_auto:good/v1753951672/tom-pumford-WnmXzjtjRfw-unsplash_ztkhp8.jpg",
+        label: "Weddings",
         title: "Wedding Perfection",
         subtitle: "Make your dream wedding reality",
       },
@@ -207,6 +220,7 @@ const HomePage = () => {
           "https://res.cloudinary.com/dc7jgb30v/image/upload/v1753951643/photos-by-lanty-O38Id_cyV4M-unsplash_rlneke.jpg",
         optimizedImage:
           "https://res.cloudinary.com/dc7jgb30v/image/upload/w_1920,h_1080,c_fill,f_webp,q_auto:good/v1753951643/photos-by-lanty-O38Id_cyV4M-unsplash_rlneke.jpg",
+        label: "Corporate",
         title: "Corporate Events",
         subtitle: "Professional solutions for success",
       },
@@ -350,11 +364,11 @@ const HomePage = () => {
   // Auto-slide timers
   useEffect(() => {
     if (!heroReady) return;
-    const timer = setInterval(() => {
+    const timer = setTimeout(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [heroSlides.length, heroReady]);
+    }, SLIDE_MS);
+    return () => clearTimeout(timer);
+  }, [currentSlide, heroSlides.length, heroReady]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -399,6 +413,43 @@ const HomePage = () => {
     },
     [navigate]
   );
+
+  const [waSheetOpen, setWaSheetOpen] = useState(false);
+  const shelfRef = useRef(null);
+
+  // One in-stock, photographed piece from each category for the hero shelf.
+  // Top-level items only: their ids are unique, so the deep link opens the
+  // right item (subcategory item ids repeat).
+  const featuredItems = useMemo(
+    () =>
+      (categories || [])
+        .map((category) => {
+          const item = (category.items || []).find(
+            (i) => !i.outOfStock && itemImage(i)
+          );
+          return item ? { item, category } : null;
+        })
+        .filter(Boolean)
+        .slice(0, 12),
+    [categories]
+  );
+
+  const scrollShelf = useCallback((direction) => {
+    const el = shelfRef.current;
+    if (el) el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: "smooth" });
+  }, []);
+
+  const heroEyebrow = /lagos/i.test(companyInfo?.location || "")
+    ? "Event decor rentals · Lagos"
+    : "Event decor rentals";
+
+  const scrollToCategories = useCallback(() => {
+    categoriesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const handleWhatsApp = useCallback(() => {
+    sendOrAsk(HOME_GREETING, setWaSheetOpen);
+  }, []);
 
   // Optimized parallax effect
   useEffect(() => {
@@ -476,6 +527,46 @@ const HomePage = () => {
             box-shadow: 0 4px 24px rgba(36, 26, 32, 0.06);
           }
 
+          /* Hero: headline words rise out of a mask on each slide change */
+          .hero-word-mask {
+            display: inline-block;
+            overflow: hidden;
+            vertical-align: bottom;
+            padding: 0 0.08em 0.1em 0;
+            margin-bottom: -0.1em;
+          }
+          .hero-word {
+            display: inline-block;
+            animation: heroWordUp 0.85s cubic-bezier(.2,.8,.2,1) both;
+          }
+          @keyframes heroWordUp {
+            from { transform: translate3d(0, 105%, 0); }
+            to { transform: none; }
+          }
+          .hero-sub { animation: fadeInUp 0.7s 0.35s ease-out both; }
+          .hero-progress {
+            transform-origin: left center;
+            animation-name: heroProgress;
+            animation-timing-function: linear;
+            animation-fill-mode: forwards;
+          }
+          @keyframes heroProgress {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+          }
+
+          /* Shelf: first card lines up with the page content (max-w-7xl + its
+             padding); the rest of the row runs off the right edge to scroll */
+          .hero-shelf {
+            --shelf-inset: 1.25rem;
+            padding-inline: var(--shelf-inset);
+            scroll-padding-inline: var(--shelf-inset);
+          }
+          @media (min-width: 640px) { .hero-shelf { --shelf-inset: 2rem; } }
+          @media (min-width: 1280px) {
+            .hero-shelf { --shelf-inset: calc((100% - 80rem) / 2 + 2rem); }
+          }
+
           /* Performance optimizations */
           .hero-section {
             contain: layout style paint;
@@ -497,8 +588,12 @@ const HomePage = () => {
         `}
       </style>
 
-      {/* Optimized Hero Section */}
-      <div className="hero-section relative h-screen overflow-hidden">
+      {/* Hero — an editorial cover: the headline sits on the photo, and a shelf
+          of real items with prices straddles its bottom edge. */}
+      <section
+        className="hero-section relative h-[84svh] min-h-[580px] md:h-screen md:min-h-[700px] overflow-hidden bg-bloom-charcoal"
+        aria-label="Welcome"
+      >
         {heroSlides.map((slide, index) => (
           <HeroSlide
             key={slide.id}
@@ -508,72 +603,407 @@ const HomePage = () => {
           />
         ))}
 
-        {/* Organic accent shapes */}
-        <div className="blob blob-a absolute -top-10 -left-16 w-80 h-80 bg-bloom-rose/20 z-10 pointer-events-none" />
-        <div className="blob blob-b absolute bottom-24 -right-10 w-64 h-64 bg-bloom-gold/20 z-10 pointer-events-none" />
+        {/* Scrims: heavier on the reading side and along the bottom, where the shelf overlaps */}
+        <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-bloom-charcoal/85 via-bloom-charcoal/40 to-bloom-charcoal/0" />
+        <div className="absolute inset-x-0 bottom-0 h-3/4 z-10 pointer-events-none bg-gradient-to-t from-bloom-charcoal via-bloom-charcoal/45 to-transparent" />
 
-        {/* Hero Content */}
         <div
-          className={`absolute inset-0 flex items-center justify-center text-center text-white z-20 px-4 transition-opacity duration-300 ${
-            heroReady ? "opacity-100" : "opacity-0"
-          }`}
+          // Text shows straight away, even before the photo arrives: on a slow
+          // connection the headline and buttons are what people need first.
+          className="relative z-20 h-full max-w-7xl mx-auto px-5 sm:px-8 flex flex-col justify-end pb-36 sm:pb-40 md:pb-48"
         >
-          <div
-            ref={heroContentRef}
-            className="glass-effect max-w-3xl w-full mx-auto px-6 py-10 md:px-14 md:py-14 rounded-[2rem]"
-            style={{ willChange: "transform" }}
-          >
-            <div className="inline-flex items-center gap-2 text-xs font-medium tracking-wide uppercase text-white/70 mb-5 animate-fade-in-up">
-              <span className="w-1.5 h-1.5 rounded-full bg-bloom-green-light" />
-              {companyInfo?.location || "Premium Event Rentals"}
-            </div>
+          <div ref={heroContentRef} className="max-w-3xl text-white" style={{ willChange: "transform" }}>
+            <p className="flex items-center gap-3 text-[11px] sm:text-xs font-semibold tracking-[0.2em] uppercase text-white/70 mb-4 sm:mb-6">
+              <span className="w-8 h-px bg-bloom-blush/80" aria-hidden="true" />
+              {heroEyebrow}
+            </p>
 
-            <h1 className="font-display text-4xl md:text-6xl font-semibold mb-5 text-white animate-fade-in-up">
-              {heroSlides[currentSlide]?.title}
-            </h1>
-            <p
-              className="text-lg md:text-xl mb-3 text-white/85 animate-fade-in-up"
-              style={{ animationDelay: "0.1s" }}
+            <h1
+              key={currentSlide}
+              className="font-display font-semibold text-white leading-[0.98] tracking-[-0.02em] text-[clamp(2.6rem,7.5vw,6.25rem)]"
             >
+              {(heroSlides[currentSlide]?.title || "").split(" ").map((word, i, words) => (
+                <React.Fragment key={i}>
+                <span className="hero-word-mask">
+                  <span
+                    className={`hero-word ${
+                      i === words.length - 1 && words.length > 1
+                        ? "italic font-medium text-bloom-blush"
+                        : ""
+                    }`}
+                    style={{ animationDelay: `${60 + i * 90}ms` }}
+                  >
+                    {word}
+                  </span>
+                </span>
+                {/* Space sits outside the inline-block mask, where it would collapse */}
+                {i < words.length - 1 && " "}
+                </React.Fragment>
+              ))}
+            </h1>
+
+            <p key={`sub-${currentSlide}`} className="hero-sub mt-4 sm:mt-6 text-base sm:text-xl text-white/80 max-w-md">
               {heroSlides[currentSlide]?.subtitle}
             </p>
-            {companyInfo?.bio && (
-              <p
-                className="text-base mb-8 text-white/70 max-w-xl mx-auto animate-fade-in-up"
-                style={{ animationDelay: "0.2s" }}
-              >
-                {userData.bio}
-              </p>
-            )}
 
+            <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button
+                onClick={scrollToCategories}
+                className="bg-bloom-rose hover:bg-bloom-rose-dark text-white px-7 py-4 rounded-full text-base sm:text-lg font-semibold transition-colors duration-300 shadow-2xl inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                Browse items
+                <ArrowDown className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleWhatsApp}
+                className="bg-[#25D366] hover:bg-[#1FBE5B] text-[#0B3B1E] px-7 py-4 rounded-full text-base sm:text-lg font-bold transition-colors duration-300 shadow-2xl inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                <WhatsAppIcon className="w-5 h-5" />
+                Chat on WhatsApp
+              </button>
+            </div>
             <button
               onClick={() => navigate("/request-quote")}
-              className="bg-bloom-rose hover:bg-bloom-rose-dark text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 hover:scale-105 shadow-2xl inline-flex items-center animate-scale-in"
-              style={{ animationDelay: "0.3s" }}
+              className="mt-4 sm:mt-5 inline-flex items-center gap-1.5 text-sm text-white/65 hover:text-white underline-offset-4 hover:underline"
             >
-              <Quote className="mr-2 w-5 h-5" />
-              Get Your Quote
+              <Quote className="w-4 h-4" />
+              Need a formal quote? Request one
             </button>
           </div>
-        </div>
 
-        {/* Hero Pagination */}
-        <div
-          className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 transition-opacity duration-300 ${
-            heroReady ? "opacity-100" : "opacity-0"
-          }`}
+          {/* Slide tabs: the line under the current one fills as the slide plays */}
+          <div className="mt-8 sm:mt-12 flex items-end gap-4 sm:gap-8" role="tablist" aria-label="Featured events">
+            {heroSlides.map((slide, index) => {
+              const active = index === currentSlide;
+              return (
+                <button
+                  key={slide.id}
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={slide.label}
+                  onClick={() => setCurrentSlide(index)}
+                  className="group text-left py-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white rounded"
+                >
+                  <span
+                    className={`hidden sm:block text-[11px] font-semibold uppercase tracking-[0.16em] mb-2 transition-colors ${
+                      active ? "text-white" : "text-white/45 group-hover:text-white/80"
+                    }`}
+                  >
+                    {slide.label}
+                  </span>
+                  <span className="block h-[2px] w-10 sm:w-24 bg-white/25 rounded-full overflow-hidden">
+                    {active && (
+                      <span
+                        key={currentSlide}
+                        className="hero-progress block h-full w-full bg-bloom-blush"
+                        style={{ animationDuration: `${SLIDE_MS}ms` }}
+                      />
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* The shelf: real pieces with prices, half on the photo, half on the page */}
+      {(categoriesLoading || featuredItems.length > 0) && (
+        <section
+          className="relative z-30 -mt-28 sm:-mt-32 bg-[linear-gradient(to_bottom,transparent_7rem,var(--color-bloom-ivory)_7rem)] sm:bg-[linear-gradient(to_bottom,transparent_8rem,var(--color-bloom-ivory)_8rem)]"
+          aria-labelledby="shelf-title"
         >
-          {heroSlides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentSlide
-                  ? "bg-bloom-rose w-8 shadow-lg"
-                  : "bg-white/50 hover:bg-white/70 w-2"
-              }`}
-            />
-          ))}
+          <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-end justify-between mb-3 sm:mb-4">
+            <h2 id="shelf-title" className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
+              From the collection
+            </h2>
+            <div className="hidden md:flex gap-2">
+              <button
+                type="button"
+                onClick={() => scrollShelf(-1)}
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm focus-visible:outline-2 focus-visible:outline-white"
+                aria-label="Scroll pieces left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollShelf(1)}
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm focus-visible:outline-2 focus-visible:outline-white"
+                aria-label="Scroll pieces right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <ul
+            ref={shelfRef}
+            className="hero-shelf flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {categoriesLoading && featuredItems.length === 0
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <li key={i} className="shrink-0 w-[42vw] max-w-[13rem] sm:w-52">
+                    <div className="rounded-2xl bg-white/90 overflow-hidden animate-pulse">
+                      <div className="aspect-[4/5] bg-bloom-blush/60" />
+                      <div className="p-3 space-y-2">
+                        <div className="h-3 w-1/2 bg-gray-100 rounded" />
+                        <div className="h-4 w-3/4 bg-gray-100 rounded" />
+                      </div>
+                    </div>
+                  </li>
+                ))
+              : featuredItems.map(({ item, category }) => {
+                  const price = formatNairaShort(item.price);
+                  return (
+                    <li key={`${category.id}-${item.id}`} className="snap-start shrink-0 w-[42vw] max-w-[13rem] sm:w-52">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/category/${category.id}?item=${item.id}`, { state: { category } })
+                        }
+                        className="group block w-full text-left bg-white rounded-2xl overflow-hidden ring-1 ring-black/5 shadow-[0_24px_48px_-24px_rgba(36,26,32,0.7)] transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloom-rose"
+                      >
+                        <span className="block aspect-[4/5] overflow-hidden bg-bloom-blush/40">
+                          <img
+                            src={itemImage(item)}
+                            alt=""
+                            loading="lazy"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.05]"
+                            onError={(e) => {
+                              e.currentTarget.src = ITEM_PLACEHOLDER;
+                            }}
+                          />
+                        </span>
+                        <span className="block p-3">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-bloom-green/80 line-clamp-1">
+                            {category.name}
+                          </span>
+                          <span className="mt-0.5 text-sm font-medium text-gray-900 line-clamp-1">
+                            {item.name}
+                          </span>
+                          {price && (
+                            <span className="block mt-0.5 font-display text-base font-semibold text-bloom-rose tabular-nums">
+                              {price}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+          </ul>
+        </section>
+      )}
+
+      {/* Categories Section */}
+      <div
+        ref={categoriesRef}
+        id="categories"
+        className="section-content pt-6 pb-14 md:pt-10 md:pb-20 bg-bloom-ivory relative overflow-hidden scroll-mt-16 md:scroll-mt-24"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='1.5' cy='1.5' r='1.5' fill='%232F5D3A' fill-opacity='0.12'/%3E%3C/svg%3E\")",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <div
+            data-animate="categories-header"
+            className={`text-center mb-8 md:mb-14 transition-all duration-800 ${
+              isVisible["categories-header"]
+                ? "animate-fade-in-up"
+                : "opacity-0"
+            }`}
+          >
+            <h2 className="font-display text-3xl md:text-5xl font-semibold text-gray-800 mb-3">
+              Browse by category
+            </h2>
+            <p className="text-base md:text-lg text-gray-600 max-w-xl mx-auto">
+              Pick a category, add what you need, then send your list on
+              WhatsApp or book your date.
+            </p>
+          </div>
+
+          {/* Categories Grid */}
+          {categoriesLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
+              {[1, 2, 3, 4, 5, 6].map((index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="bg-gray-200 rounded-2xl shadow-lg overflow-hidden">
+                    <div className="bg-gray-300 aspect-[4/3] w-full"></div>
+                    <div className="p-3 sm:p-6">
+                      <div className="bg-gray-300 h-6 w-3/4 mb-2 rounded"></div>
+                      <div className="bg-gray-300 h-4 w-full mb-2 rounded"></div>
+                      <div className="bg-gray-300 h-4 w-1/2 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">📦</div>
+              <h3 className="text-2xl font-semibold text-gray-700 mb-2">
+                No Categories Available
+              </h3>
+              <p className="text-gray-500">
+                Categories will appear here once they are added to the system.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 items-stretch">
+              {categories.map((category, index) => {
+                // Check if category (including items nested in subcategories) has any in stock.
+                // Was only looking at category.items, so a category with all its real items
+                // living in subCategories had an empty items array — and [].every() is
+                // vacuously true, so it always showed "Out of Stock" no matter what.
+                const allCategoryItems = [
+                  ...(category.items || []),
+                  ...(category.subCategories?.flatMap((sub) => sub.items || []) || []),
+                ];
+                const hasInStockItems = allCategoryItems.some(
+                  (item) => !item.outOfStock
+                );
+                const allOutOfStock =
+                  allCategoryItems.length > 0 &&
+                  allCategoryItems.every((item) => item.outOfStock);
+
+                const stockBadge =
+                  category.itemCount === 0
+                    ? { label: "Coming Soon", dot: "bg-gray-400" }
+                    : allOutOfStock
+                    ? { label: "Out of Stock", dot: "bg-red-500" }
+                    : hasInStockItems
+                    ? { label: "In Stock", dot: "bg-emerald-500" }
+                    : { label: "Limited Stock", dot: "bg-amber-500" };
+
+                const extraColors = category.colors?.length
+                  ? category.colors.length - 4
+                  : 0;
+
+                return (
+                  <div
+                    key={category.id}
+                    data-animate={`category-${index}`}
+                    className={`group h-full cursor-pointer transform transition-all duration-500 hover:-translate-y-1 ${
+                      isVisible[`category-${index}`]
+                        ? "animate-fade-in-up"
+                        : "opacity-0"
+                    }`}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                    onClick={() => handleCategoryClick(category)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleCategoryClick(category)
+                    }
+                  >
+                    <div className="h-full flex flex-col bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-500 overflow-hidden border border-gray-100">
+                      {/* Image */}
+                      <div className="relative overflow-hidden aspect-[4/3] sm:aspect-auto sm:h-48 shrink-0">
+                        <img
+                          src={
+                            category.image ||
+                            ITEM_PLACEHOLDER
+                          }
+                          alt={category.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => {
+                            e.target.src = ITEM_PLACEHOLDER;
+                          }}
+                        />
+
+                        {/* Stock Status */}
+                        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium text-gray-700 shadow-sm">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${stockBadge.dot}`}
+                          />
+                          {stockBadge.label}
+                        </div>
+
+                        {/* Subcategory Badge */}
+                        {category.subCategories?.length > 0 && (
+                          <div className="hidden sm:block absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm text-gray-700 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">
+                            {category.subCategories.length} sub
+                            {category.subCategories.length > 1 ? "s" : ""}
+                          </div>
+                        )}
+
+                        {/* Hover reveal: view items + extra detail */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-bloom-charcoal/75 via-bloom-charcoal/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                          {(category.colors?.length > 0 ||
+                            category.sizes?.length > 0) && (
+                            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                              {category.colors?.slice(0, 4).map((color, i) => (
+                                <span
+                                  key={i}
+                                  title={color}
+                                  className="w-4 h-4 rounded-full border border-white/60 shadow-sm"
+                                  style={{
+                                    backgroundColor: getColorHex(color),
+                                  }}
+                                />
+                              ))}
+                              {extraColors > 0 && (
+                                <span className="text-[11px] text-white/80">
+                                  +{extraColors}
+                                </span>
+                              )}
+                              {category.sizes?.length > 0 && (
+                                <span className="text-[11px] text-white/80 ml-1">
+                                  {category.sizes.length} size
+                                  {category.sizes.length > 1 ? "s" : ""}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <span className="inline-flex items-center justify-center bg-bloom-rose text-white px-4 py-2 rounded-full text-sm font-medium self-start">
+                            View Items
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex flex-col flex-1 p-3 sm:p-6">
+                        <h3 className="font-display text-base sm:text-lg font-semibold text-gray-800 mb-1 sm:mb-1.5 line-clamp-2 sm:line-clamp-1 group-hover:text-bloom-green transition-colors duration-300">
+                          {category.name}
+                        </h3>
+
+                        <p className="hidden sm:block text-gray-500 text-sm leading-relaxed line-clamp-2 min-h-[2.6em]">
+                          {category.description ||
+                            "Premium quality rentals for your special event"}
+                        </p>
+
+                        {/* Spacer pushes footer to the bottom so every card aligns */}
+                        <div className="flex-1" />
+
+                        <div className="mt-2 sm:mt-4 sm:pt-3 sm:border-t border-gray-100 flex items-center justify-between">
+                          {category.itemCount > 0 ? (
+                            <span className="text-xs sm:text-sm font-medium text-bloom-green">
+                              {category.itemCount} item
+                              {category.itemCount !== 1 ? "s" : ""} available
+                            </span>
+                          ) : (
+                            <span className="text-xs sm:text-sm text-gray-400">
+                              Items coming soon
+                            </span>
+                          )}
+
+                          {category.hasQuotes && (
+                            <span className="hidden sm:inline text-xs font-medium text-bloom-rose">
+                              Custom quotes
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -695,216 +1125,6 @@ const HomePage = () => {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Categories Section */}
-      <div
-        ref={categoriesRef}
-        className="section-content py-20 bg-bloom-ivory relative overflow-hidden"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='1.5' cy='1.5' r='1.5' fill='%232F5D3A' fill-opacity='0.12'/%3E%3C/svg%3E\")",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div
-            data-animate="categories-header"
-            className={`text-center mb-16 transition-all duration-800 ${
-              isVisible["categories-header"]
-                ? "animate-fade-in-up"
-                : "opacity-0"
-            }`}
-          >
-            <h2 className="font-display text-4xl md:text-5xl font-semibold text-gray-800 mb-4">
-              Our Rental Categories
-            </h2>
-            <p className="text-xl text-gray-600">
-              Everything you need for your perfect event
-            </p>
-            <div className="w-16 h-1 bg-bloom-rose mx-auto mt-8 rounded-full"></div>
-          </div>
-
-          {/* Categories Grid */}
-          {categoriesLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3, 4, 5, 6].map((index) => (
-                <div key={index} className="animate-pulse">
-                  <div className="bg-gray-200 rounded-2xl shadow-lg overflow-hidden">
-                    <div className="bg-gray-300 h-48 w-full"></div>
-                    <div className="p-6">
-                      <div className="bg-gray-300 h-6 w-3/4 mb-2 rounded"></div>
-                      <div className="bg-gray-300 h-4 w-full mb-2 rounded"></div>
-                      <div className="bg-gray-300 h-4 w-1/2 rounded"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : categories.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">📦</div>
-              <h3 className="text-2xl font-semibold text-gray-700 mb-2">
-                No Categories Available
-              </h3>
-              <p className="text-gray-500">
-                Categories will appear here once they are added to the system.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
-              {categories.map((category, index) => {
-                // Check if category (including items nested in subcategories) has any in stock.
-                // Was only looking at category.items, so a category with all its real items
-                // living in subCategories had an empty items array — and [].every() is
-                // vacuously true, so it always showed "Out of Stock" no matter what.
-                const allCategoryItems = [
-                  ...(category.items || []),
-                  ...(category.subCategories?.flatMap((sub) => sub.items || []) || []),
-                ];
-                const hasInStockItems = allCategoryItems.some(
-                  (item) => !item.outOfStock
-                );
-                const allOutOfStock =
-                  allCategoryItems.length > 0 &&
-                  allCategoryItems.every((item) => item.outOfStock);
-
-                const stockBadge =
-                  category.itemCount === 0
-                    ? { label: "Coming Soon", dot: "bg-gray-400" }
-                    : allOutOfStock
-                    ? { label: "Out of Stock", dot: "bg-red-500" }
-                    : hasInStockItems
-                    ? { label: "In Stock", dot: "bg-emerald-500" }
-                    : { label: "Limited Stock", dot: "bg-amber-500" };
-
-                const extraColors = category.colors?.length
-                  ? category.colors.length - 4
-                  : 0;
-
-                return (
-                  <div
-                    key={category.id}
-                    data-animate={`category-${index}`}
-                    className={`group h-full cursor-pointer transform transition-all duration-500 hover:-translate-y-1 ${
-                      isVisible[`category-${index}`]
-                        ? "animate-fade-in-up"
-                        : "opacity-0"
-                    }`}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    onClick={() => handleCategoryClick(category)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleCategoryClick(category)
-                    }
-                  >
-                    <div className="h-full flex flex-col bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-500 overflow-hidden border border-gray-100">
-                      {/* Image */}
-                      <div className="relative overflow-hidden h-48 shrink-0">
-                        <img
-                          src={
-                            category.image ||
-                            `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`
-                          }
-                          alt={category.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                          decoding="async"
-                          onError={(e) => {
-                            e.target.src = `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop`;
-                          }}
-                        />
-
-                        {/* Stock Status */}
-                        <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${stockBadge.dot}`}
-                          />
-                          {stockBadge.label}
-                        </div>
-
-                        {/* Subcategory Badge */}
-                        {category.subCategories?.length > 0 && (
-                          <div className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm text-gray-700 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">
-                            {category.subCategories.length} sub
-                            {category.subCategories.length > 1 ? "s" : ""}
-                          </div>
-                        )}
-
-                        {/* Hover reveal: view items + extra detail */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-bloom-charcoal/75 via-bloom-charcoal/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                          {(category.colors?.length > 0 ||
-                            category.sizes?.length > 0) && (
-                            <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                              {category.colors?.slice(0, 4).map((color, i) => (
-                                <span
-                                  key={i}
-                                  title={color}
-                                  className="w-4 h-4 rounded-full border border-white/60 shadow-sm"
-                                  style={{
-                                    backgroundColor: getColorHex(color),
-                                  }}
-                                />
-                              ))}
-                              {extraColors > 0 && (
-                                <span className="text-[11px] text-white/80">
-                                  +{extraColors}
-                                </span>
-                              )}
-                              {category.sizes?.length > 0 && (
-                                <span className="text-[11px] text-white/80 ml-1">
-                                  {category.sizes.length} size
-                                  {category.sizes.length > 1 ? "s" : ""}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          <span className="inline-flex items-center justify-center bg-bloom-rose text-white px-4 py-2 rounded-full text-sm font-medium self-start">
-                            View Items
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex flex-col flex-1 p-6">
-                        <h3 className="font-display text-lg font-semibold text-gray-800 mb-1.5 line-clamp-1 group-hover:text-bloom-green transition-colors duration-300">
-                          {category.name}
-                        </h3>
-
-                        <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 min-h-[2.6em]">
-                          {category.description ||
-                            "Premium quality rentals for your special event"}
-                        </p>
-
-                        {/* Spacer pushes footer to the bottom so every card aligns */}
-                        <div className="flex-1" />
-
-                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                          {category.itemCount > 0 ? (
-                            <span className="text-sm font-medium text-bloom-green">
-                              {category.itemCount} item
-                              {category.itemCount !== 1 ? "s" : ""} available
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-400">
-                              Items coming soon
-                            </span>
-                          )}
-
-                          {category.hasQuotes && (
-                            <span className="text-xs font-medium text-bloom-rose">
-                              Custom quotes
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       </div>
 
@@ -1173,13 +1393,19 @@ const HomePage = () => {
               Book Your Event
             </button>
             <button
-              onClick={() => navigate("/request-quote")}
-              className="glass-effect text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center hover:bg-white/20"
+              onClick={handleWhatsApp}
+              className="bg-[#25D366] hover:bg-[#1FBE5B] text-[#0B3B1E] px-8 py-4 rounded-full text-lg font-bold transition-colors duration-300 shadow-2xl flex items-center"
             >
-              <Quote className="mr-2 w-5 h-5" />
-              Get Free Quote
+              <WhatsAppIcon className="mr-2 w-5 h-5" />
+              Chat on WhatsApp
             </button>
           </div>
+          <button
+            onClick={() => navigate("/request-quote")}
+            className="mt-6 text-sm text-white/60 hover:text-white underline-offset-4 hover:underline"
+          >
+            Prefer a formal written quote? Request one
+          </button>
 
           {/* Trust Indicators */}
           <div className="mt-12 flex flex-wrap justify-center items-center gap-8 opacity-70">
@@ -1199,8 +1425,12 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Floating Chat Box Component */}
-      <FloatingChatBox whatsappNumber="+2348142186524" />
+      <WhatsAppSheet
+        isOpen={waSheetOpen}
+        onClose={() => setWaSheetOpen(false)}
+        message={HOME_GREETING}
+        title="Chat on WhatsApp"
+      />
     </>
   );
 };

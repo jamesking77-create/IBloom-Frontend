@@ -1,5 +1,5 @@
 // screens/user/components/BookingPreviewStep.js
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Calendar,
@@ -36,6 +36,8 @@ import {
   selectLastCreatedBookingId,
   resetBookingCreation,
 } from "../../store/slices/booking-slice";
+import WhatsAppSheet, { WhatsAppIcon, sendOrAsk } from "../../UI/whatsAppSheet";
+import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
 
 const BookingPreviewStep = ({
   customerInfo,
@@ -55,13 +57,8 @@ const BookingPreviewStep = ({
   // Local state for UI interactions
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [showWhatsAppPicker, setShowWhatsAppPicker] = useState(false); // NEW
-
-  // NEW: the two WhatsApp numbers to choose between
-  const whatsappNumbers = [
-    { label: "Sales Line 1", phone: "2348172258085" },
-    { label: "Sales Line 2", phone: "2348124862088" },
-  ];
+  const [showWhatsAppPicker, setShowWhatsAppPicker] = useState(false);
+  const [sentTo, setSentTo] = useState(null);
 
   // FIXED: Memoized calculations to prevent unnecessary re-renders
   const calculations = useMemo(() => {
@@ -368,27 +365,29 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
     onSubmit,
   ]);
 
-  // Confirms the booking (submits to the backend) and opens WhatsApp with the full
-  // summary for the chosen sales line — one action doing what used to be two buttons.
-  // WhatsApp still opens even if the backend submission has an issue, since that's
-  // the client's actual lead channel and shouldn't get blocked by it.
-  const sendBookingToWhatsAppNumber = useCallback(
-    async (phone) => {
-      setShowWhatsAppPicker(false);
-      await submitBookingToBackend();
-      const message = buildBookingWhatsAppMessage();
-      window.open(
-        `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
-        "_blank",
-      );
+  // Confirms the booking and opens WhatsApp with the full summary — one action.
+  // WhatsApp opens FIRST, inside the tap: mobile browsers block window.open once
+  // an await has run, which used to stop WhatsApp from opening at all. The
+  // booking is then recorded in the background; WhatsApp is the lead channel,
+  // so a backend hiccup must never block it.
+  // Only record the booking once, even if they send it to WhatsApp again.
+  const bookingRecordedRef = useRef(false);
+  const handleBookingSent = useCallback(
+    (phone) => {
+      setSentTo(phone);
+      if (bookingRecordedRef.current) return;
+      bookingRecordedRef.current = true;
+      submitBookingToBackend();
     },
-    [submitBookingToBackend, buildBookingWhatsAppMessage],
+    [submitBookingToBackend],
   );
 
-  // NEW: toggles the number picker
   const handleShareBookingToWhatsApp = useCallback(() => {
-    setShowWhatsAppPicker((prev) => !prev);
-  }, []);
+    const message = buildBookingWhatsAppMessage();
+    if (sendOrAsk(message, setShowWhatsAppPicker)) {
+      handleBookingSent("single");
+    }
+  }, [buildBookingWhatsAppMessage, handleBookingSent]);
 
   const eventDuration = calculateDuration();
 
@@ -686,7 +685,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
               const itemImage =
                 item.images?.image1 ||
                 item.imageUrl ||
-                "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
+                ITEM_PLACEHOLDER;
               const itemDuration = item.duration || 1;
               const orderMode = item.orderMode || "booking";
               const itemTotal = itemPrice * itemQuantity;
@@ -706,7 +705,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
                           className="w-12 h-12 rounded-lg object-cover shadow-md"
                           onError={(e) => {
                             e.target.src =
-                              "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
+                              ITEM_PLACEHOLDER;
                           }}
                         />
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -750,7 +749,7 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
                           className="w-16 h-16 rounded-xl object-cover mr-4 shadow-md"
                           onError={(e) => {
                             e.target.src =
-                              "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=100&h=100&fit=crop";
+                              ITEM_PLACEHOLDER;
                           }}
                         />
                         <div className="absolute -top-2 -right-2 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -994,63 +993,43 @@ Tax (7.5%): ${formatPrice(calculations.tax)}
           Previous
         </button>
 
-        <div className="relative w-full sm:flex-1 sm:max-w-md">
-          {showWhatsAppPicker && (
-            <>
-              {/* Backdrop to close picker on outside click */}
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowWhatsAppPicker(false)}
-              />
-              <div className="absolute bottom-full mb-2 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-20">
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
-                  Choose a WhatsApp number
-                </div>
-                {whatsappNumbers.map((num) => (
-                  <button
-                    key={num.phone}
-                    onClick={() => sendBookingToWhatsAppNumber(num.phone)}
-                    type="button"
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left"
-                  >
-                    <MessageCircle
-                      className="w-5 h-5 text-[#25D366]"
-                      fill="#25D366"
-                    />
-                    <span className="font-medium text-gray-800">
-                      {num.label}
-                    </span>
-                    <span className="ml-auto text-sm text-gray-400">
-                      {num.phone}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
+        <div className="w-full sm:flex-1 sm:max-w-md">
           <button
             onClick={handleShareBookingToWhatsApp}
             disabled={
               isSubmitting || loading || !cartItems || cartItems.length === 0
             }
             type="button"
-            className="w-full py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg bg-[#25D366] hover:bg-[#1ebc59] disabled:bg-gray-300 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
+            className="w-full py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg bg-[#25D366] hover:bg-[#1FBE5B] disabled:bg-gray-300 disabled:cursor-not-allowed text-[#0B3B1E] flex items-center justify-center gap-2 sm:gap-3 shadow-lg transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1DA851]"
           >
             {isSubmitting || loading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
-                Processing...
+                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-[#0B3B1E]"></div>
+                Saving your booking…
               </>
             ) : (
               <>
-                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" fill="white" />
-                Confirm &amp; Send to WhatsApp
+                <WhatsAppIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                {sentTo ? "Send to WhatsApp again" : "Confirm & send to WhatsApp"}
               </>
             )}
           </button>
+          <p className="mt-2 text-xs text-center text-gray-500">
+            {sentTo
+              ? "Booking sent. Finish the chat in WhatsApp to confirm delivery and setup."
+              : "WhatsApp opens with your full booking summary, ready to send."}
+          </p>
         </div>
       </div>
+
+      <WhatsAppSheet
+        isOpen={showWhatsAppPicker}
+        onClose={() => setShowWhatsAppPicker(false)}
+        message={buildBookingWhatsAppMessage}
+        title="Send your booking"
+        subtitle="Pick a sales line. WhatsApp opens with your booking summary ready to send."
+        onSent={handleBookingSent}
+      />
 
       {/* Trust Indicators */}
       <div className="bg-bloom-green-50 rounded-2xl p-4 sm:p-6 border border-green-200">

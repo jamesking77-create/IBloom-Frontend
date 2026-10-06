@@ -20,6 +20,7 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
+  Search,
 } from "lucide-react";
 import { fetchProfile } from "../../store/slices/profile-slice";
 import { fetchCategories } from "../../store/slices/categoriesSlice";
@@ -28,6 +29,7 @@ import { fetchCompanyInfo } from "../../store/slices/publicCompanyInfoSlice";
 import { getColorHex } from "../../utils/getHexColor";
 import WhatsAppSheet, { WhatsAppIcon, sendOrAsk } from "../../UI/whatsAppSheet";
 import { ITEM_PLACEHOLDER } from "../../utils/itemPlaceholder";
+import { openSearch } from "../../store/slices/ui-slice";
 
 const HOME_GREETING = "Hi iBloom, I'd like to ask about renting some items for my event.";
 const SLIDE_MS = 6000;
@@ -439,6 +441,19 @@ const HomePage = () => {
     if (el) el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: "smooth" });
   }, []);
 
+  // Real count for the search bar ("Search 207 items…"), subcategories included.
+  const totalItems = useMemo(
+    () =>
+      (categories || []).reduce(
+        (n, c) =>
+          n +
+          (c.items?.length || 0) +
+          (c.subCategories || []).reduce((m, s) => m + (s.items?.length || 0), 0),
+        0
+      ),
+    [categories]
+  );
+
   const heroEyebrow = /lagos/i.test(companyInfo?.location || "")
     ? "Event decor rentals · Lagos"
     : "Event decor rentals";
@@ -591,7 +606,7 @@ const HomePage = () => {
       {/* Hero — an editorial cover: the headline sits on the photo, and a shelf
           of real items with prices straddles its bottom edge. */}
       <section
-        className="hero-section relative h-[84svh] min-h-[580px] md:h-screen md:min-h-[700px] overflow-hidden bg-bloom-charcoal"
+        className="hero-section relative h-[88svh] min-h-[680px] md:h-screen md:min-h-[760px] overflow-hidden bg-bloom-charcoal"
         aria-label="Welcome"
       >
         {heroSlides.map((slide, index) => (
@@ -646,7 +661,27 @@ const HomePage = () => {
               {heroSlides[currentSlide]?.subtitle}
             </p>
 
-            <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Search bar: opens the site-wide search panel (every item and subcategory) */}
+            <button
+              type="button"
+              onClick={() => dispatch(openSearch())}
+              className="group mt-6 sm:mt-8 w-full max-w-xl flex items-center gap-3 h-14 sm:h-16 pl-4 sm:pl-5 pr-2 rounded-full bg-white/95 text-left shadow-[0_20px_50px_-15px_rgba(0,0,0,0.55)] ring-1 ring-white/40 hover:bg-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              aria-label="Search all items"
+            >
+              <Search className="w-5 h-5 text-bloom-green shrink-0" />
+              <span className="flex-1 min-w-0 truncate text-[15px] sm:text-base text-gray-500">
+                {totalItems > 0 ? `Search ${totalItems} items` : "Search items"}
+                <span className="hidden sm:inline">: candelabras, backdrops…</span>
+              </span>
+              <kbd className="hidden md:inline-flex items-center h-6 px-2 rounded-md border border-gray-200 bg-gray-50 text-[11px] font-semibold text-gray-500">
+                /
+              </kbd>
+              <span className="shrink-0 h-10 sm:h-12 px-4 sm:px-5 rounded-full bg-bloom-charcoal text-white text-sm font-semibold inline-flex items-center group-hover:bg-bloom-green transition-colors">
+                Search
+              </span>
+            </button>
+
+            <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button
                 onClick={scrollToCategories}
                 className="bg-bloom-rose hover:bg-bloom-rose-dark text-white px-7 py-4 rounded-full text-base sm:text-lg font-semibold transition-colors duration-300 shadow-2xl inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"

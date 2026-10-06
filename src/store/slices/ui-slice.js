@@ -8,6 +8,8 @@ const initialState = {
   isNotificationsOpen: false,
   // Public site: the customer's item list drawer (see UI/listBar.jsx)
   isListOpen: false,
+  // Public site: the catalogue search panel (see UI/searchPalette.jsx)
+  isSearchOpen: false,
 };
 
 const uiSlice = createSlice({
@@ -51,6 +53,12 @@ const uiSlice = createSlice({
     closeList: (state) => {
       state.isListOpen = false;
     },
+    openSearch: (state) => {
+      state.isSearchOpen = true;
+    },
+    closeSearch: (state) => {
+      state.isSearchOpen = false;
+    },
   },
 });
 
@@ -63,6 +71,8 @@ export const {
   closeAllDropdowns,
   openList,
   closeList,
+  openSearch,
+  closeSearch,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

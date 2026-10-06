@@ -20,12 +20,14 @@ import {
   Calendar,
   Smartphone,
   MessageCircle,
+  Search,
 } from "lucide-react";
 import logoimg from "../../assets/newiblooms.png";
 import fullLogo from "../../assets/newiblooms.png";
 import { fetchCompanyInfo } from "../../store/slices/publicCompanyInfoSlice";
 import { selectCartItemCount } from "../../store/slices/cart-slice";
-import { openList } from "../../store/slices/ui-slice";
+import { openList, openSearch } from "../../store/slices/ui-slice";
+import SearchPalette from "../../UI/searchPalette";
 import ListBar, { useListBarVisible } from "../../UI/listBar";
 import FloatingChatBox from "../../UI/floatingChatBox";
 import WhatsAppSheet, { WhatsAppIcon, sendOrAsk } from "../../UI/whatsAppSheet";
@@ -57,6 +59,39 @@ const UserLayout = () => {
       navigate("/", { state: { scrollToCategories: true } });
     }
   };
+
+  // "/" or Ctrl/⌘+K opens the catalogue search from anywhere on the site
+  // (but "/" is left alone while someone is typing in a field).
+  useEffect(() => {
+    const onKey = (e) => {
+      const typing = e.target.closest?.("input, textarea, select, [contenteditable=true]");
+      if ((e.key === "k" || e.key === "K") && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        dispatch(openSearch());
+      } else if (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        dispatch(openSearch());
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [dispatch]);
+
+  const handleSearchClick = () => {
+    setIsMobileMenuOpen(false);
+    dispatch(openSearch());
+  };
+
+  const searchIconButton = (
+    <button
+      onClick={handleSearchClick}
+      className="p-2.5 rounded-full hover:bg-white/60 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-bloom-green"
+      aria-label="Search items"
+      title="Search items (/)"
+    >
+      <Search className="w-5 h-5 text-gray-700" />
+    </button>
+  );
 
   const handleWhatsAppClick = () => {
     setIsMobileMenuOpen(false);
@@ -355,7 +390,8 @@ const UserLayout = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
+            {searchIconButton}
             {listIconButton}
             <button
               onClick={handleWhatsAppClick}
@@ -385,7 +421,8 @@ const UserLayout = () => {
             />
           </Link>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
+            {searchIconButton}
             <button
               onClick={handleWhatsAppClick}
               className="inline-flex items-center gap-1.5 bg-[#25D366] text-[#0B3B1E] pl-3 pr-3.5 py-2 rounded-full text-sm font-bold mr-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1DA851]"
@@ -578,6 +615,7 @@ const UserLayout = () => {
 
       <ListBar />
       <FloatingChatBox raised={listBarVisible} />
+      <SearchPalette />
       <WhatsAppSheet
         isOpen={waSheetOpen}
         onClose={() => setWaSheetOpen(false)}

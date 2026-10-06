@@ -120,6 +120,20 @@ const CategoriesPage = () => {
     if (found) setModalItem(found);
   }, [searchParams, allItems]);
 
+  // /category/:id?sub=:subId (no item) opens that subcategory's chip, e.g. from
+  // a subcategory result in the site search.
+  useEffect(() => {
+    const subParam = searchParams.get("sub");
+    if (subParam === null || searchParams.get("item") || !category) return;
+    const sub = (category.subCategories || []).find(
+      (s) => parseInt(s.id, 10) === parseInt(subParam, 10)
+    );
+    if (sub) {
+      setSelectedSubCategory(sub);
+      setSearchQuery("");
+    }
+  }, [searchParams, category]);
+
   // Search always covers the whole category, every subcategory included, and
   // matches item names, descriptions and subcategory names ("gold" finds the
   // Gold centerpieces). A chip only narrows the list when nothing is typed.

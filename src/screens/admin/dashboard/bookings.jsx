@@ -2128,14 +2128,6 @@ const Bookings = () => {
                         <span>Total:</span>
                         <span>{formatCurrency(invoiceData.total)}</span>
                       </div>
-                      {invoiceData.requiresDeposit && (
-                        <div className="flex justify-between text-orange-600">
-                          <span>Deposit Required:</span>
-                          <span>
-                            {formatCurrency(invoiceData.depositAmount)}
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>

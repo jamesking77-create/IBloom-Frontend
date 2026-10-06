@@ -61,7 +61,6 @@ Subtotal: ₦${invoiceData.subtotal.toLocaleString('en-NG', { minimumFractionDig
 Tax (${(invoiceData.taxRate * 100).toFixed(1)}%): ₦${invoiceData.tax.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
 ${includedAdditional.length ? `\n*Delivery/Setup/Deposit (no tax):*\n${additionalLines}\n` : ''}
 *Total: ₦${invoiceData.total.toLocaleString('en-NG', { minimumFractionDigits: 2 })}*
-${invoiceData.requiresDeposit ? `Deposit required (50%): ₦${invoiceData.depositAmount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}\n` : ''}
 Due date: ${new Date(invoiceData.dueDate).toLocaleDateString()}
 ${bankLines}
 Thank you for choosing ${invoiceData.company.name}!`;
@@ -330,12 +329,6 @@ Thank you for choosing ${invoiceData.company.name}!`;
               <td><strong>Total Amount:</strong></td>
               <td class="text-right"><strong>₦${invoiceData.total.toLocaleString('en-NG', {minimumFractionDigits: 2})}</strong></td>
             </tr>
-            ${invoiceData.requiresDeposit ? `
-            <tr style="color: #EA580C; font-weight: bold;">
-              <td>Deposit Required (50%):</td>
-              <td class="text-right">₦${invoiceData.depositAmount.toLocaleString('en-NG', {minimumFractionDigits: 2})}</td>
-            </tr>
-            ` : ''}
           </table>
         </div>
 

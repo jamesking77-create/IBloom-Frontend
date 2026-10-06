@@ -114,7 +114,9 @@ const publicSlice = createSlice({
       })
       .addCase(fetchCompanyInfo.fulfilled, (state, action) => {
         state.loading = false;
-        state.companyInfo = action.payload;
+        // Keep the previous object if the response has no company: an undefined
+        // companyInfo crashes every public page that reads companyInfo.x.
+        state.companyInfo = action.payload || state.companyInfo;
         state.lastFetched = new Date().toISOString();
       })
       .addCase(fetchCompanyInfo.rejected, (state, action) => {
